@@ -263,6 +263,37 @@ importers:
         specifier: ^3.2.0
         version: 3.2.7(@types/node@22.20.5)(lightningcss@1.33.0)(sass-embedded@1.105.1)(sass@1.105.1)(supports-color@8.1.1)(terser@5.51.2)(tsx@4.23.15)
 
+  packages/web:
+    dependencies:
+      '@quasar/extras':
+        specifier: ^1.17.0
+        version: 1.18.0
+      '@wizzn/shared':
+        specifier: workspace:*
+        version: link:../shared
+      quasar:
+        specifier: ^2.18.0
+        version: 2.35.0
+      vue:
+        specifier: ^3.5.0
+        version: 3.5.43(typescript@5.9.3)
+      vue-router:
+        specifier: ^4.5.0
+        version: 4.6.4(vue@3.5.43(typescript@5.9.3))
+    devDependencies:
+      '@quasar/app-vite':
+        specifier: ^2.3.0
+        version: 2.6.2(@quasar/extras@1.18.0)(@types/node@22.20.5)(quasar@2.35.0)(rolldown@1.2.13)(rollup@4.64.2)(sass@1.105.1)(supports-color@8.1.1)(terser@5.51.2)(tsx@4.23.15)(typescript@5.9.3)(vue-router@4.6.4(vue@3.5.43(typescript@5.9.3)))(vue@3.5.43(typescript@5.9.3))
+      sass-embedded:
+        specifier: ^1.89.0
+        version: 1.105.1
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vue-tsc:
+        specifier: ^2.2.0
+        version: 2.2.12(typescript@5.9.3)
+
 packages:
 
   '@babel/helper-string-parser@7.29.7':
