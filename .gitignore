@@ -10,3 +10,14 @@ packages/api/.env
 .env.web
 *.log
 media-data/
+
+# console setup outputs + keys
+setup-out/
+secrets/
+*.p8
+
+# Local Piper TTS (venv + voices), managed by scripts/dev.sh
+.piper/
+
+*.onnx
+
