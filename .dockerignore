@@ -8,3 +8,4 @@ apm_modules
 .gemini
 media-data
 .env*
+packages/admin/.quasar

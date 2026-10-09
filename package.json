@@ -14,7 +14,9 @@
     "db:generate": "pnpm --filter @wizzn/api db:generate",
     "db:migrate": "pnpm --filter @wizzn/api db:migrate",
     "db:seed": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api db:seed",
-    "build:shared": "pnpm --filter @wizzn/shared build"
+    "build:shared": "pnpm --filter @wizzn/shared build",
+    "dev:admin": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/admin dev",
+    "dev:all": "./scripts/dev.sh"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

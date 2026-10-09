@@ -1,7 +1,7 @@
 import type { InterestsInput, MeDto } from '@wizzn/shared'
 import type { AuthPort, Repos, SessionUser } from '../src/types.js'
 
-export const anon: SessionUser = { id: 'u1', name: 'Anonymous', isAnonymous: true }
+export const anon: SessionUser = { id: 'u1', name: 'Anonymous', email: 'x@anonymous.invalid', isAnonymous: true }
 
 export function fakeAuth(user: SessionUser | null = anon): AuthPort {
   return {

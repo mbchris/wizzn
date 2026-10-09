@@ -1,0 +1,26 @@
+{
+  "name": "@wizzn/admin",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "echo \"admin: no unit tests (UI)\"",
+    "postinstall": "quasar prepare"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.17.0",
+    "@wizzn/shared": "workspace:*",
+    "quasar": "^2.18.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^2.3.0",
+    "sass-embedded": "^1.89.0",
+    "typescript": "^5.8.3",
+    "vue-tsc": "^2.2.0"
+  }
+}

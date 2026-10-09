@@ -1,0 +1,66 @@
+import { describe, expect, it } from 'vitest'
+import { createApp } from '../src/app.js'
+import type { AdminRepo, SessionUser } from '../src/types.js'
+import { fakeAuth, fakeRepos } from './fakes.js'
+
+const admin: SessionUser = { id: 'a1', name: 'Chris', email: 'Chris@Wizzn.app', isAnonymous: false }
+const headers = { authorization: 'Bearer t', 'content-type': 'application/json' }
+const FIELD = '6f1c2a3e-1b2c-4d5e-8f90-123456789abc'
+const UNIT = '7f1c2a3e-1b2c-4d5e-8f90-123456789abc'
+
+function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}) {
+  const enqueued: string[] = []
+  const repo: AdminRepo = {
+    createBrief: async (input) => ({ briefId: 'b1', unitIds: Array.from({ length: input.count }, (_, i) => `u${i}`) }),
+    listUnits: async () => [],
+    getUnit: async () => null,
+    editUnit: async () => 'ok',
+    approve: async () => 'ok',
+    reject: async () => 'ok',
+    requeue: async () => 'ok',
+    ...overrides,
+  }
+  const app = createApp({
+    auth: fakeAuth(user),
+    repos: fakeRepos(),
+    corsOrigins: [],
+    admin: { emails: ['chris@wizzn.app'], repo, queue: { enqueueResearch: async (id) => void enqueued.push(id) } },
+  })
+  return { app, enqueued }
+}
+
+describe('/api/admin', () => {
+  it('rejects anonymous and non-listed users with 403', async () => {
+    const anon = setup({ ...admin, isAnonymous: true })
+    const other = setup({ ...admin, email: 'x@y.de' })
+    expect((await anon.app.request('/api/admin/units', { headers })).status).toBe(403)
+    expect((await other.app.request('/api/admin/units', { headers })).status).toBe(403)
+  })
+  it('matches admin emails case-insensitively', async () => {
+    expect((await setup().app.request('/api/admin/units', { headers })).status).toBe(200)
+  })
+  it('creates a brief and enqueues one research job per unit', async () => {
+    const { app, enqueued } = setup()
+    const res = await app.request('/api/admin/briefs', { method: 'POST', headers, body: JSON.stringify({ fieldId: FIELD, topic: 'Notgroschen', format: 'written', count: 3 }) })
+    expect(res.status).toBe(201)
+    expect(enqueued).toEqual(['u0', 'u1', 'u2'])
+  })
+  it('rejects a brief with count > 10', async () => {
+    const res = await setup().app.request('/api/admin/briefs', { method: 'POST', headers, body: JSON.stringify({ fieldId: FIELD, topic: 'Notgroschen', format: 'written', count: 11 }) })
+    expect(res.status).toBe(400)
+  })
+  it('maps repo results to HTTP codes', async () => {
+    const { app } = setup(admin, { approve: async () => 'invalid_state', reject: async () => 'not_found', editUnit: async () => 'invalid_content' })
+    expect((await app.request(`/api/admin/units/${UNIT}/approve`, { method: 'POST', headers })).status).toBe(409)
+    expect((await app.request(`/api/admin/units/${UNIT}/reject`, { method: 'POST', headers, body: JSON.stringify({ reason: 'zu werblich' }) })).status).toBe(404)
+    expect((await app.request(`/api/admin/units/${UNIT}`, { method: 'PUT', headers, body: JSON.stringify({ title: 'Neu', contentJson: {} }) })).status).toBe(400)
+  })
+  it('requeue enqueues research only on success', async () => {
+    const ok = setup()
+    await ok.app.request(`/api/admin/units/${UNIT}/requeue`, { method: 'POST', headers })
+    expect(ok.enqueued).toEqual([UNIT])
+    const blocked = setup(admin, { requeue: async () => 'invalid_state' })
+    await blocked.app.request(`/api/admin/units/${UNIT}/requeue`, { method: 'POST', headers })
+    expect(blocked.enqueued).toEqual([])
+  })
+})

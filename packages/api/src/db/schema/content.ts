@@ -56,6 +56,8 @@ export const unit = pgTable(
 export const source = pgTable('source', {
   id: uuid('id').primaryKey().defaultRandom(),
   unitId: uuid('unit_id').notNull().references(() => unit.id, { onDelete: 'cascade' }),
+  // Index the LLM refers to in claims ("[0]", "[1]")
+  position: integer('position').notNull().default(0),
   url: text('url').notNull(),
   title: text('title').notNull(),
   publisher: text('publisher').notNull(),
@@ -67,6 +69,7 @@ export const asset = pgTable('asset', {
   id: uuid('id').primaryKey().defaultRandom(),
   unitId: uuid('unit_id').notNull().references(() => unit.id, { onDelete: 'cascade' }),
   kind: assetKind('kind').notNull(),
+  position: integer('position').notNull().default(0),
   path: text('path').notNull(),
   durationSec: integer('duration_sec'),
 })
@@ -89,3 +92,11 @@ export const unitRelations = relations(unit, ({ one, many }) => ({
 }))
 export const sourceRelations = relations(source, ({ one }) => ({ unit: one(unit, { fields: [source.unitId], references: [unit.id] }) }))
 export const assetRelations = relations(asset, ({ one }) => ({ unit: one(unit, { fields: [asset.unitId], references: [unit.id] }) }))
+export const contentBriefRelations = relations(contentBrief, ({ one, many }) => ({
+  field: one(field, { fields: [contentBrief.fieldId], references: [field.id] }),
+  theme: one(theme, { fields: [contentBrief.themeId], references: [theme.id] }),
+  units: many(unit),
+}))
+export const checkReportRelations = relations(checkReport, ({ one }) => ({
+  unit: one(unit, { fields: [checkReport.unitId], references: [unit.id] }),
+}))

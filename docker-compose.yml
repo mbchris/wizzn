@@ -27,6 +27,14 @@ services:
     depends_on:
       api: { condition: service_healthy }
 
+  admin:
+    build:
+      context: .
+      dockerfile: Dockerfile.admin
+      args:
+        API_URL: ${API_PUBLIC_URL}
+    restart: unless-stopped
+
   media:
     image: nginx:1.27-alpine
     restart: unless-stopped

@@ -16,5 +16,15 @@ pnpm dev:worker             # job worker
 pnpm test
 ```
 
+## Content pipeline (local)
+```bash
+ollama serve & ollama pull qwen3:8b
+# packages/api/.env: ADMIN_EMAILS=you@example.com
+pnpm dev            # api :3000
+pnpm dev:worker     # pipeline worker
+pnpm dev:admin      # admin http://localhost:9100 → "Konto anlegen" with an ADMIN_EMAILS address
+```
+Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length), `IMAGE_PROVIDER=placeholder` (SVG).
+
 ## Deploy
 Coolify → Docker Compose resource → `docker-compose.yml`. Container start runs migrations + seed.

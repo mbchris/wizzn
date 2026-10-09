@@ -1,8 +1,9 @@
-import type { FieldDto, InterestsInput, MeDto } from '@wizzn/shared'
+import type { BriefInput, FieldDto, InterestsInput, MeDto, UnitDetailDto, UnitEdit, UnitListQuery, UnitSummaryDto } from '@wizzn/shared'
 
 export interface SessionUser {
   id: string
   name: string
+  email: string
   isAnonymous: boolean
 }
 
@@ -21,4 +22,22 @@ export interface Repos {
 
 export interface AppVariables {
   user: SessionUser
+}
+
+export type AdminActionResult = 'ok' | 'not_found' | 'invalid_state' | 'invalid_content'
+
+export interface AdminRepo {
+  createBrief(input: BriefInput, createdBy: string): Promise<{ briefId: string; unitIds: string[] }>
+  listUnits(query: UnitListQuery): Promise<UnitSummaryDto[]>
+  getUnit(id: string): Promise<UnitDetailDto | null>
+  /** Only allowed while in_review; content must match unitContentSchema */
+  editUnit(id: string, edit: UnitEdit): Promise<AdminActionResult>
+  approve(id: string): Promise<AdminActionResult>
+  reject(id: string, reason: string): Promise<AdminActionResult>
+  /** Moves failed/rejected/in_review back to queued; caller enqueues research */
+  requeue(id: string): Promise<AdminActionResult>
+}
+
+export interface JobQueue {
+  enqueueResearch(unitId: string): Promise<void>
 }

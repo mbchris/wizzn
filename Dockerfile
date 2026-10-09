@@ -16,6 +16,8 @@ RUN pnpm deploy --filter @wizzn/api --prod --legacy /out && cp -r packages/api/d
 
 FROM base AS runtime
 ENV NODE_ENV=production
+# ffmpeg: WAV → MP3 for audio units
+RUN apk add --no-cache ffmpeg
 COPY --from=build /out /app
 USER node
 EXPOSE 3000
