@@ -1,0 +1,317 @@
+[
+  {
+    "theme": "behaviour-patterns",
+    "format": "written",
+    "topic": "Wie lange es dauert, eine Gewohnheit zu bilden",
+    "title": "Der 21-Tage-Mythos",
+    "slides": [
+      {
+        "title": "Kein fester Zeitraum",
+        "body": "Oft heißt es, nach 21 Tagen sitzt eine neue Gewohnheit. Eine Studie am University College London fand jedoch im Schnitt etwa 66 Tage, mit großer Spannbreite.",
+        "imagePrompt": "Kalender mit vielen abgehakten Tagen"
+      },
+      {
+        "title": "18 bis 254 Tage",
+        "body": "Je nach Person und Verhalten dauerte es zwischen 18 und 254 Tagen, bis sich etwas automatisch anfühlte. Ein Glas Wasser trinken geht schneller als täglich Sport."
+      },
+      {
+        "title": "Ein Ausrutscher ist okay",
+        "body": "Einen Tag zu verpassen, hat den Prozess in der Studie kaum gestört. Entscheidend ist, danach einfach weiterzumachen.",
+        "imagePrompt": "Kleiner Stolperstein auf einem Weg, der weitergeht"
+      },
+      {
+        "title": "Gleicher Ort, gleiche Zeit",
+        "body": "Gewohnheiten entstehen, wenn ein Verhalten immer wieder im selben Kontext passiert, etwa direkt nach dem Zähneputzen. Der Kontext wird zum Auslöser."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.spring.org.uk/2023/01/form-a-habit.php",
+        "title": "How Long To Form A Habit? 66 Days Is A Rough Average",
+        "publisher": "PsyBlog"
+      }
+    ]
+  },
+  {
+    "theme": "behaviour-patterns",
+    "format": "written",
+    "topic": "Warum wir Dinge aufschieben",
+    "title": "Morgen, morgen, nur nicht heute",
+    "slides": [
+      {
+        "title": "Kein Zeitproblem",
+        "body": "Prokrastination wird oft mit schlechtem Zeitmanagement erklärt. Psychologisch geht es aber häufig um Gefühle: Wir schieben auf, um Unbehagen, Langeweile oder Angst vor dem Scheitern zu vermeiden.",
+        "imagePrompt": "Person schaut aufs Handy, daneben ein Stapel Papiere"
+      },
+      {
+        "title": "Kurz gut, lang schlecht",
+        "body": "Das Aufschieben bringt sofort Erleichterung. Später kommen Stress und schlechtes Gewissen dazu, und die Aufgabe wirkt noch größer."
+      },
+      {
+        "title": "Mini-Schritte",
+        "body": "Zerlege Aufgaben in winzige Schritte. Statt „Hausarbeit schreiben“ lieber „fünf Minuten Gliederung notieren“. Der Anfang ist oft die größte Hürde.",
+        "imagePrompt": "Treppe aus kleinen Klebezetteln"
+      },
+      {
+        "title": "Freundlich zu dir",
+        "body": "Selbstvorwürfe verstärken das Aufschieben oft. Wer sich selbst mit Verständnis begegnet, findet leichter wieder in die Aufgabe hinein."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.barmer.de/presse/presseinformationen/newsletter-gesundheit-im-blick/prokrastination-tipps-gegen-das-staendige-aufschieben-1237282",
+        "title": "Prokrastination: Tipps gegen das ständige Aufschieben",
+        "publisher": "BARMER"
+      }
+    ]
+  },
+  {
+    "theme": "neurodivergence",
+    "format": "written",
+    "topic": "ADHS bei Erwachsenen",
+    "title": "ADHS wächst nicht einfach raus",
+    "slides": [
+      {
+        "title": "Nicht nur bei Kindern",
+        "body": "ADHS beginnt in der Kindheit, bleibt aber bei vielen Betroffenen bis ins Erwachsenenalter bestehen. Oft wird es erst spät erkannt.",
+        "imagePrompt": "Gedankenblasen, die in verschiedene Richtungen fliegen"
+      },
+      {
+        "title": "Wie es sich zeigt",
+        "body": "Bei Erwachsenen äußert sich ADHS häufig als innere Unruhe, Schwierigkeiten mit Organisation und Konzentration, Vergesslichkeit oder impulsives Verhalten."
+      },
+      {
+        "title": "Auch Stärken",
+        "body": "Viele Betroffene beschreiben auch Kreativität, Begeisterungsfähigkeit und die Fähigkeit, sich in spannende Themen tief zu vertiefen."
+      },
+      {
+        "title": "Diagnose vom Profi",
+        "body": "Selbsttests im Netz ersetzen keine Diagnose. Ansprechpartner sind Fachärztinnen und Fachärzte für Psychiatrie sowie psychologische Psychotherapeuten.",
+        "imagePrompt": "Ruhiges Beratungszimmer mit zwei Stühlen"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.dak.de/dak/gesundheit/psychische-gesundheit/psychische-erkrankungen/adhs-bei-erwachsenen_14012",
+        "title": "ADHS bei Erwachsenen: Ursachen, Symptome und Therapien",
+        "publisher": "DAK-Gesundheit"
+      }
+    ]
+  },
+  {
+    "theme": "neurodivergence",
+    "format": "written",
+    "topic": "Autismus als Spektrum verstehen",
+    "title": "Autismus ist ein Spektrum",
+    "slides": [
+      {
+        "title": "Viele Ausprägungen",
+        "body": "Autismus ist eine angeborene Entwicklungsbesonderheit. Weil sie sich bei jedem Menschen anders zeigt, spricht man von einem Spektrum.",
+        "imagePrompt": "Regenbogenfarbenes Unendlichkeitszeichen"
+      },
+      {
+        "title": "Soziale Kommunikation",
+        "body": "Viele autistische Menschen erleben soziale Situationen anders. Ungeschriebene Regeln, Ironie oder Smalltalk können anstrengend sein."
+      },
+      {
+        "title": "Sinne und Routinen",
+        "body": "Häufig sind Geräusche, Licht oder Berührungen intensiver wahrnehmbar. Feste Abläufe und tiefe Spezialinteressen geben vielen Halt und Freude.",
+        "imagePrompt": "Kopfhörer und ein Buch auf einem ruhigen Tisch"
+      },
+      {
+        "title": "Verständnis hilft",
+        "body": "Autismus ist keine Krankheit, die man heilen muss. Oft helfen vor allem Akzeptanz, klare Kommunikation und passende Rahmenbedingungen in Schule, Job und Alltag."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.gesundheitsinformation.de/pdf/autismus/broschuere_autismus.pdf",
+        "title": "Autismus",
+        "publisher": "gesundheitsinformation.de (IQWiG)"
+      }
+    ]
+  },
+  {
+    "theme": "social",
+    "format": "written",
+    "topic": "Der Zuschauereffekt",
+    "title": "Warum keiner hilft",
+    "slides": [
+      {
+        "title": "Viele schauen zu",
+        "body": "Je mehr Menschen einen Notfall beobachten, desto geringer ist oft die Wahrscheinlichkeit, dass ein Einzelner hilft. Das nennt man Zuschauereffekt.",
+        "imagePrompt": "Menschenmenge, alle schauen auf ihr Handy"
+      },
+      {
+        "title": "Das Experiment",
+        "body": "Die Psychologen John Darley und Bibb Latané zeigten Ende der 1960er-Jahre: Allein reagierten Versuchspersonen schneller auf einen vermeintlichen Notfall als in Gruppen."
+      },
+      {
+        "title": "Verantwortung verteilt sich",
+        "body": "In der Gruppe denkt jeder, ein anderer wird schon helfen. Dazu kommt Unsicherheit: Wenn niemand reagiert, wirkt die Situation vielleicht harmloser."
+      },
+      {
+        "title": "Den Bann brechen",
+        "body": "Wenn du Hilfe brauchst, sprich eine Person direkt an: „Sie mit der roten Jacke, rufen Sie bitte den Notruf.“ Und wenn du zuschaust: Sei du die Person, die handelt.",
+        "imagePrompt": "Hand, die nach einem Telefon greift"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://flexikon.doccheck.com/de/Zuschauereffekt_(Psychologie)",
+        "title": "Zuschauereffekt (Psychologie)",
+        "publisher": "DocCheck Flexikon"
+      }
+    ]
+  },
+  {
+    "theme": "developmental",
+    "format": "audio",
+    "topic": "Piagets Stufen der kognitiven Entwicklung",
+    "title": "Wie Kinder die Welt entdecken",
+    "images": [
+      {
+        "prompt": "Baby greift nach einem bunten Spielzeug",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Zwei unterschiedlich geformte Gläser mit Wasser",
+        "atFraction": 0.45
+      },
+      {
+        "prompt": "Jugendliche denkt über ein Puzzle nach",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Hast du schon einmal beobachtet, wie ein Baby begeistert ein Spielzeug immer wieder auf den Boden wirft? Oder wie ein Kindergartenkind steif und fest behauptet, in einem hohen, schmalen Glas sei mehr Saft als in einem breiten, obwohl gerade derselbe Saft umgefüllt wurde? Hinter solchen Momenten steckt eine der einflussreichsten Theorien der Entwicklungspsychologie. Sie stammt von dem Schweizer Forscher Jean Piaget.\n\nPiaget hat Kinder, auch seine eigenen, sehr genau beobachtet. Seine zentrale Idee: Kinder sind keine kleinen Erwachsenen, die einfach noch weniger wissen. Sie denken grundlegend anders. Und dieses Denken entwickelt sich in vier Stufen.\n\nDie erste Stufe ist die sensomotorische Phase. Sie reicht etwa von der Geburt bis zum zweiten Lebensjahr. Babys erkunden die Welt mit ihren Sinnen und Bewegungen. Sie greifen, lutschen, schauen und hören. Ein großer Meilenstein in dieser Zeit ist die sogenannte Objektpermanenz. Das bedeutet, das Kind versteht, dass Dinge weiter existieren, auch wenn es sie nicht mehr sieht. Deshalb wird das Versteckspiel plötzlich so spannend.\n\nDie zweite Stufe ist die präoperationale Phase, ungefähr vom zweiten bis zum siebten Lebensjahr. Jetzt entwickeln Kinder Sprache und Vorstellungskraft. Sie spielen Rollenspiele, ein Stock wird zum Schwert, ein Karton zum Raumschiff. Gleichzeitig ist ihr Denken noch stark auf die eigene Sicht bezogen. Piaget nannte das Egozentrismus, gemeint ist nicht Egoismus, sondern die Schwierigkeit, sich in eine andere Perspektive hineinzuversetzen. Auch das Beispiel mit den Gläsern gehört hierher. Kinder in dieser Phase lassen sich noch stark vom Aussehen leiten und verstehen nicht, dass die Menge gleich bleibt.\n\nDie dritte Stufe ist die konkret-operationale Phase, etwa vom siebten bis zum elften Lebensjahr. Nun können Kinder logisch denken, solange es um konkrete Dinge geht. Sie verstehen, dass Saft beim Umfüllen nicht mehr oder weniger wird. Sie können Gegenstände nach Größe ordnen und einfache Rechenoperationen umkehren. Abstrakte Gedankenspiele fallen ihnen aber noch schwer.\n\nDie vierte Stufe ist die formal-operationale Phase, ab etwa elf oder zwölf Jahren. Jetzt wird abstraktes Denken möglich. Jugendliche können Hypothesen aufstellen, über Möglichkeiten nachdenken, die es gar nicht gibt, und sich mit philosophischen Fragen beschäftigen. Vielleicht erklärt das auch, warum Teenager plötzlich so gerne diskutieren.\n\nWie gut ist Piagets Modell heute? Die Forschung hat inzwischen gezeigt, dass Kinder manches früher können, als Piaget dachte, und dass die Übergänge fließender sind als klare Stufen. Auch Kultur und soziales Umfeld spielen eine größere Rolle. Trotzdem ist seine Grundidee bis heute prägend: Kinder sind aktive kleine Forscher, die ihr Wissen selbst aufbauen.\n\nUnd das ist vielleicht auch für Erwachsene eine schöne Erinnerung. Neugier, Ausprobieren und Fehler machen sind der Motor des Lernens, und zwar ein Leben lang. Bleib also neugierig.",
+    "sources": [
+      {
+        "url": "https://studyflix.de/paedagogik-psychologie/piaget-stufenmodell-4251",
+        "title": "Piaget Stufenmodell",
+        "publisher": "Studyflix"
+      },
+      {
+        "url": "https://positivepsychology.com/de/piaget-stufen-theorie/",
+        "title": "Piagets Stufen: 4 Stufen der kognitiven Entwicklung",
+        "publisher": "PositivePsychology.com"
+      }
+    ]
+  },
+  {
+    "theme": "social",
+    "format": "audio",
+    "topic": "Der Bystander-Effekt und wie man ihn durchbricht",
+    "title": "Einer muss anfangen",
+    "images": [
+      {
+        "prompt": "Belebte Fußgängerzone von oben",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Rauch, der unter einer Tür hervorquillt",
+        "atFraction": 0.4
+      },
+      {
+        "prompt": "Person zeigt auf jemanden und bittet um Hilfe",
+        "atFraction": 0.75
+      }
+    ],
+    "script": "Stell dir vor, mitten in einer belebten Einkaufsstraße bricht jemand zusammen. Dutzende Menschen gehen vorbei. Einige bleiben stehen und schauen. Aber niemand tut etwas. Wie kann das sein? Die meisten von uns würden doch sagen, ich würde natürlich helfen. Die Sozialpsychologie hat für dieses Phänomen einen Namen: den Zuschauereffekt, oder auf Englisch Bystander-Effekt.\n\nBekannt wurde das Thema durch einen tragischen Fall im New York der Sechzigerjahre. Eine junge Frau namens Kitty Genovese wurde getötet, und in Zeitungen hieß es, viele Nachbarn hätten zugesehen, ohne einzugreifen. Später stellte sich heraus, dass diese Darstellung stark übertrieben war. Trotzdem hat der Fall die Forschung angestoßen.\n\nDie Psychologen John Darley und Bibb Latané wollten wissen, was hinter dem Nichthelfen steckt. In einem ihrer bekanntesten Experimente saßen Versuchspersonen in einem Raum und füllten Fragebögen aus. Plötzlich drang Rauch durch einen Lüftungsschlitz. Wer allein im Raum war, meldete den Rauch meist schnell. Saßen dagegen andere Personen im Raum, die eingeweiht waren und bewusst ruhig blieben, reagierten viele Versuchspersonen lange nicht. Manche blieben sogar sitzen, obwohl der Raum immer voller Rauch wurde.\n\nDarley und Latané fanden mehrere Gründe für dieses Verhalten. Der erste ist die Verantwortungsdiffusion. Wenn viele Menschen anwesend sind, verteilt sich die gefühlte Verantwortung. Jeder denkt, irgendwer wird schon helfen. Je mehr Leute da sind, desto kleiner wird der eigene Anteil im Kopf.\n\nDer zweite Grund ist die sogenannte pluralistische Ignoranz. In unklaren Situationen schauen wir, wie andere reagieren. Wenn alle ruhig bleiben, schließen wir daraus, dass es wohl nicht so schlimm ist. Das Problem: Die anderen machen genau dasselbe und schauen auf uns.\n\nDer dritte Grund ist die Angst, sich zu blamieren. Was, wenn ich falsch liege? Was, wenn ich etwas falsch mache? Diese Sorge hält viele davon ab, den ersten Schritt zu tun.\n\nDas Wichtigste an diesem Wissen ist: Es kann dir helfen, anders zu handeln. Wenn du merkst, dass du in einer Gruppe zögerst, erinnere dich an den Zuschauereffekt. Frag dich nicht, ob jemand anderes hilft, sondern was du selbst tun kannst. Schon ein Anruf beim Notruf eins eins zwei ist eine große Hilfe.\n\nUnd wenn du selbst Hilfe brauchst, gibt es einen wirksamen Trick. Rufe nicht einfach in die Menge, sondern sprich eine bestimmte Person direkt an. Zum Beispiel: Sie mit der blauen Mütze, rufen Sie bitte einen Krankenwagen. Damit hebst du die Verantwortungsdiffusion auf. Die angesprochene Person weiß jetzt, dass sie gemeint ist.\n\nÜbrigens zeigen neuere Untersuchungen mit Videoaufnahmen aus echten Konflikten, dass Menschen in vielen Fällen doch eingreifen. Der Zuschauereffekt ist also kein Naturgesetz. Er ist eine Falle, die wir erkennen und überwinden können.\n\nVielleicht bist du beim nächsten Mal genau die Person, die den Anfang macht.",
+    "sources": [
+      {
+        "url": "https://flexikon.doccheck.com/de/Zuschauereffekt_(Psychologie)",
+        "title": "Zuschauereffekt (Psychologie)",
+        "publisher": "DocCheck Flexikon"
+      },
+      {
+        "url": "https://karrierebibel.de/bystander-effekt/",
+        "title": "Bystander-Effekt: Zuschauen, aber nicht helfen",
+        "publisher": "Karrierebibel"
+      }
+    ]
+  },
+  {
+    "theme": "behaviour-patterns",
+    "format": "audio",
+    "topic": "Prokrastination verstehen und überwinden",
+    "title": "Schluss mit Aufschieben",
+    "images": [
+      {
+        "prompt": "Laptop mit leerem Dokument und tickender Uhr",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Person setzt einen Timer auf fünf Minuten",
+        "atFraction": 0.55
+      },
+      {
+        "prompt": "Abgehakte To-do-Liste mit Smiley",
+        "atFraction": 0.85
+      }
+    ],
+    "script": "Die Präsentation ist in drei Tagen fällig. Eigentlich wolltest du heute anfangen. Stattdessen hast du die Küche geputzt, deine Mails sortiert und zwanzig Minuten Videos über Katzen geschaut. Wenn dir das bekannt vorkommt, bist du in bester Gesellschaft. Fast jeder schiebt manchmal Dinge auf. Psychologen nennen das Prokrastination. Und das Spannende ist, es hat oft weniger mit Faulheit zu tun, als viele denken.\n\nLange galt Prokrastination als Problem des Zeitmanagements. Wer aufschiebt, muss nur besser planen, so die Annahme. Heute sehen viele Forschende das anders. Aufschieben hat häufig mit Gefühlen zu tun. Eine Aufgabe löst unangenehme Emotionen aus, zum Beispiel Langeweile, Unsicherheit, Überforderung oder die Angst, es nicht gut genug zu machen. Indem wir die Aufgabe verschieben, verschwinden diese Gefühle für den Moment. Das fühlt sich gut an, und genau deshalb tun wir es immer wieder.\n\nDas Problem ist der Preis. Die Erleichterung hält nur kurz. Später kommen Zeitdruck, Stress und schlechtes Gewissen dazu. Und oft wirkt die Aufgabe dadurch noch größer und unangenehmer. Ein Teufelskreis.\n\nWas hilft also? Hier sind ein paar Strategien, die sich in der Praxis bewährt haben.\n\nErstens: Mach den Anfang winzig. Der Start ist meist die größte Hürde. Statt dir vorzunehmen, die Präsentation fertigzumachen, nimm dir nur vor, die ersten drei Folientitel aufzuschreiben. Oder nutze die Fünf-Minuten-Regel: Du arbeitest nur fünf Minuten an der Aufgabe. Danach darfst du aufhören. Oft merkst du, dass es gar nicht so schlimm ist, und machst einfach weiter.\n\nZweitens: Arbeite in festen Blöcken. Eine bekannte Methode ist die Pomodoro-Technik. Du arbeitest fünfundzwanzig Minuten konzentriert und machst dann fünf Minuten Pause. Nach vier Durchgängen gönnst du dir eine längere Pause. Die Zeit fühlt sich überschaubar an, und das senkt die innere Hürde.\n\nDrittens: Entferne Ablenkungen. Leg das Handy in einen anderen Raum, schließe unnötige Tabs und schalte Benachrichtigungen aus. Je schwerer die Ablenkung erreichbar ist, desto leichter bleibst du dran.\n\nViertens: Sei konkret. Vage Vorsätze wie, ich lerne heute, sind schwer umzusetzen. Besser ist ein klarer Plan: Heute um sechzehn Uhr lese ich Kapitel drei am Schreibtisch.\n\nFünftens, und das ist vielleicht der wichtigste Punkt: Sei freundlich zu dir selbst. Viele Menschen beschimpfen sich innerlich, wenn sie wieder aufgeschoben haben. Doch Selbstvorwürfe erzeugen genau die unangenehmen Gefühle, vor denen wir eigentlich fliehen. Forschung deutet darauf hin, dass Menschen, die sich ihr Aufschieben verzeihen, beim nächsten Mal seltener prokrastinieren.\n\nUnd wann solltest du dir Unterstützung holen? Wenn das Aufschieben dein Leben stark belastet, zum Beispiel im Studium oder Job ernste Folgen hat, können Beratungsstellen, etwa an Hochschulen, oder eine Psychotherapie helfen. Manchmal steckt auch etwas anderes dahinter, etwa eine Depression oder ADHS.\n\nAlso, was ist die eine winzige Sache, die du jetzt gleich für fünf Minuten anfangen kannst?",
+    "sources": [
+      {
+        "url": "https://www.barmer.de/presse/presseinformationen/newsletter-gesundheit-im-blick/prokrastination-tipps-gegen-das-staendige-aufschieben-1237282",
+        "title": "Prokrastination: Tipps gegen das ständige Aufschieben",
+        "publisher": "BARMER"
+      }
+    ]
+  },
+  {
+    "theme": "neurodivergence",
+    "format": "audio",
+    "topic": "Wie ADHS sich bei Erwachsenen anfühlen kann",
+    "title": "ADHS im Erwachsenenleben",
+    "images": [
+      {
+        "prompt": "Schreibtisch mit vielen angefangenen Projekten",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Person konzentriert sich mit Kopfhörern",
+        "atFraction": 0.5
+      },
+      {
+        "prompt": "Bunte Planungstafel mit Klebezetteln",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Lange dachte man, ADHS sei eine Kinderkrankheit. Der Zappelphilipp, der im Unterricht nicht stillsitzen kann. Heute weiß man: Bei vielen Menschen bleibt ADHS bis ins Erwachsenenalter bestehen. Und gerade bei Erwachsenen wird es oft übersehen. Heute geht es darum, wie sich ADHS im Erwachsenenleben zeigen kann. Ein wichtiger Hinweis vorab: Dieses Audio kann keine Diagnose ersetzen. Es soll dir helfen, das Thema besser zu verstehen.\n\nADHS steht für Aufmerksamkeitsdefizit-Hyperaktivitätsstörung. Es handelt sich um eine neurobiologische Besonderheit, bei der unter anderem die Steuerung von Aufmerksamkeit, Impulsen und Aktivität anders funktioniert. Die Anlage dafür ist zu einem großen Teil erblich. Die Symptome beginnen in der Kindheit, auch wenn sie damals vielleicht niemand als ADHS erkannt hat.\n\nBei Erwachsenen sieht ADHS oft anders aus als bei Kindern. Die körperliche Hyperaktivität nimmt häufig ab. Sie verwandelt sich bei vielen in eine innere Unruhe. Betroffene beschreiben das Gefühl, dass im Kopf ständig ein Motor läuft und die Gedanken von einem Thema zum nächsten springen.\n\nTypisch sind auch Schwierigkeiten mit Organisation und Struktur. Termine werden vergessen, Rechnungen bleiben liegen, und viele Projekte werden begeistert angefangen, aber nicht zu Ende gebracht. Langweilige Routineaufgaben kosten enorm viel Kraft. Gleichzeitig können sich viele Betroffene in Themen, die sie wirklich interessieren, stundenlang vertiefen. Das nennt man Hyperfokus.\n\nAuch Impulsivität kann eine Rolle spielen. Etwa, anderen ins Wort zu fallen, spontane Käufe zu tätigen oder Entscheidungen zu treffen, ohne lange nachzudenken. Und viele Betroffene berichten von starken Gefühlsschwankungen und einer hohen Empfindlichkeit gegenüber Kritik.\n\nWichtig ist: Diese Erfahrungen kennt jeder Mensch manchmal. Bei ADHS sind sie aber dauerhaft, deutlich ausgeprägt und beeinträchtigen das Leben in mehreren Bereichen, zum Beispiel im Job, in Beziehungen oder im Umgang mit Geld. Oft kommen weitere Belastungen hinzu, etwa Depressionen oder Ängste, manchmal auch als Folge jahrelanger Überforderung.\n\nViele Erwachsene, die spät eine Diagnose bekommen, erleben sie als Erleichterung. Endlich gibt es eine Erklärung für Dinge, die sie lange an sich selbst kritisiert haben.\n\nWenn du dich in diesen Beschreibungen wiederfindest, kann ein Gespräch mit deiner Hausärztin oder deinem Hausarzt ein erster Schritt sein. Für die eigentliche Diagnostik sind Fachärztinnen und Fachärzte für Psychiatrie sowie psychologische Psychotherapeuten zuständig. Online-Tests können einen Anstoß geben, ersetzen aber keine fundierte Untersuchung.\n\nUnd die Behandlung? Es gibt wirksame Möglichkeiten. Dazu gehören Psychoedukation, also das Verstehen der eigenen Funktionsweise, Coaching und Verhaltenstherapie sowie bei Bedarf Medikamente. Auch praktische Strategien helfen im Alltag, etwa klare Routinen, Erinnerungen im Handy und das Aufteilen großer Aufgaben in kleine Schritte.\n\nADHS ist keine Charakterschwäche. Mit Wissen, Unterstützung und passenden Strategien lässt sich gut damit leben. Und viele Betroffene entdecken mit der Zeit auch ihre Stärken, etwa Kreativität, Spontaneität und große Begeisterungsfähigkeit.",
+    "sources": [
+      {
+        "url": "https://www.dak.de/dak/gesundheit/psychische-gesundheit/psychische-erkrankungen/adhs-bei-erwachsenen_14012",
+        "title": "ADHS bei Erwachsenen: Ursachen, Symptome und Therapien",
+        "publisher": "DAK-Gesundheit"
+      }
+    ]
+  },
+  {
+    "theme": "behaviour-patterns",
+    "format": "audio",
+    "topic": "Gewohnheiten bilden mit Wissenschaft statt Willenskraft",
+    "title": "Gewohnheiten, die bleiben",
+    "images": [
+      {
+        "prompt": "Zahnbürste neben einer kleinen Pflanze",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Kette aus Büroklammern, die immer länger wird",
+        "atFraction": 0.5
+      },
+      {
+        "prompt": "Morgenroutine mit Glas Wasser und Notizbuch",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Jeden Tag putzen wir die Zähne, schließen die Haustür ab und greifen morgens nach dem Handy. Wir denken darüber kaum nach. Das sind Gewohnheiten. Sie steuern einen großen Teil unseres Alltags. Und wer versteht, wie sie entstehen, kann gezielt neue aufbauen. Lass uns dafür einen Blick in die Forschung werfen.\n\nVielleicht hast du schon einmal gehört, dass es einundzwanzig Tage dauert, bis eine neue Gewohnheit sitzt. Diese Zahl ist sehr verbreitet, aber wissenschaftlich kaum belegt. Eine bekannte Studie am University College London hat das genauer untersucht. Die Forscherin Phillippa Lally und ihr Team baten Freiwillige, sich ein neues gesundes Verhalten anzugewöhnen. Zum Beispiel ein Stück Obst zum Mittagessen zu essen, ein Glas Wasser zu trinken oder vor dem Abendessen joggen zu gehen. Jeden Tag gaben die Teilnehmenden an, wie automatisch sich das Verhalten anfühlte.\n\nDas Ergebnis: Im Durchschnitt dauerte es etwa sechsundsechzig Tage, bis das neue Verhalten weitgehend automatisch lief. Aber die Spannbreite war riesig, von achtzehn bis zu über zweihundertfünfzig Tagen. Einfache Dinge wie ein Glas Wasser wurden schneller zur Gewohnheit als anstrengendere wie Sport.\n\nEine zweite Erkenntnis ist fast noch wichtiger. Einen Tag auszulassen hatte kaum Einfluss auf den Fortschritt. Du musst also nicht perfekt sein. Ein Ausrutscher zerstört nicht alles, was du aufgebaut hast. Entscheidend ist, am nächsten Tag weiterzumachen.\n\nWie entstehen Gewohnheiten überhaupt? Ein zentraler Baustein ist der Kontext. Wenn du ein Verhalten immer wieder in derselben Situation ausführst, verknüpft dein Gehirn beides miteinander. Irgendwann reicht die Situation allein als Auslöser. Du musst dich dann nicht mehr jedes Mal bewusst entscheiden.\n\nDaraus lassen sich praktische Tipps ableiten.\n\nErstens: Verknüpfe die neue Gewohnheit mit einer bestehenden. Das nennt man manchmal Habit Stacking. Zum Beispiel: Nachdem ich mir morgens Kaffee eingeschenkt habe, schreibe ich drei Dinge auf, für die ich dankbar bin. Die alte Gewohnheit wird zum Anker für die neue.\n\nZweitens: Fang klein an. Je leichter das Verhalten, desto schneller wird es automatisch. Lieber jeden Tag zwei Minuten lesen als einmal pro Woche eine Stunde.\n\nDrittens: Gestalte deine Umgebung. Leg das Buch auf dein Kopfkissen, stell die Obstschale sichtbar auf den Tisch, und pack die Chips in den hintersten Schrank. Unser Verhalten wird stark von dem beeinflusst, was leicht erreichbar ist.\n\nViertens: Mach Fortschritte sichtbar. Ein einfacher Kalender, in dem du jeden erfolgreichen Tag abhakst, kann sehr motivierend sein.\n\nUnd fünftens: Hab Geduld. Wenn sich etwas nach drei Wochen noch nicht automatisch anfühlt, ist das kein Scheitern. Es ist völlig normal. Dein Gehirn arbeitet im Hintergrund weiter, auch wenn du es nicht sofort merkst.\n\nWelche kleine Gewohnheit möchtest du in den nächsten sechsundsechzig Tagen aufbauen?",
+    "sources": [
+      {
+        "url": "https://www.spring.org.uk/2023/01/form-a-habit.php",
+        "title": "How Long To Form A Habit? 66 Days Is A Rough Average",
+        "publisher": "PsyBlog"
+      }
+    ]
+  }
+]

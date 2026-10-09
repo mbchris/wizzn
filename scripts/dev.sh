@@ -57,6 +57,8 @@ fi
 c_info "Migrating + seeding database"
 pnpm db:migrate
 pnpm db:seed
+c_info "Seeding sample units (skips existing)"
+pnpm db:seed:samples
 
 # 5. Ollama
 OLLAMA_PID=""

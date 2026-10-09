@@ -28,3 +28,6 @@ Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length), `IMAGE_PROVIDE
 
 ## Deploy
 Coolify → Docker Compose resource → `docker-compose.yml`. Container start runs migrations + seed.
+
+## Store / console setup
+Google + Apple resources: see `docs/setup-consoles.md` (`pnpm setup:google`, `pnpm setup:apple`).

@@ -195,5 +195,5 @@ Source      = { url: string; title: string; publisher: string }
 | Production LLM | Chosen via 10-brief eval |
 | Image provider | Cheapest API with consistent illustration style |
 | Free daily cap | 3 units/day |
-| Domain / bundle id | `app.wizzn` (to confirm) |
+| Domain / bundle id | Bundle/package id: `app.fourki.wizzn` (decided 2026-10-09); domain open |
 | Repo docs still name "bandstr" (CLAUDE.md, AGENTS.md) | Rename in M1 |

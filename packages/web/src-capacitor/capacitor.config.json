@@ -1,5 +1,5 @@
 {
-  "appId": "app.wizzn",
+  "appId": "app.fourki.wizzn",
   "appName": "wizzn",
   "webDir": "www",
   "ios": { "contentInset": "never" },

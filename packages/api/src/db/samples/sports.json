@@ -1,0 +1,337 @@
+[
+  {
+    "theme": "routine",
+    "format": "written",
+    "topic": "Wie viel Bewegung die WHO empfiehlt",
+    "title": "150 Minuten, die zählen",
+    "slides": [
+      {
+        "title": "Die Zielmarke",
+        "body": "Die WHO empfiehlt Erwachsenen pro Woche 150 bis 300 Minuten moderate Bewegung oder 75 bis 150 Minuten intensive Bewegung. Das sind etwa 30 Minuten an fünf Tagen.",
+        "imagePrompt": "Fahrradfahrerin in einem sonnigen Park"
+      },
+      {
+        "title": "Moderat oder intensiv?",
+        "body": "Moderat heißt, du kannst noch reden, aber nicht mehr singen, etwa beim zügigen Gehen. Intensiv heißt, du kommst deutlich außer Atem, etwa beim Joggen."
+      },
+      {
+        "title": "Plus Kraft",
+        "body": "Zusätzlich sollen an mindestens zwei Tagen pro Woche muskelkräftigende Übungen dazukommen, die alle großen Muskelgruppen beanspruchen.",
+        "imagePrompt": "Person macht Kniebeugen im Wohnzimmer"
+      },
+      {
+        "title": "Jede Minute zählt",
+        "body": "Die wichtigste Botschaft der WHO: Jede Bewegung ist besser als keine. Auch kurze Einheiten, Treppensteigen oder der Weg zur Arbeit mit dem Rad bringen etwas."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.aerzteblatt.de/news/who-gibt-neue-aktivitaetsempfehlungen-heraus-fuer-die-gesundheit-zaehlt-jede-bewegung-35fe8935-43d0-4130-b000-ae2f7994608e",
+        "title": "WHO gibt neue Aktivitätsempfehlungen heraus: Für die Gesundheit zählt jede Bewegung",
+        "publisher": "Deutsches Ärzteblatt"
+      }
+    ]
+  },
+  {
+    "theme": "routine",
+    "format": "written",
+    "topic": "Langes Sitzen unterbrechen",
+    "title": "Steh doch mal auf",
+    "slides": [
+      {
+        "title": "Sitzen ist Alltag",
+        "body": "Schreibtisch, Auto, Sofa: Viele Menschen sitzen den größten Teil des Tages. Langes, statisches Sitzen belastet Rücken, Nacken, Kreislauf und Stoffwechsel.",
+        "imagePrompt": "Person am Schreibtisch, die sich streckt"
+      },
+      {
+        "title": "Pausen einbauen",
+        "body": "Fachleute raten, das Sitzen regelmäßig zu unterbrechen, etwa alle halbe Stunde kurz aufzustehen, sich zu strecken oder ein paar Schritte zu gehen."
+      },
+      {
+        "title": "Kleine Tricks",
+        "body": "Telefonate im Stehen führen, die Wasserflasche weiter weg stellen, Treppe statt Aufzug nehmen. Solche kleinen Gewohnheiten summieren sich.",
+        "imagePrompt": "Person telefoniert im Stehen am Fenster"
+      },
+      {
+        "title": "Ausgleich schaffen",
+        "body": "Studien zeigen, dass regelmäßige, flotte Bewegung am Tag die Risiken langen Sitzens deutlich abmildern kann. Ein zügiger Spaziergang nach Feierabend ist ein guter Anfang."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://osha.europa.eu/de/publications/prolonged-static-sitting-work-health-effects-and-good-practice-advice",
+        "title": "Langes statisches Sitzen bei der Arbeit",
+        "publisher": "Europäische Agentur für Sicherheit und Gesundheitsschutz am Arbeitsplatz"
+      },
+      {
+        "url": "https://www.aerzteblatt.de/news/regelmassige-bewegungseinheiten-konnten-langes-sitzen-kompensieren-9ce268a8-794f-4675-a5f0-d1118b8f49dd",
+        "title": "Regelmäßige Bewegungseinheiten könnten langes Sitzen kompensieren",
+        "publisher": "Deutsches Ärzteblatt"
+      }
+    ]
+  },
+  {
+    "theme": "strength",
+    "format": "written",
+    "topic": "Was beim Muskelkater wirklich passiert",
+    "title": "Muskelkater entzaubert",
+    "slides": [
+      {
+        "title": "Keine Milchsäure",
+        "body": "Lange hieß es, Milchsäure sei schuld. Heute geht man davon aus, dass winzige Verletzungen in den Muskelfasern den Schmerz auslösen.",
+        "imagePrompt": "Stilisierte Muskelfaser mit kleinen Rissen"
+      },
+      {
+        "title": "Typisch verzögert",
+        "body": "Muskelkater zeigt sich meist erst ein bis zwei Tage nach dem Training und klingt nach einigen Tagen wieder ab. Besonders oft entsteht er bei ungewohnten oder bremsenden Bewegungen."
+      },
+      {
+        "title": "Was hilft",
+        "body": "Lockere Bewegung, Wärme, ausreichend Schlaf und eine ausgewogene Ernährung unterstützen die Regeneration. Hartes Training auf den schmerzenden Muskel solltest du vermeiden.",
+        "imagePrompt": "Person entspannt in einer warmen Badewanne"
+      },
+      {
+        "title": "Langsam steigern",
+        "body": "Der beste Schutz ist eine schrittweise Steigerung. Wer neu anfängt, beginnt mit wenigen Wiederholungen und gibt dem Körper Zeit, sich anzupassen."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.tk.de/techniker/gesundheit-foerdern/sport-und-bewegung/training/regeneration-nach-training-2205452",
+        "title": "Regeneration nach dem Training",
+        "publisher": "Techniker Krankenkasse"
+      }
+    ]
+  },
+  {
+    "theme": "cardio",
+    "format": "written",
+    "topic": "HIIT kurz erklärt",
+    "title": "HIIT: kurz und knackig",
+    "slides": [
+      {
+        "title": "Das Prinzip",
+        "body": "Beim hochintensiven Intervalltraining wechseln sich kurze, sehr anstrengende Phasen mit Erholungspausen ab. Zum Beispiel 30 Sekunden Vollgas, dann 60 Sekunden locker.",
+        "imagePrompt": "Stoppuhr neben Laufschuhen"
+      },
+      {
+        "title": "Wenig Zeit, viel Effekt",
+        "body": "HIIT kann die Ausdauer in vergleichsweise kurzer Zeit verbessern. Das macht es attraktiv für alle, die wenig Zeit zum Trainieren haben."
+      },
+      {
+        "title": "Nicht jeden Tag",
+        "body": "Weil HIIT den Körper stark fordert, braucht er Erholung. Zwei bis drei Einheiten pro Woche gelten als guter Rahmen, kombiniert mit ruhigerem Training.",
+        "imagePrompt": "Kalender mit drei markierten Trainingstagen"
+      },
+      {
+        "title": "Erst die Basis",
+        "body": "Wer untrainiert ist oder Herz-Kreislauf-Probleme hat, sollte vorher ärztlichen Rat einholen und zunächst eine Grundlagenausdauer aufbauen."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.tk.de/techniker/magazin/sport/sporttrends/hochintensives-intervalltraining-2063190",
+        "title": "HIIT: Mit hochintensivem Intervalltraining schneller am Ziel",
+        "publisher": "Techniker Krankenkasse"
+      },
+      {
+        "url": "https://www.apotheken-umschau.de/gesund-bleiben/sport-und-bewegung/hiit-im-check-so-effektiv-ist-intervalltraining-wirklich-1511473.html",
+        "title": "HIIT im Faktencheck",
+        "publisher": "Apotheken Umschau"
+      }
+    ]
+  },
+  {
+    "theme": "workout-types",
+    "format": "written",
+    "topic": "Ausdauer, Kraft, Beweglichkeit: der richtige Mix",
+    "title": "Der perfekte Trainingsmix",
+    "slides": [
+      {
+        "title": "Ausdauer",
+        "body": "Laufen, Radfahren, Schwimmen oder zügiges Gehen stärken Herz, Kreislauf und Lunge. Sie sind die Basis für die WHO-Empfehlung von 150 Minuten pro Woche.",
+        "imagePrompt": "Schwimmerin im Freibad"
+      },
+      {
+        "title": "Kraft",
+        "body": "Krafttraining erhält Muskeln und Knochen und wird mit zunehmendem Alter immer wichtiger. Die WHO empfiehlt es an mindestens zwei Tagen pro Woche."
+      },
+      {
+        "title": "Beweglichkeit und Balance",
+        "body": "Dehnen, Yoga oder Gleichgewichtsübungen halten Gelenke geschmeidig und beugen Stürzen vor, besonders später im Leben.",
+        "imagePrompt": "Person in einer Yoga-Pose im Grünen"
+      },
+      {
+        "title": "Kombinieren",
+        "body": "Am meisten profitierst du von einer Mischung. Zum Beispiel zwei Ausdauertage, zwei kurze Krafteinheiten und ab und zu eine Runde Dehnen."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.aerzteblatt.de/news/who-gibt-neue-aktivitaetsempfehlungen-heraus-fuer-die-gesundheit-zaehlt-jede-bewegung-35fe8935-43d0-4130-b000-ae2f7994608e",
+        "title": "WHO gibt neue Aktivitätsempfehlungen heraus",
+        "publisher": "Deutsches Ärzteblatt"
+      }
+    ]
+  },
+  {
+    "theme": "routine",
+    "format": "audio",
+    "topic": "Eine Sportroutine aufbauen, die bleibt",
+    "title": "Dranbleiben leicht gemacht",
+    "images": [
+      {
+        "prompt": "Gepackte Sporttasche neben der Wohnungstür",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Kalender mit grünen Haken",
+        "atFraction": 0.45
+      },
+      {
+        "prompt": "Zwei Freundinnen joggen lachend",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Der Januar beginnt, das Fitnessstudio ist voll, die Motivation riesig. Und im Februar? Da sind viele Geräte wieder frei. Kommt dir das bekannt vor? Eine Sportroutine aufzubauen ist für viele schwerer, als einmal mit dem Training anzufangen. In den nächsten Minuten bekommst du Strategien, die dir helfen, wirklich dranzubleiben.\n\nZuerst ein Blick auf das Ziel. Die Weltgesundheitsorganisation empfiehlt Erwachsenen pro Woche mindestens hundertfünfzig Minuten moderate Bewegung, also zum Beispiel zügiges Gehen oder gemütliches Radfahren. Alternativ fünfundsiebzig Minuten intensive Bewegung wie Joggen. Dazu an zwei Tagen pro Woche Übungen für die Muskeln. Und die vielleicht wichtigste Botschaft der WHO lautet: Jede Bewegung zählt. Du musst also nicht sofort perfekt starten.\n\nStrategie eins: Fang lächerlich klein an. Viele scheitern, weil sie sich zu viel vornehmen. Fünf Trainings pro Woche, eine Stunde lang, obwohl sie vorher gar keinen Sport gemacht haben. Besser ist ein Start, der sich fast zu leicht anfühlt. Zehn Minuten Spazierengehen nach dem Abendessen. Fünf Kniebeugen beim Zähneputzen. Wenn das zur Gewohnheit geworden ist, steigerst du langsam.\n\nStrategie zwei: Verknüpfe Sport mit festen Momenten. Gewohnheiten entstehen, wenn ein Verhalten immer wieder in derselben Situation stattfindet. Zum Beispiel jeden Dienstag und Donnerstag direkt nach der Arbeit. Oder jeden Morgen nach dem ersten Kaffee eine kurze Übungsrunde. Je klarer der Auslöser, desto weniger musst du jedes Mal neu entscheiden.\n\nStrategie drei: Mach es dir leicht. Pack deine Sporttasche schon am Abend vorher und stell sie an die Tür. Leg die Laufschuhe sichtbar hin. Such dir ein Training, das nah an deiner Wohnung oder deinem Arbeitsplatz liegt. Jede kleine Hürde, die du entfernst, erhöht die Chance, dass du es wirklich tust.\n\nStrategie vier: Finde etwas, das dir Spaß macht. Wenn du Joggen hasst, wirst du es auf Dauer nicht durchziehen. Vielleicht ist Tanzen, Klettern, Schwimmen oder ein Mannschaftssport viel mehr dein Ding. Probier ruhig verschiedene Sachen aus.\n\nStrategie fünf: Hol dir Verbündete. Wer mit Freunden trainiert oder sich mit jemandem verabredet, sagt seltener ab. Eine feste Verabredung schafft Verbindlichkeit, und gemeinsam macht es meist auch mehr Spaß.\n\nStrategie sechs: Verzeih dir Pausen. Es wird Wochen geben, in denen es nicht klappt. Krankheit, Stress, Urlaub. Das ist völlig normal. Studien zur Gewohnheitsbildung zeigen, dass ein einzelner verpasster Tag den Prozess kaum stört. Wichtig ist nur, danach wieder einzusteigen, statt alles hinzuschmeißen.\n\nUnd zum Schluss: Mach deine Fortschritte sichtbar. Ein Kalender, in dem du jede Einheit abhakst, oder eine App, die deine Minuten zählt, kann unglaublich motivieren. Irgendwann willst du die Kette einfach nicht mehr reißen lassen.\n\nAlso, was ist dein winziger erster Schritt für diese Woche? Schreib ihn dir auf, am besten mit Tag und Uhrzeit. Ein konkreter Plan wie Mittwoch um achtzehn Uhr zwanzig Minuten Spaziergang wirkt viel stärker als der vage Vorsatz, mehr Sport zu machen.",
+    "sources": [
+      {
+        "url": "https://www.aerzteblatt.de/news/who-gibt-neue-aktivitaetsempfehlungen-heraus-fuer-die-gesundheit-zaehlt-jede-bewegung-35fe8935-43d0-4130-b000-ae2f7994608e",
+        "title": "WHO gibt neue Aktivitätsempfehlungen heraus",
+        "publisher": "Deutsches Ärzteblatt"
+      },
+      {
+        "url": "https://www.spring.org.uk/2023/01/form-a-habit.php",
+        "title": "How Long To Form A Habit? 66 Days Is A Rough Average",
+        "publisher": "PsyBlog"
+      }
+    ]
+  },
+  {
+    "theme": "strength",
+    "format": "audio",
+    "topic": "Krafttraining für Einsteiger",
+    "title": "Stark werden, ganz ohne Studio",
+    "images": [
+      {
+        "prompt": "Gymnastikmatte und Wasserflasche im Wohnzimmer",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Person macht Liegestütze an einer Küchenarbeitsplatte",
+        "atFraction": 0.5
+      },
+      {
+        "prompt": "Ältere Person trägt fröhlich Einkaufstaschen",
+        "atFraction": 0.85
+      }
+    ],
+    "script": "Wenn du an Krafttraining denkst, siehst du vielleicht muskelbepackte Menschen in einem lauten Fitnessstudio. Aber Krafttraining ist viel mehr als Bodybuilding. Es ist eine der besten Investitionen in deine Gesundheit, egal wie alt du bist. Und du kannst ganz einfach zuhause damit anfangen.\n\nWarum ist Kraft so wichtig? Ab etwa dem dreißigsten Lebensjahr beginnt der Körper langsam, Muskelmasse abzubauen, wenn wir nichts dagegen tun. Muskeln sind aber nicht nur für schweres Heben da. Sie stabilisieren deine Gelenke, schützen deinen Rücken, unterstützen den Stoffwechsel und helfen, Stürze im Alter zu vermeiden. Auch die Knochen profitieren, denn sie werden durch die Belastung stärker.\n\nDeshalb empfiehlt die Weltgesundheitsorganisation, an mindestens zwei Tagen pro Woche muskelkräftigende Übungen zu machen, die alle großen Muskelgruppen beanspruchen. Das sind vor allem Beine, Hüfte, Rücken, Bauch, Brust, Schultern und Arme.\n\nDer Einstieg gelingt am besten mit deinem eigenen Körpergewicht. Hier sind fünf Grundübungen, die fast alles abdecken.\n\nErstens: Kniebeugen. Stell dich hüftbreit hin und schiebe den Po nach hinten, als würdest du dich auf einen Stuhl setzen. Am Anfang kannst du dich tatsächlich auf einen Stuhl setzen und wieder aufstehen.\n\nZweitens: Liegestütze. Wenn die klassische Variante noch zu schwer ist, stützt du dich an einer Wand oder an der Küchenarbeitsplatte ab. Je schräger du stehst, desto leichter wird es.\n\nDrittens: Ausfallschritte. Mach einen großen Schritt nach vorne und senke das hintere Knie Richtung Boden. Dann zurück und Seite wechseln.\n\nViertens: Der Unterarmstütz, auch Plank genannt. Stütz dich auf Unterarme und Zehenspitzen und halte den Körper wie ein Brett. Starte mit zwanzig Sekunden.\n\nFünftens: Die Brücke. Leg dich auf den Rücken, stell die Füße auf und heb das Becken an. Das stärkt Po und unteren Rücken.\n\nWie viel solltest du machen? Für den Anfang reichen zwei Durchgänge mit jeweils acht bis zwölf Wiederholungen pro Übung. Die letzten Wiederholungen dürfen anstrengend sein, aber die Technik sollte sauber bleiben. Qualität ist wichtiger als Menge.\n\nNach dem Training brauchen deine Muskeln Erholung. Denn sie wachsen nicht während der Belastung, sondern in der Pause danach. Gönn derselben Muskelgruppe deshalb mindestens einen Tag Ruhe. Und wenn du in den ersten Wochen Muskelkater bekommst, ist das normal. Er entsteht durch winzige Verletzungen in den Muskelfasern und vergeht nach ein paar Tagen.\n\nWenn die Übungen leichter werden, steigere dich. Mach mehr Wiederholungen, einen dritten Durchgang oder nutze Wasserflaschen und einen Rucksack als Gewichte.\n\nUnd falls du Vorerkrankungen hast, Schmerzen in Gelenken spürst oder lange keinen Sport gemacht hast, sprich vorher mit deinem Arzt oder deiner Ärztin. Dann steht deinem Start nichts mehr im Weg.\n\nEin letzter Tipp: Zwei kurze Einheiten von zwanzig Minuten pro Woche sind ein wunderbarer Start. Leg dir dafür feste Tage in den Kalender, dann wird Krafttraining schnell zur Gewohnheit.",
+    "sources": [
+      {
+        "url": "https://www.aerzteblatt.de/news/who-gibt-neue-aktivitaetsempfehlungen-heraus-fuer-die-gesundheit-zaehlt-jede-bewegung-35fe8935-43d0-4130-b000-ae2f7994608e",
+        "title": "WHO gibt neue Aktivitätsempfehlungen heraus",
+        "publisher": "Deutsches Ärzteblatt"
+      },
+      {
+        "url": "https://www.tk.de/techniker/gesundheit-foerdern/sport-und-bewegung/training/regeneration-nach-training-2205452",
+        "title": "Regeneration nach dem Training",
+        "publisher": "Techniker Krankenkasse"
+      }
+    ]
+  },
+  {
+    "theme": "cardio",
+    "format": "audio",
+    "topic": "HIIT im Faktencheck",
+    "title": "Lohnt sich HIIT wirklich?",
+    "images": [
+      {
+        "prompt": "Person sprintet eine Treppe hinauf",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Herzsymbol mit Pulslinie",
+        "atFraction": 0.4
+      },
+      {
+        "prompt": "Person dehnt sich entspannt nach dem Training",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Zwanzig Minuten Training, und danach fühlst du dich, als hättest du einen Marathon hinter dir. So beschreiben viele das hochintensive Intervalltraining, kurz HIIT. Es gilt als effektiv und zeitsparend. Aber was ist dran am Hype, und für wen ist es geeignet? Machen wir den Faktencheck.\n\nDas Prinzip ist einfach. Du wechselst zwischen kurzen Phasen, in denen du fast an deine Grenze gehst, und Phasen der Erholung. Ein typisches Beispiel: dreißig Sekunden so schnell wie möglich auf dem Rad treten, dann eine Minute locker weiterfahren. Das wiederholst du mehrmals. Auch mit Übungen wie Hampelmännern, Kniebeugen oder Sprints funktioniert das.\n\nWas bringt es? Studien zeigen, dass HIIT die Ausdauerleistung in vergleichsweise kurzer Zeit verbessern kann. Herz und Kreislauf werden stark gefordert und passen sich an. Für Menschen, die wenig Zeit haben, ist das ein echter Vorteil. Statt einer Stunde gemütlich zu joggen, erreichst du manche Effekte schon mit einer deutlich kürzeren Einheit.\n\nOft hört man auch, HIIT sei ein Wundermittel zum Abnehmen. Hier ist Vorsicht angebracht. Ja, intensive Belastung verbraucht Energie, und der Körper arbeitet danach noch eine Weile auf erhöhtem Niveau. Dieser Nachbrenneffekt wird aber häufig überschätzt. Für das Gewicht zählen am Ende die Gesamtbewegung über die Woche und die Ernährung.\n\nJetzt zu den Schattenseiten. HIIT ist anstrengend, wirklich anstrengend. Das ist für Herz, Muskeln und Gelenke eine starke Belastung. Wer untrainiert ist, übergewichtig ist oder Herz-Kreislauf-Probleme hat, sollte nicht einfach loslegen. Hier ist ein ärztlicher Check vorher eine gute Idee. Und es lohnt sich, zuerst eine Basis aufzubauen, zum Beispiel mit einigen Wochen moderatem Ausdauertraining.\n\nAuch die Verletzungsgefahr ist ein Thema. Bei schnellen, explosiven Bewegungen leidet unter Ermüdung oft die Technik. Dann steigt das Risiko für Zerrungen oder Probleme mit den Knien. Deshalb gilt: Lieber etwas langsamer und sauber, als schnell und schlampig.\n\nUnd wie oft? Weil HIIT den Körper so fordert, braucht er Zeit zur Erholung. Zwei bis drei Einheiten pro Woche gelten für die meisten als guter Rahmen. An den anderen Tagen passt ruhigeres Training, Krafttraining oder einfach ein Spaziergang.\n\nSo kannst du einsteigen: Wärm dich mindestens fünf Minuten locker auf. Dann starte mit kurzen Belastungen von zwanzig bis dreißig Sekunden und längeren Pausen, zum Beispiel einer Minute. Vier bis sechs Wiederholungen reichen am Anfang völlig. Zum Schluss ein paar Minuten locker auslaufen oder ausfahren.\n\nDas Fazit unseres Faktenchecks: HIIT ist kein Wundermittel, aber ein wirksames Werkzeug. Richtig dosiert und kombiniert mit anderen Trainingsformen, kann es deine Fitness ordentlich voranbringen.\n\nUnd noch ein Gedanke zum Schluss: Wenn dir HIIT keinen Spaß macht, ist das völlig in Ordnung. Ruhiges Ausdauertraining wie zügiges Gehen, Radfahren oder Schwimmen bringt deiner Gesundheit ebenfalls sehr viel. Das beste Training ist immer das, das du regelmäßig machst.",
+    "sources": [
+      {
+        "url": "https://www.apotheken-umschau.de/gesund-bleiben/sport-und-bewegung/hiit-im-check-so-effektiv-ist-intervalltraining-wirklich-1511473.html",
+        "title": "HIIT im Faktencheck",
+        "publisher": "Apotheken Umschau"
+      },
+      {
+        "url": "https://www.tk.de/techniker/magazin/sport/sporttrends/hochintensives-intervalltraining-2063190",
+        "title": "HIIT: Mit hochintensivem Intervalltraining schneller am Ziel",
+        "publisher": "Techniker Krankenkasse"
+      }
+    ]
+  },
+  {
+    "theme": "workout-types",
+    "format": "audio",
+    "topic": "Regeneration: warum Pausen zum Training gehören",
+    "title": "Die Kraft der Pause",
+    "images": [
+      {
+        "prompt": "Gemütliches Bett mit Morgenlicht",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Gesunde Mahlzeit nach dem Sport",
+        "atFraction": 0.5
+      },
+      {
+        "prompt": "Person spaziert entspannt im Wald",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Mehr ist besser. So denken viele, wenn es um Training geht. Jeden Tag ins Studio, jeden Tag laufen, keine Pause. Doch genau das kann deine Fortschritte bremsen. Denn dein Körper wird nicht im Training stärker, sondern in der Erholung danach. Lass uns verstehen, warum Pausen so wichtig sind und wie gute Regeneration aussieht.\n\nWenn du trainierst, setzt du deinem Körper einen Reiz. Muskeln werden belastet, Energiespeicher geleert, und es entstehen winzige Verletzungen in den Muskelfasern. In der Phase danach repariert der Körper diese Schäden. Und er tut noch mehr: Er passt sich an und baut etwas zusätzliche Leistungsfähigkeit auf, um für die nächste Belastung besser gerüstet zu sein. Fachleute sprechen von Superkompensation.\n\nDas bedeutet aber auch: Wenn du deinem Körper keine Zeit für diese Anpassung gibst, belastest du ihn immer wieder im erschöpften Zustand. Dann stagniert die Leistung oder sinkt sogar. Im Extremfall kann es zu einem sogenannten Übertraining kommen, mit Müdigkeit, schlechtem Schlaf, Gereiztheit und häufigeren Infekten.\n\nWie lange braucht der Körper? Das hängt von der Intensität ab. Nach einer lockeren Einheit bist du oft schon am nächsten Tag wieder fit. Nach einem harten Krafttraining braucht dieselbe Muskelgruppe meist ein bis zwei Tage. Deshalb trainieren viele abwechselnd verschiedene Muskelgruppen oder wechseln zwischen intensiven und lockeren Tagen.\n\nWas fördert die Regeneration? An erster Stelle steht der Schlaf. Im Schlaf laufen viele Reparaturprozesse ab. Sieben bis neun Stunden sind für die meisten Erwachsenen ein guter Richtwert.\n\nDann die Ernährung. Nach dem Training braucht der Körper Energie und Baustoffe. Eine ausgewogene Mahlzeit mit Kohlenhydraten und Eiweiß, zum Beispiel Vollkornnudeln mit Linsensoße oder ein Joghurt mit Haferflocken, hilft beim Auffüllen. Und vergiss das Trinken nicht.\n\nDrittens: aktive Erholung. Komplettes Nichtstun ist nicht immer die beste Pause. Lockere Bewegung wie ein Spaziergang, entspanntes Radfahren oder Schwimmen fördert die Durchblutung, ohne den Körper erneut stark zu belasten.\n\nViertens: Stress im Blick behalten. Dein Körper unterscheidet nicht so genau zwischen Trainingsstress und Alltagsstress. In einer stressigen Woche im Job kann es sinnvoll sein, das Training etwas lockerer zu gestalten.\n\nUnd zum Thema Muskelkater: Er ist ein Zeichen, dass deine Muskeln eine ungewohnte Belastung verarbeiten. Mit leichter Bewegung, Wärme und Geduld verschwindet er nach einigen Tagen. Ein intensives Training auf den schmerzenden Muskel solltest du dann besser verschieben.\n\nHör außerdem auf die Signale deines Körpers. Fühlst du dich dauerhaft schlapp, schläfst schlecht oder hast keine Lust mehr auf Sport, die du sonst hattest, dann kann das ein Hinweis auf zu wenig Erholung sein.\n\nAm Ende gilt: Pausen sind kein Zeichen von Faulheit. Sie sind ein fester Teil eines klugen Trainings. Plane deine Ruhetage genauso bewusst ein wie deine Trainingstage.",
+    "sources": [
+      {
+        "url": "https://www.tk.de/techniker/gesundheit-foerdern/sport-und-bewegung/training/regeneration-nach-training-2205452",
+        "title": "Regeneration nach dem Training",
+        "publisher": "Techniker Krankenkasse"
+      }
+    ]
+  },
+  {
+    "theme": "routine",
+    "format": "audio",
+    "topic": "Mehr Bewegung im Büroalltag",
+    "title": "Fit trotz Schreibtisch",
+    "images": [
+      {
+        "prompt": "Stehschreibtisch in einem hellen Büro",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Treppenhaus mit Person, die hinaufgeht",
+        "atFraction": 0.45
+      },
+      {
+        "prompt": "Mittagspause im Park mit Spaziergang",
+        "atFraction": 0.75
+      }
+    ],
+    "script": "Acht Stunden am Schreibtisch, dazu der Weg im Auto oder in der Bahn, und abends noch eine Serie auf dem Sofa. Bei vielen Menschen kommen so zehn oder mehr Stunden Sitzen am Tag zusammen. Unser Körper ist dafür eigentlich nicht gemacht. Doch die gute Nachricht ist: Du kannst einiges dagegen tun, auch ohne deinen Job zu kündigen.\n\nWas macht langes Sitzen mit uns? Die Europäische Agentur für Sicherheit und Gesundheitsschutz am Arbeitsplatz beschreibt mehrere Folgen von langem, statischem Sitzen. Dazu gehören Beschwerden in Rücken, Nacken und Schultern. Aber auch der Kreislauf und der Stoffwechsel leiden, wenn wir uns stundenlang kaum bewegen. Langfristig wird viel Sitzen mit einem höheren Risiko für Herz-Kreislauf-Erkrankungen und Diabetes in Verbindung gebracht.\n\nEine spannende Erkenntnis aus der Forschung gibt aber Hoffnung. Eine große Auswertung mehrerer Studien, über die das Deutsche Ärzteblatt berichtet hat, legt nahe, dass etwa dreißig bis vierzig Minuten moderate bis intensive Bewegung am Tag die erhöhten Risiken von viel Sitzen deutlich abmildern können. Du musst also nicht aufhören zu sitzen, aber du solltest einen Ausgleich schaffen.\n\nWie gelingt das im Büroalltag? Hier ein paar Ideen.\n\nErstens: Unterbrich das Sitzen regelmäßig. Steh etwa jede halbe Stunde kurz auf. Streck dich, roll die Schultern, geh ein paar Schritte. Ein Wecker oder eine App kann dich daran erinnern.\n\nZweitens: Nutze natürliche Anlässe. Telefonate kannst du im Stehen oder beim Gehen führen. Statt eine Mail an die Kollegin im Nachbarbüro zu schreiben, geh einfach hin. Und stell die Wasserflasche nicht auf den Schreibtisch, sondern in die Küche. Dann musst du automatisch öfter aufstehen.\n\nDrittens: Die Treppe ist dein kostenloses Fitnessgerät. Wer jeden Tag ein paar Stockwerke zu Fuß geht, bringt Herz und Beine in Schwung.\n\nViertens: Plane Bewegung in deine Pausen ein. Ein zügiger Spaziergang in der Mittagspause bringt nicht nur Bewegung, sondern auch frische Luft und einen klareren Kopf für den Nachmittag.\n\nFünftens: Mach den Arbeitsweg aktiv. Fahr mit dem Rad, steig eine Haltestelle früher aus oder park etwas weiter weg. So sammelst du ganz nebenbei Bewegungsminuten.\n\nSechstens: Wenn möglich, wechsle die Arbeitshaltung. Ein höhenverstellbarer Schreibtisch erlaubt es, zwischen Sitzen und Stehen zu wechseln. Wichtig ist dabei der Wechsel, nicht stundenlanges Stehen.\n\nUnd zum Schluss ein Blick auf den Feierabend. Nach einem langen Tag am Schreibtisch ist es verlockend, direkt aufs Sofa zu fallen. Doch genau dann tut Bewegung besonders gut. Schon ein flotter Spaziergang von zwanzig Minuten kann einen Unterschied machen.\n\nDein Körper wird es dir danken, vielleicht nicht sofort, aber ganz sicher auf lange Sicht.\n\nUnd wenn du magst, steck dir ein kleines Ziel für diese Woche: Jeden Tag einmal die Treppe statt des Aufzugs, oder drei Mittagspausen mit Spaziergang. Kleine Schritte, die du wirklich machst, sind mehr wert als große Pläne.",
+    "sources": [
+      {
+        "url": "https://osha.europa.eu/de/publications/prolonged-static-sitting-work-health-effects-and-good-practice-advice",
+        "title": "Langes statisches Sitzen bei der Arbeit",
+        "publisher": "Europäische Agentur für Sicherheit und Gesundheitsschutz am Arbeitsplatz"
+      },
+      {
+        "url": "https://www.aerzteblatt.de/news/regelmassige-bewegungseinheiten-konnten-langes-sitzen-kompensieren-9ce268a8-794f-4675-a5f0-d1118b8f49dd",
+        "title": "Regelmäßige Bewegungseinheiten könnten langes Sitzen kompensieren",
+        "publisher": "Deutsches Ärzteblatt"
+      }
+    ]
+  }
+]

@@ -1,0 +1,337 @@
+[
+  {
+    "theme": "budget",
+    "format": "written",
+    "topic": "Ein Haushaltsbuch führen",
+    "title": "Wohin fließt dein Geld?",
+    "slides": [
+      {
+        "title": "Der Überblick",
+        "body": "Ein Haushaltsbuch zeigt dir schwarz auf weiß, wofür du dein Geld ausgibst. Die Verbraucherzentrale empfiehlt, es mindestens zwei bis drei Monate konsequent zu führen.",
+        "imagePrompt": "Notizbuch mit Münzen und Stift"
+      },
+      {
+        "title": "Feste und variable Kosten",
+        "body": "Trenne Fixkosten wie Miete, Versicherungen und Abos von variablen Ausgaben wie Lebensmitteln, Freizeit oder Kleidung. So erkennst du, wo Spielraum ist."
+      },
+      {
+        "title": "Jeder Kaffee zählt",
+        "body": "Notiere auch kleine Beträge. Gerade der Coffee to go, Lieferdienste oder spontane Online-Käufe summieren sich über den Monat oft zu überraschenden Summen.",
+        "imagePrompt": "Kaffeebecher neben einem wachsenden Münzstapel"
+      },
+      {
+        "title": "App oder Papier",
+        "body": "Ob Heft, Tabelle oder App ist egal. Wichtig ist, dass du dranbleibst. Am Monatsende schaust du in Ruhe drauf und entscheidest, was du ändern willst."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/sparen-und-anlegen/haushaltsbuch-fuehren-ueberblick-ueber-ihre-finanzen-52179",
+        "title": "Haushaltsbuch führen: Überblick über Ihre Finanzen",
+        "publisher": "Verbraucherzentrale"
+      }
+    ]
+  },
+  {
+    "theme": "budget",
+    "format": "written",
+    "topic": "Warum ein Notgroschen zuerst kommt",
+    "title": "Erst der Notgroschen",
+    "slides": [
+      {
+        "title": "Dein Sicherheitsnetz",
+        "body": "Waschmaschine kaputt, Autoreparatur, unerwartete Nachzahlung. Ein Notgroschen fängt solche Überraschungen auf, ohne dass du den Dispo brauchst.",
+        "imagePrompt": "Sparschwein mit kleinem Rettungsring"
+      },
+      {
+        "title": "Wie viel?",
+        "body": "Als Faustregel gelten etwa drei Monatsausgaben, je nach Lebenssituation auch mehr. Wer selbstständig ist oder Kinder hat, plant oft großzügiger."
+      },
+      {
+        "title": "Wo parken?",
+        "body": "Der Notgroschen soll schnell verfügbar und sicher sein. Ein Tagesgeldkonto ist dafür typisch, nicht Aktien, die gerade dann im Minus sein könnten, wenn du das Geld brauchst."
+      },
+      {
+        "title": "Dann investieren",
+        "body": "Erst wenn das Polster steht, lohnt es sich, Geld langfristig anzulegen. So musst du Investments in schlechten Zeiten nicht verkaufen.",
+        "imagePrompt": "Treppe aus Münzstapeln, die nach oben führt"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/sparen-und-anlegen/haushaltsbuch-fuehren-ueberblick-ueber-ihre-finanzen-52179",
+        "title": "Haushaltsbuch führen: Überblick über Ihre Finanzen",
+        "publisher": "Verbraucherzentrale"
+      },
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/altersvorsorge/etf-fuer-anfaenger-die-haeufigsten-fragen-einfach-erklaert-109444",
+        "title": "ETF für Anfänger: Die häufigsten Fragen einfach erklärt",
+        "publisher": "Verbraucherzentrale"
+      }
+    ]
+  },
+  {
+    "theme": "investments",
+    "format": "written",
+    "topic": "ETFs in einfachen Worten",
+    "title": "ETF in 60 Sekunden",
+    "slides": [
+      {
+        "title": "Ein Korb voller Aktien",
+        "body": "Ein ETF ist ein börsengehandelter Fonds, der einen Index nachbildet, zum Beispiel den MSCI World mit Unternehmen aus vielen Industrieländern. Du kaufst damit viele Aktien auf einmal.",
+        "imagePrompt": "Einkaufskorb mit kleinen Firmengebäuden"
+      },
+      {
+        "title": "Breit gestreut",
+        "body": "Weil dein Geld auf sehr viele Unternehmen verteilt ist, fällt die Pleite einer einzelnen Firma kaum ins Gewicht. Das senkt das Risiko gegenüber Einzelaktien."
+      },
+      {
+        "title": "Niedrige Kosten",
+        "body": "ETFs werden nicht aktiv gemanagt. Ihre laufenden Kosten sind deshalb meist deutlich niedriger als bei klassischen Fonds, und das macht über viele Jahre viel aus."
+      },
+      {
+        "title": "Zeit ist der Schlüssel",
+        "body": "Aktienkurse schwanken. Die Verbraucherzentrale rät, nur Geld anzulegen, das du mindestens zehn bis fünfzehn Jahre nicht brauchst.",
+        "imagePrompt": "Sanduhr neben einer steigenden Linie"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/altersvorsorge/etf-fuer-anfaenger-die-haeufigsten-fragen-einfach-erklaert-109444",
+        "title": "ETF für Anfänger: Die häufigsten Fragen einfach erklärt",
+        "publisher": "Verbraucherzentrale"
+      }
+    ]
+  },
+  {
+    "theme": "tax-optimization",
+    "format": "written",
+    "topic": "Der Arbeitnehmer-Pauschbetrag",
+    "title": "1.230 Euro ohne Belege",
+    "slides": [
+      {
+        "title": "Automatisch drin",
+        "body": "Als Arbeitnehmer bekommst du für berufliche Ausgaben automatisch einen Pauschbetrag von 1.230 Euro im Jahr. Dafür brauchst du keine Belege.",
+        "imagePrompt": "Lohnzettel mit grünem Haken"
+      },
+      {
+        "title": "Mehr ist mehr",
+        "body": "Liegen deine echten Werbungskosten darüber, kannst du sie einzeln angeben. Dann zählt der höhere Betrag und deine Steuerlast sinkt."
+      },
+      {
+        "title": "Was zählt dazu?",
+        "body": "Typisch sind der Arbeitsweg über die Pendlerpauschale, Arbeitsmittel wie Laptop oder Fachbücher, Fortbildungen und die Homeoffice-Pauschale.",
+        "imagePrompt": "Laptop, Fachbuch und Fahrradschlüssel auf einem Tisch"
+      },
+      {
+        "title": "Schnell überschritten",
+        "body": "Wer einen längeren Arbeitsweg hat oder viel im Homeoffice arbeitet, liegt oft über der Pauschale. Ein kurzer Check vor der Steuererklärung lohnt sich."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.finanztip.de/werbungskostenpauschale/",
+        "title": "Arbeitnehmer-Pauschbetrag: 1.230 Euro Werbungskostenpauschale",
+        "publisher": "Finanztip"
+      },
+      {
+        "url": "https://www.test.de/Werbungskosten-in-der-Steuererklaerung-5193081-0/",
+        "title": "Werbungskosten: Das können Arbeitnehmer für den Job absetzen",
+        "publisher": "Stiftung Warentest"
+      }
+    ]
+  },
+  {
+    "theme": "budget",
+    "format": "written",
+    "topic": "Warum der Dispo so teuer ist",
+    "title": "Die Dispo-Falle",
+    "slides": [
+      {
+        "title": "Bequem, aber teuer",
+        "body": "Der Dispokredit erlaubt dir, dein Girokonto zu überziehen. Das ist praktisch, aber die Zinsen liegen oft über zehn Prozent im Jahr.",
+        "imagePrompt": "Girokarte mit kleinem Warnschild"
+      },
+      {
+        "title": "Für kurze Engpässe",
+        "body": "Gedacht ist der Dispo für kurze Überbrückungen von wenigen Tagen oder Wochen. Wer dauerhaft im Minus ist, zahlt über das Jahr viel Geld für Zinsen."
+      },
+      {
+        "title": "Raus aus dem Minus",
+        "body": "Ein günstigerer Ratenkredit kann den Dispo ablösen. Wichtig: Danach das Limit senken, damit du nicht wieder hineinrutschst.",
+        "imagePrompt": "Pfeil, der aus einem roten Bereich nach oben zeigt"
+      },
+      {
+        "title": "Hilfe holen",
+        "body": "Wenn die Schulden über den Kopf wachsen, helfen Schuldnerberatungen, etwa bei Verbraucherzentralen oder Wohlfahrtsverbänden, oft kostenlos."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.vzhh.de/themen/finanzen/konto/dispozinsen-deutlich-gestiegen",
+        "title": "Dispozinsen deutlich gestiegen",
+        "publisher": "Verbraucherzentrale Hamburg"
+      },
+      {
+        "url": "https://www.zdfheute.de/ratgeber/dispo-kredit-schulden-falle-vermeiden-100.html",
+        "title": "Girokonto im Dispo: So behält man seine Finanzen im Blick",
+        "publisher": "ZDFheute"
+      }
+    ]
+  },
+  {
+    "theme": "investments",
+    "format": "audio",
+    "topic": "Der Zinseszinseffekt und die Inflation",
+    "title": "Zeit ist dein stärkster Hebel",
+    "images": [
+      {
+        "prompt": "Kleiner Baum, der aus Münzen wächst",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Schneeball, der einen Hang hinunterrollt und wächst",
+        "atFraction": 0.35
+      },
+      {
+        "prompt": "Einkaufskorb, der kleiner wird",
+        "atFraction": 0.7
+      }
+    ],
+    "script": "Albert Einstein soll den Zinseszins einmal als achtes Weltwunder bezeichnet haben. Ob er das wirklich gesagt hat, ist zwar umstritten. Aber die Idee dahinter ist so mächtig, dass es sich lohnt, sie einmal richtig zu verstehen. Denn sie entscheidet mit darüber, wie viel dein Geld in einigen Jahrzehnten wert ist.\n\nFangen wir einfach an. Stell dir vor, du legst hundert Euro an und bekommst fünf Prozent Zinsen im Jahr. Nach einem Jahr hast du hundertfünf Euro. Soweit, so normal. Spannend wird es im zweiten Jahr. Jetzt bekommst du nämlich nicht nur Zinsen auf deine ursprünglichen hundert Euro, sondern auch auf die fünf Euro Zinsen aus dem ersten Jahr. Du hast also am Ende hundertzehn Euro und fünfundzwanzig Cent. Das klingt nach wenig. Aber dieser Effekt wird jedes Jahr stärker.\n\nMan kann sich das wie einen Schneeball vorstellen, der einen Hang hinunterrollt. Am Anfang ist er klein und wächst langsam. Doch je größer er wird, desto mehr Schnee bleibt an ihm hängen. Bei deinem Geld ist es genauso. Nach dreißig Jahren mit fünf Prozent Rendite werden aus zehntausend Euro rund dreiundvierzigtausend Euro, ohne dass du einen einzigen weiteren Euro einzahlst.\n\nEs gibt eine einfache Faustregel, um das abzuschätzen, die Zweiundsiebziger-Regel. Du teilst zweiundsiebzig durch den Zinssatz und bekommst ungefähr die Anzahl der Jahre, in denen sich dein Geld verdoppelt. Bei sechs Prozent sind das etwa zwölf Jahre, bei drei Prozent etwa vierundzwanzig Jahre.\n\nAber Achtung, diese Regel funktioniert auch in die andere Richtung. Und hier kommt die Inflation ins Spiel. Inflation bedeutet, dass die Preise steigen und dein Geld an Kaufkraft verliert. Die Europäische Zentralbank strebt eine Inflationsrate von etwa zwei Prozent an. Wendest du die Faustregel an, halbiert sich die Kaufkraft deines Geldes bei zwei Prozent Inflation in rund sechsunddreißig Jahren. Geld, das einfach unverzinst auf dem Girokonto liegt, wird also mit der Zeit immer weniger wert.\n\nWas heißt das für dich? Erstens: Früh anfangen lohnt sich enorm. Wer mit fünfundzwanzig Jahren monatlich einen kleinen Betrag spart, hat später oft mehr als jemand, der mit vierzig doppelt so viel einzahlt. Der Grund ist einfach die zusätzliche Zeit, in der der Schneeball rollen kann.\n\nZweitens: Kosten sind wie Gegenwind. Auch Gebühren wirken über den Zinseszins, nur eben gegen dich. Ein Prozent mehr Kosten pro Jahr klingt harmlos, kann über Jahrzehnte aber einen großen Teil deines Ertrags auffressen.\n\nDrittens: Höhere Renditechancen gibt es nicht ohne Risiko. Aktien und Aktienfonds haben langfristig in der Vergangenheit oft gute Erträge gebracht, schwanken aber zwischendurch stark. Deshalb solltest du nur Geld anlegen, das du lange nicht brauchst, und vorher einen Notgroschen haben.\n\nDer Zinseszins ist kein Zaubertrick. Er ist Mathematik plus Geduld. Und Geduld ist etwas, das jeder von uns aufbringen kann.",
+    "sources": [
+      {
+        "url": "https://www.finanzfluss.de/geldanlage/zinseszinseffekt/",
+        "title": "Zinseszinseffekt",
+        "publisher": "Finanzfluss"
+      },
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/altersvorsorge/etf-fuer-anfaenger-die-haeufigsten-fragen-einfach-erklaert-109444",
+        "title": "ETF für Anfänger: Die häufigsten Fragen einfach erklärt",
+        "publisher": "Verbraucherzentrale"
+      }
+    ]
+  },
+  {
+    "theme": "tax-optimization",
+    "format": "audio",
+    "topic": "Warum sich die Steuererklärung oft lohnt",
+    "title": "Hol dir dein Geld zurück",
+    "images": [
+      {
+        "prompt": "Briefumschlag vom Finanzamt mit Geldschein",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Fahrrad auf dem Weg zur Arbeit",
+        "atFraction": 0.4
+      },
+      {
+        "prompt": "Gemütlicher Schreibtisch im Homeoffice",
+        "atFraction": 0.65
+      }
+    ],
+    "script": "Steuererklärung. Für viele klingt das nach Papierkram, Frust und einem verlorenen Sonntag. Aber hier kommt eine Nachricht, die dich vielleicht motiviert: Ein großer Teil der Menschen, die eine Steuererklärung machen, bekommt Geld zurück. Und viele Arbeitnehmerinnen und Arbeitnehmer verschenken Jahr für Jahr Geld, weil sie es einfach nicht versuchen.\n\nWarum gibt es überhaupt eine Erstattung? Als Arbeitnehmer zahlst du jeden Monat Lohnsteuer, die dein Arbeitgeber direkt abführt. Diese Lohnsteuer wird pauschal berechnet. Deine persönlichen Ausgaben, die das Finanzamt anerkennen würde, kennt der Arbeitgeber aber nicht. Mit der Steuererklärung holst du dir zu viel gezahlte Steuer zurück.\n\nEin wichtiger Begriff dabei sind die Werbungskosten. Das sind Ausgaben, die du für deinen Job hast. Das Finanzamt zieht automatisch einen Arbeitnehmer-Pauschbetrag von zwölfhundertdreißig Euro im Jahr ab, ganz ohne Belege. Wenn deine echten Kosten darüber liegen, lohnt es sich, sie einzeln aufzulisten.\n\nWas zählt dazu? Ein großer Posten ist oft der Arbeitsweg. Über die Pendlerpauschale kannst du für jeden Arbeitstag die Entfernung zwischen Wohnung und erster Tätigkeitsstätte ansetzen. Dabei ist egal, ob du mit dem Auto, dem Rad oder zu Fuß kommst.\n\nWer im Homeoffice arbeitet, kann die Homeoffice-Pauschale nutzen. Sie beträgt sechs Euro pro Tag, für höchstens zweihundertzehn Tage im Jahr. Das sind bis zu zwölfhundertsechzig Euro.\n\nDazu kommen Arbeitsmittel. Ein Laptop, den du beruflich nutzt, ein Schreibtischstuhl, Fachliteratur oder Arbeitskleidung, die man im Alltag nicht trägt. Auch Fortbildungen, Bewerbungskosten oder Gewerkschaftsbeiträge können dazugehören.\n\nNeben den Werbungskosten gibt es weitere Möglichkeiten. Handwerkerleistungen und haushaltsnahe Dienstleistungen können die Steuer direkt senken. Das gilt zum Beispiel für den Anteil der Arbeitskosten, wenn ein Handwerker in deiner Wohnung etwas repariert. Bezahlen solltest du dafür per Überweisung, nicht bar.\n\nAuch bei Kapitalerträgen gibt es einen Freibetrag, den Sparerpauschbetrag. Er liegt bei tausend Euro pro Person und zweitausend Euro für Ehepaare. Mit einem Freistellungsauftrag bei deiner Bank sorgst du dafür, dass bis zu dieser Grenze gar keine Steuer auf Zinsen oder Dividenden abgezogen wird.\n\nUnd wann musst du überhaupt eine Steuererklärung machen? Für viele Arbeitnehmer ist sie freiwillig. Pflicht wird sie zum Beispiel, wenn du Lohnersatzleistungen wie Kurzarbeitergeld oder Elterngeld über einer bestimmten Grenze bekommen hast, wenn du mehrere Jobs gleichzeitig hattest oder bestimmte Steuerklassen-Kombinationen in der Ehe nutzt. Bist du nicht verpflichtet, kannst du die Erklärung bis zu vier Jahre rückwirkend abgeben. Es lohnt sich also, auch ältere Jahre nachzuholen.\n\nWie fängst du an? Sammle übers Jahr Belege in einem Ordner oder digital in einer App. Nutze das offizielle Elster-Portal oder eine Steuersoftware, die dich durch die Fragen führt. Und wenn deine Lage komplizierter ist, kann ein Lohnsteuerhilfeverein oder eine Steuerberatung helfen.\n\nDer erste Durchgang dauert vielleicht ein paar Stunden. Aber wenn am Ende eine Erstattung kommt, fühlt sich dieser Sonntag gar nicht mehr so verloren an.",
+    "sources": [
+      {
+        "url": "https://www.test.de/Werbungskosten-in-der-Steuererklaerung-5193081-0/",
+        "title": "Werbungskosten: Das können Arbeitnehmer für den Job absetzen",
+        "publisher": "Stiftung Warentest"
+      },
+      {
+        "url": "https://www.finanztip.de/werbungskostenpauschale/",
+        "title": "Arbeitnehmer-Pauschbetrag: 1.230 Euro Werbungskostenpauschale",
+        "publisher": "Finanztip"
+      }
+    ]
+  },
+  {
+    "theme": "budget",
+    "format": "audio",
+    "topic": "Mit dem Haushaltsbuch zum eigenen Budget",
+    "title": "Dein Budget in drei Schritten",
+    "images": [
+      {
+        "prompt": "Offenes Notizbuch mit farbigen Spalten",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Drei Gläser mit Münzen, beschriftet mit Symbolen",
+        "atFraction": 0.5
+      },
+      {
+        "prompt": "Person lächelt zufrieden mit Tasse Tee",
+        "atFraction": 0.85
+      }
+    ],
+    "script": "Am Ende des Geldes ist noch so viel Monat übrig. Diesen Spruch kennen viele, und er beschreibt ein echtes Gefühl. Das Geld ist irgendwie weg, aber man weiß gar nicht genau, wohin. Die gute Nachricht: Mit einem einfachen Werkzeug bekommst du wieder Überblick. Es heißt Haushaltsbuch. Und in den nächsten Minuten zeige ich dir, wie du daraus in drei Schritten ein Budget machst, das zu dir passt.\n\nSchritt eins: Erfassen. Ein Haushaltsbuch ist nichts anderes als eine Liste deiner Einnahmen und Ausgaben. Die Verbraucherzentrale empfiehlt, es mindestens zwei bis drei Monate lang konsequent zu führen. Erst dann siehst du ein realistisches Bild, denn manche Ausgaben kommen nicht jeden Monat vor.\n\nNotiere wirklich alles. Die Miete und den Handyvertrag genauso wie den Döner in der Mittagspause oder die Jacke, die du spontan im Netz bestellt hast. Gerade die kleinen Beträge sind spannend. Zehn Euro hier, sieben Euro da, das fällt im Alltag kaum auf. Aufs Jahr gerechnet können daraus aber hunderte Euro werden.\n\nOb du ein Heft nimmst, eine Tabelle oder eine App, ist eigentlich egal. Wichtig ist nur, dass es für dich bequem ist. Viele Banking-Apps sortieren Ausgaben inzwischen sogar automatisch in Kategorien.\n\nSchritt zwei: Sortieren. Teile deine Ausgaben in zwei große Gruppen. Fixkosten sind Beträge, die jeden Monat gleich bleiben, also Miete, Strom, Versicherungen, Abos und Verträge. Variable Kosten schwanken, etwa Lebensmittel, Ausgehen, Kleidung oder Hobbys.\n\nSchau dir zuerst die Fixkosten an. Hier steckt oft verstecktes Sparpotenzial. Gibt es Abos, die du kaum nutzt? Einen Handyvertrag, der teurer ist als nötig? Eine Versicherung, die du doppelt hast? Einmal kündigen oder wechseln spart dann jeden Monat automatisch.\n\nSchritt drei: Planen. Jetzt machst du aus dem Rückblick einen Plan für die Zukunft. Lege fest, wie viel Geld du für die einzelnen Bereiche pro Monat ausgeben willst. Und ganz wichtig: Plane einen festen Betrag fürs Sparen ein, am besten gleich am Monatsanfang per Dauerauftrag. Dann sparst du, was übrig ist, nicht nur was übrig bleibt.\n\nDein erstes Sparziel sollte ein Notgroschen sein. Als Faustregel gelten etwa drei Monatsausgaben auf einem Tagesgeldkonto. Der fängt unerwartete Kosten auf, zum Beispiel eine kaputte Waschmaschine, ohne dass du dein Konto überziehen musst.\n\nUnd noch ein Tipp zum Schluss: Plane auch Geld für Dinge ein, die dir Freude machen. Ein Budget, das alles verbietet, hält niemand lange durch. Es geht nicht darum, dich einzuschränken, sondern darum, dein Geld bewusst für das einzusetzen, was dir wirklich wichtig ist.\n\nSchau einmal im Monat auf deine Zahlen, passe den Plan an und feiere kleine Erfolge. So wird aus dem Gefühl, dass das Geld einfach verschwindet, ein Gefühl von Kontrolle.",
+    "sources": [
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/sparen-und-anlegen/haushaltsbuch-fuehren-ueberblick-ueber-ihre-finanzen-52179",
+        "title": "Haushaltsbuch führen: Überblick über Ihre Finanzen",
+        "publisher": "Verbraucherzentrale"
+      }
+    ]
+  },
+  {
+    "theme": "investments",
+    "format": "audio",
+    "topic": "ETF-Sparplan: die wichtigsten Fragen für Einsteiger",
+    "title": "Dein Einstieg in ETFs",
+    "images": [
+      {
+        "prompt": "Weltkugel aus vielen kleinen Firmenlogos ohne Text",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Kalender mit monatlichen Münzsymbolen",
+        "atFraction": 0.45
+      },
+      {
+        "prompt": "Achterbahn, die insgesamt nach oben führt",
+        "atFraction": 0.75
+      }
+    ],
+    "script": "ETFs sind in den letzten Jahren für viele Menschen zum Einstieg in die Geldanlage geworden. Auch Verbraucherzentralen erklären sie gerne als einfache Möglichkeit für Privatanlegerinnen und Privatanleger. Aber was genau ist ein ETF eigentlich, und worauf solltest du achten? Hier kommen die wichtigsten Grundlagen, ganz ohne Fachchinesisch.\n\nETF steht für Exchange Traded Fund, also börsengehandelter Fonds. Ein ETF bildet einen Index nach. Ein Index ist eine Art Liste von Unternehmen, zum Beispiel der Dax mit großen deutschen Firmen oder der MSCI World mit Unternehmen aus vielen Industrieländern. Wenn du einen ETF auf den MSCI World kaufst, besitzt du damit indirekt kleine Anteile an sehr vielen Unternehmen auf einmal.\n\nDer erste große Vorteil ist die Streuung. Dein Geld liegt nicht in einer einzelnen Firma, sondern in hunderten oder tausenden. Wenn ein Unternehmen pleitegeht, fällt das kaum ins Gewicht. Das macht ETFs weniger riskant als einzelne Aktien.\n\nDer zweite Vorteil sind die Kosten. Klassische Fonds werden von Managern aktiv betreut, die Aktien auswählen. Das kostet Gebühren. Ein ETF folgt einfach seinem Index. Dadurch sind die laufenden Kosten meist deutlich niedriger. Über viele Jahre macht dieser Unterschied durch den Zinseszinseffekt eine Menge aus.\n\nDer dritte Vorteil ist die Flexibilität. Bei vielen Banken und Brokern kannst du einen Sparplan einrichten, oft schon mit kleinen Beträgen im Monat. Das Geld wird dann automatisch angelegt. Du kannst den Betrag jederzeit ändern, pausieren oder Anteile verkaufen.\n\nJetzt zu den Risiken. Ein ETF ist keine Garantie. Wenn die Börsen fallen, fällt auch dein ETF. In Krisen kann es zwischenzeitlich deutliche Verluste geben. Deshalb ist der Anlagehorizont so wichtig. Die Verbraucherzentrale rät, nur Geld in Aktien-ETFs anzulegen, das du mindestens zehn bis fünfzehn Jahre nicht brauchst. Historisch haben sich breit gestreute Aktienmärkte über solche langen Zeiträume meist erholt, aber eine Garantie für die Zukunft ist das nicht.\n\nEin Sparplan hat dabei einen netten Nebeneffekt. Weil du jeden Monat den gleichen Betrag investierst, kaufst du bei niedrigen Kursen automatisch mehr Anteile und bei hohen weniger. Du musst also nicht den perfekten Zeitpunkt erwischen, was ohnehin niemand zuverlässig kann.\n\nWorauf solltest du bei der Auswahl achten? Ein breiter Index ist für den Einstieg oft sinnvoll. Schau dir die laufenden Kosten an, die als Prozentsatz angegeben sind. Und prüfe, ob der ETF Erträge ausschüttet oder automatisch wieder anlegt, je nachdem, was dir lieber ist.\n\nBevor du startest, sollte dein Notgroschen stehen. Und sei vorsichtig bei Versprechen von schnellem Reichtum, egal ob von Influencern oder Werbung. Eine solide Geldanlage ist meist eher langweilig.\n\nDieses Audio ersetzt übrigens keine persönliche Beratung. Wenn du unsicher bist, bieten die Verbraucherzentralen unabhängige Beratungen zur Geldanlage an.",
+    "sources": [
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/geld-versicherungen/altersvorsorge/etf-fuer-anfaenger-die-haeufigsten-fragen-einfach-erklaert-109444",
+        "title": "ETF für Anfänger: Die häufigsten Fragen einfach erklärt",
+        "publisher": "Verbraucherzentrale"
+      }
+    ]
+  },
+  {
+    "theme": "budget",
+    "format": "audio",
+    "topic": "Raus aus dem Dispo",
+    "title": "Schluss mit dem Minus",
+    "images": [
+      {
+        "prompt": "Kontoauszug mit roter Zahl",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Schere, die eine Kreditkarte halbiert",
+        "atFraction": 0.55
+      },
+      {
+        "prompt": "Grüner Kontostand und Konfetti",
+        "atFraction": 0.9
+      }
+    ],
+    "script": "Das Konto ist mal wieder im Minus, und irgendwie ist das schon normal geworden. Der Dispo fühlt sich an wie ein Teil des eigenen Geldes. So geht es vielen Menschen in Deutschland. Aber genau hier steckt eine der teuersten Gewohnheiten im Umgang mit Geld. Lass uns anschauen, warum das so ist und wie du da wieder rauskommst.\n\nDer Dispositionskredit, kurz Dispo, ist ein Kreditrahmen auf deinem Girokonto. Die Bank erlaubt dir, bis zu einer bestimmten Grenze ins Minus zu gehen. Das ist bequem, denn du musst keinen Antrag stellen und nichts unterschreiben. Doch diese Bequemlichkeit hat einen Preis. Die Zinsen für den Dispo liegen bei vielen Banken über zehn Prozent im Jahr. Wenn du sogar über den Dispo hinaus überziehst, wird es oft noch teurer.\n\nZum Vergleich: Ein normaler Ratenkredit ist in der Regel deutlich günstiger. Wer also über Monate mit mehreren tausend Euro im Dispo steckt, zahlt dafür im Jahr schnell einen dreistelligen Betrag an Zinsen. Geld, das dir für nichts anderes zur Verfügung steht.\n\nGedacht ist der Dispo eigentlich für kurze Engpässe. Wenn das Gehalt mal ein paar Tage später kommt oder eine Rechnung unglücklich fällt. Problematisch wird es, wenn das Minus zum Dauerzustand wird.\n\nWie kommst du da raus? Hier ein Plan in vier Schritten.\n\nErstens: Hinschauen. Wie hoch ist dein Minus genau, und welchen Zinssatz zahlst du? Das steht auf deinem Kontoauszug oder im Preisverzeichnis deiner Bank. Allein diese Zahl zu kennen, motiviert oft schon.\n\nZweitens: Ausgaben prüfen. Führe für ein paar Wochen ein Haushaltsbuch. Wo fließt das Geld hin? Gibt es Abos oder Verträge, die du kündigen kannst? Jeder Euro, den du freischaufelst, hilft beim Abbau.\n\nDrittens: Umschulden. Wenn das Minus groß ist, kann ein günstiger Ratenkredit den Dispo ablösen. Du zahlst dann in festen Raten und zu niedrigeren Zinsen zurück. Ganz wichtig: Danach solltest du deinen Dispo-Rahmen senken oder ganz streichen lassen. Sonst ist die Versuchung groß, wieder hineinzurutschen, und am Ende hast du zwei Schulden statt einer.\n\nViertens: Ein Polster aufbauen. Sobald das Minus weg ist, spar dir Schritt für Schritt einen kleinen Notgroschen an. Er sorgt dafür, dass die nächste unerwartete Rechnung dich nicht direkt wieder ins Minus schickt.\n\nUnd wenn dir die Schulden über den Kopf wachsen? Dann bist du damit nicht allein, und du musst das auch nicht allein lösen. Schuldnerberatungen, zum Beispiel bei Verbraucherzentralen, Kommunen oder Wohlfahrtsverbänden, helfen oft kostenlos. Je früher du dich meldest, desto mehr Möglichkeiten gibt es.\n\nRaus aus dem Dispo zu kommen, ist kein Sprint. Aber jeder Monat mit weniger Minus ist ein Monat, in dem du weniger Zinsen zahlst und mehr Freiheit gewinnst.",
+    "sources": [
+      {
+        "url": "https://www.vzhh.de/themen/finanzen/konto/dispozinsen-deutlich-gestiegen",
+        "title": "Dispozinsen deutlich gestiegen",
+        "publisher": "Verbraucherzentrale Hamburg"
+      },
+      {
+        "url": "https://www.zdfheute.de/ratgeber/dispo-kredit-schulden-falle-vermeiden-100.html",
+        "title": "Girokonto im Dispo: So behält man seine Finanzen im Blick",
+        "publisher": "ZDFheute"
+      }
+    ]
+  }
+]

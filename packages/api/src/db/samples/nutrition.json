@@ -1,0 +1,327 @@
+[
+  {
+    "theme": "protein",
+    "format": "written",
+    "topic": "Wie viel Eiweiß brauchst du wirklich?",
+    "title": "Wie viel Protein brauchst du?",
+    "slides": [
+      {
+        "title": "Die Faustregel",
+        "body": "Die Deutsche Gesellschaft für Ernährung empfiehlt Erwachsenen bis 65 Jahre etwa 0,8 Gramm Protein pro Kilogramm Körpergewicht am Tag. Bei 70 Kilo sind das rund 56 Gramm.",
+        "imagePrompt": "Küchenwaage mit Linsen, Ei und Joghurt"
+      },
+      {
+        "title": "Ab 65 etwas mehr",
+        "body": "Für Menschen ab 65 Jahren liegt der Schätzwert bei 1,0 Gramm pro Kilogramm. Der Körper baut im Alter leichter Muskeln ab, mehr Eiweiß kann dem entgegenwirken."
+      },
+      {
+        "title": "Meist schon erreicht",
+        "body": "Die meisten Menschen in Deutschland essen bereits mehr Protein als empfohlen. Teure Eiweißpulver sind für Freizeitsportler in der Regel nicht nötig.",
+        "imagePrompt": "Eiweißshake neben einem Teller mit Bohnen und Vollkornbrot"
+      },
+      {
+        "title": "Gute Quellen",
+        "body": "Hülsenfrüchte, Vollkorn, Milchprodukte, Eier, Nüsse und Fisch liefern Eiweiß. Kombinierst du pflanzliche Quellen, etwa Bohnen mit Getreide, ergänzen sie sich besonders gut."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.dge.de/fileadmin/dok/gesunde-ernaehrung/faq/DGE-FAQ-Protein-2021.pdf",
+        "title": "FAQ Protein",
+        "publisher": "Deutsche Gesellschaft für Ernährung"
+      },
+      {
+        "url": "https://www.dge.de/fileadmin/dok/presse/meldungen/2011-2018/DGE-Pressemeldung-aktuell-08-2017-Referenzwert-Protein.pdf",
+        "title": "Referenzwert für Protein",
+        "publisher": "Deutsche Gesellschaft für Ernährung"
+      }
+    ]
+  },
+  {
+    "theme": "vegan",
+    "format": "written",
+    "topic": "Vitamin B12 bei veganer Ernährung",
+    "title": "Vegan? Denk an B12",
+    "slides": [
+      {
+        "title": "Das eine Vitamin",
+        "body": "Vitamin B12 steckt in nennenswerter Menge fast nur in tierischen Lebensmitteln. Wer sich vegan ernährt, braucht deshalb ein B12-Präparat oder angereicherte Lebensmittel.",
+        "imagePrompt": "Kleine Vitamin-Tablette auf einem grünen Blatt"
+      },
+      {
+        "title": "Warum es wichtig ist",
+        "body": "B12 ist an der Blutbildung und an Nervenfunktionen beteiligt. Ein Mangel entwickelt sich langsam, oft über Jahre, weil der Körper Reserven hat. Das macht ihn tückisch."
+      },
+      {
+        "title": "Algen helfen nicht",
+        "body": "Algen oder fermentierte Lebensmittel werden oft als Quelle genannt. Sie enthalten aber meist B12-Formen, die der Körper nicht verwerten kann. Verlass dich nicht darauf."
+      },
+      {
+        "title": "Werte checken",
+        "body": "Lass deinen B12-Status regelmäßig ärztlich kontrollieren. Neben B12 lohnt sich bei veganer Ernährung ein Blick auf Jod, Vitamin D, Eisen, Zink und Omega-3-Fettsäuren.",
+        "imagePrompt": "Kalender mit markiertem Arzttermin und Pflanzen"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/lebensmittel/nahrungsergaenzungsmittel/vegane-ernaehrung-welche-nahrungsergaenzung-ist-sinnvoll-13323",
+        "title": "Vegane Ernährung – welche Nahrungsergänzung ist sinnvoll?",
+        "publisher": "Verbraucherzentrale"
+      }
+    ]
+  },
+  {
+    "theme": "vegetarian",
+    "format": "written",
+    "topic": "Eisen aus Pflanzen besser aufnehmen",
+    "title": "Eisen clever kombinieren",
+    "slides": [
+      {
+        "title": "Pflanzliches Eisen",
+        "body": "Hülsenfrüchte, Vollkorn, Haferflocken und Nüsse liefern Eisen. Der Körper nimmt dieses pflanzliche Eisen aber schlechter auf als Eisen aus Fleisch.",
+        "imagePrompt": "Schüssel mit Linsen und Haferflocken"
+      },
+      {
+        "title": "Vitamin C als Turbo",
+        "body": "Vitamin C verbessert die Aufnahme deutlich. Paprika im Linsensalat oder ein Glas Orangensaft zum Müsli sind einfache Kombis.",
+        "imagePrompt": "Linsensalat mit roter Paprika und Zitrone"
+      },
+      {
+        "title": "Kaffee und Tee später",
+        "body": "Stoffe in Kaffee und schwarzem Tee hemmen die Eisenaufnahme. Trink sie lieber mit etwas Abstand zu eisenreichen Mahlzeiten."
+      },
+      {
+        "title": "Kein Selbstversuch",
+        "body": "Nimm Eisenpräparate nicht auf Verdacht, denn zu viel Eisen kann schaden. Bei Müdigkeit oder Blässe kann ein Bluttest beim Arzt klären, ob wirklich ein Mangel besteht."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.bfr.bund.de/fragen-und-antworten/thema/fragen-und-antworten-zu-eisen-in-lebensmitteln/",
+        "title": "Fragen und Antworten zu Eisen in Lebensmitteln",
+        "publisher": "Bundesinstitut für Risikobewertung"
+      }
+    ]
+  },
+  {
+    "theme": "keto",
+    "format": "written",
+    "topic": "Ketogene Ernährung kurz erklärt",
+    "title": "Keto in 4 Slides",
+    "slides": [
+      {
+        "title": "Das Prinzip",
+        "body": "Bei der ketogenen Ernährung isst du sehr wenig Kohlenhydrate und viel Fett. Der Körper stellt dann auf Ketonkörper als Energiequelle um, das nennt man Ketose.",
+        "imagePrompt": "Teller mit Avocado, Ei und Gemüse"
+      },
+      {
+        "title": "Was wegfällt",
+        "body": "Brot, Nudeln, Reis, Kartoffeln, die meisten Obstsorten und auch viele Hülsenfrüchte sind stark eingeschränkt. Das macht die Ernährung im Alltag anspruchsvoll."
+      },
+      {
+        "title": "Typische Nebenwirkungen",
+        "body": "In den ersten Tagen berichten viele von Müdigkeit, Kopfschmerzen oder Verstopfung, oft Keto-Grippe genannt. Langfristig kann die Versorgung mit Ballaststoffen und manchen Vitaminen leiden."
+      },
+      {
+        "title": "Vorher abklären",
+        "body": "Medizinisch wird Keto zum Beispiel bei bestimmten Epilepsieformen eingesetzt. Wer Vorerkrankungen hat oder Medikamente nimmt, sollte eine Umstellung vorher ärztlich besprechen.",
+        "imagePrompt": "Stethoskop neben einem Notizblock"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.helsana.ch/de/blog/ernaehrung/gewicht-abnehmen/ketogene-diaet.html",
+        "title": "Ketogene Diät: Sinn oder Unsinn?",
+        "publisher": "Helsana"
+      }
+    ]
+  },
+  {
+    "theme": "vegetarian",
+    "format": "written",
+    "topic": "Die neuen DGE-Empfehlungen: drei Viertel pflanzlich",
+    "title": "Drei Viertel Pflanze",
+    "slides": [
+      {
+        "title": "Das neue Verhältnis",
+        "body": "Seit 2024 empfiehlt die DGE: Etwa drei Viertel der Lebensmittel sollen pflanzlich sein, ein Viertel tierisch. Erstmals flossen auch Umweltaspekte in die Empfehlungen ein.",
+        "imagePrompt": "Teller zu drei Vierteln mit Gemüse gefüllt"
+      },
+      {
+        "title": "Fleisch begrenzen",
+        "body": "Höchstens 300 Gramm Fleisch und Wurst pro Woche lautet die Orientierung. Das ist für viele deutlich weniger als bisher."
+      },
+      {
+        "title": "Hülsenfrüchte rein",
+        "body": "Linsen, Bohnen und Kichererbsen sollen regelmäßig auf den Teller, etwa 125 Gramm pro Woche gekocht. Dazu kommt täglich eine kleine Handvoll Nüsse.",
+        "imagePrompt": "Gläser mit bunten Hülsenfrüchten"
+      },
+      {
+        "title": "Klein anfangen",
+        "body": "Du musst nicht alles auf einmal ändern. Ein fleischfreier Tag mehr pro Woche oder Linsen statt Hack in der Bolognese sind ein guter Start."
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://www.pharmazeutische-zeitung.de/drei-viertel-pflanzlich-ein-viertel-tierisch-145959/",
+        "title": "Drei Viertel pflanzlich, ein Viertel tierisch",
+        "publisher": "Pharmazeutische Zeitung"
+      }
+    ]
+  },
+  {
+    "theme": "protein",
+    "format": "audio",
+    "topic": "Proteinhype: Brauchen Sportler mehr Eiweiß?",
+    "title": "Der Proteinhype im Faktencheck",
+    "images": [
+      {
+        "prompt": "Regal mit bunten Proteinriegeln",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Teller mit Linsen, Quark und Vollkornbrot",
+        "atFraction": 0.45
+      },
+      {
+        "prompt": "Person beim entspannten Krafttraining",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Proteinriegel, Proteinpudding, Proteinmüsli. Wenn du durch den Supermarkt gehst, wirkt es fast so, als hätten wir alle einen riesigen Eiweißmangel. Aber stimmt das eigentlich? Lass uns das in den nächsten Minuten gemeinsam auseinandernehmen.\n\nZuerst die gute Nachricht. Eiweiß ist wirklich wichtig. Dein Körper braucht es für Muskeln, für Enzyme, für das Immunsystem und für unzählige andere Aufgaben. Ohne Protein geht also gar nichts. Die Frage ist nur, wie viel du tatsächlich brauchst.\n\nDie Deutsche Gesellschaft für Ernährung hat dafür einen klaren Wert. Erwachsene zwischen neunzehn und fünfundsechzig Jahren sollten etwa null Komma acht Gramm Protein pro Kilogramm Körpergewicht am Tag aufnehmen. Wenn du siebzig Kilo wiegst, sind das ungefähr sechsundfünfzig Gramm. Ab fünfundsechzig liegt der Wert etwas höher, bei einem Gramm pro Kilogramm.\n\nUnd jetzt kommt der spannende Teil. Die meisten Menschen in Deutschland erreichen diese Menge längst. Viele liegen sogar deutlich darüber. Ein Frühstück mit Haferflocken und Joghurt, mittags ein Linsencurry, abends ein Brot mit Käse, und schon bist du in der Nähe des Ziels, ganz ohne Spezialprodukte.\n\nWas ist mit Sport? Wenn du regelmäßig trainierst, brauchst du nicht automatisch Pulver oder Riegel. Für Freizeitsportlerinnen und Freizeitsportler reicht in der Regel eine ausgewogene Ernährung völlig aus. Wer sehr intensiv oder leistungsorientiert trainiert, kann einen etwas höheren Bedarf haben. Aber selbst dann lässt sich das meist über normale Lebensmittel abdecken.\n\nWarum also der ganze Hype? Ein Teil davon ist schlicht Marketing. Das Wort Protein auf der Verpackung verkauft sich gut, und Produkte mit diesem Etikett sind oft teurer. Dabei stecken in manchen Riegeln auch viel Zucker oder Süßstoffe, und der Mehrwert gegenüber einem Becher Quark ist überschaubar.\n\nKann zu viel Eiweiß schaden? Für gesunde Menschen ist eine etwas höhere Zufuhr aus normalen Lebensmitteln unproblematisch. Wer aber Nierenprobleme hat, sollte vorsichtig sein und das mit dem Arzt oder der Ärztin besprechen. Hier kann sehr viel Protein die Nieren zusätzlich belasten.\n\nWenn du deine Eiweißversorgung verbessern willst, dann setz auf Vielfalt. Hülsenfrüchte wie Linsen, Bohnen und Kichererbsen sind echte Alleskönner. Dazu Vollkorngetreide, Nüsse, Milchprodukte, Eier und ab und zu Fisch. Und hier ein kleiner Trick: Kombinierst du pflanzliche Eiweißquellen, zum Beispiel Bohnen mit Mais oder Linsen mit Reis, dann ergänzen sie sich besonders gut.\n\nZum Schluss noch ein Gedanke. Statt auf einzelne Nährstoffe zu starren, lohnt sich der Blick aufs Ganze. Abwechslungsreich essen, genug Gemüse, regelmäßig bewegen und ausreichend schlafen. Das bringt deinem Körper meist mehr als der nächste Proteinriegel.\n\nAlso, beim nächsten Einkauf darfst du ruhig entspannt am Regal mit den Eiweißprodukten vorbeigehen. Dein Körper bekommt sehr wahrscheinlich schon, was er braucht.\n\nNoch ein praktischer Tipp: Verteile dein Eiweiß über den Tag. Eine eiweißhaltige Komponente zu jeder Mahlzeit, etwa Joghurt am Morgen, Bohnen am Mittag und Käse oder Tofu am Abend, ist einfacher als eine riesige Portion auf einmal.",
+    "sources": [
+      {
+        "url": "https://www.dge.de/fileadmin/dok/presse/meldungen/2011-2018/DGE-Pressemeldung-aktuell-08-2017-Referenzwert-Protein.pdf",
+        "title": "Referenzwert für Protein",
+        "publisher": "Deutsche Gesellschaft für Ernährung"
+      },
+      {
+        "url": "https://www.dge.de/fileadmin/dok/gesunde-ernaehrung/faq/DGE-FAQ-Protein-2021.pdf",
+        "title": "FAQ Protein",
+        "publisher": "Deutsche Gesellschaft für Ernährung"
+      }
+    ]
+  },
+  {
+    "theme": "vegan",
+    "format": "audio",
+    "topic": "Vegan starten ohne Nährstofflücken",
+    "title": "Vegan starten – aber richtig",
+    "images": [
+      {
+        "prompt": "Bunter Marktstand mit Gemüse",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Jodsalz und Algenblatt auf einem Tisch",
+        "atFraction": 0.5
+      },
+      {
+        "prompt": "Einkaufskorb mit Tofu, Nüssen und Leinsamen",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Du überlegst, dich vegan zu ernähren? Vielleicht aus Liebe zu Tieren, fürs Klima oder weil du einfach neugierig bist. Super, dass du dir vorher Gedanken machst. Denn eine vegane Ernährung kann richtig gut funktionieren, wenn du ein paar Dinge im Blick behältst. Genau um diese Dinge geht es jetzt.\n\nFangen wir mit dem wichtigsten Punkt an, Vitamin B zwölf. Dieses Vitamin steckt in nennenswerten Mengen fast nur in tierischen Lebensmitteln. Deshalb ist bei veganer Ernährung ein B zwölf Präparat praktisch Pflicht. Das ist keine Schwäche des Konzepts, sondern einfach ein Baustein, der dazugehört. Die Verbraucherzentrale weist ausdrücklich darauf hin. Und Vorsicht: Algen oder fermentierte Produkte werden manchmal als natürliche Quelle angepriesen. Sie enthalten aber meist Formen, die dein Körper nicht verwerten kann.\n\nWarum ist das so wichtig? Vitamin B zwölf brauchst du für die Blutbildung und für deine Nerven. Ein Mangel schleicht sich langsam an, oft über Jahre, weil der Körper Speicher hat. Genau deshalb lohnt es sich, deine Werte regelmäßig ärztlich kontrollieren zu lassen.\n\nDer zweite Kandidat ist Jod. Jod brauchst du für die Schilddrüse. Viele Menschen bekommen es über Milchprodukte und Fisch. Wenn beides wegfällt, ist jodiertes Speisesalz eine einfache Hilfe. Bei Algen ist dagegen Vorsicht angesagt, denn manche enthalten so viel Jod, dass es zu viel des Guten sein kann.\n\nDann Vitamin D. Das betrifft übrigens nicht nur vegan lebende Menschen. In den dunklen Monaten bildet die Haut in Deutschland kaum Vitamin D. Ob ein Präparat sinnvoll ist, kannst du mit einem Bluttest klären.\n\nWeiter geht es mit Eisen und Zink. Beides steckt in Hülsenfrüchten, Vollkorn, Nüssen und Samen. Der Körper nimmt diese Mineralstoffe aus Pflanzen allerdings etwas schlechter auf. Ein kleiner Trick hilft: Kombiniere eisenreiche Mahlzeiten mit Vitamin C, zum Beispiel Paprika, Brokkoli oder ein Glas Orangensaft. Kaffee und schwarzen Tee trinkst du besser mit etwas Abstand.\n\nAuch Kalzium solltest du im Blick haben. Gute Quellen sind mit Kalzium angereicherte Pflanzendrinks, kalziumreiches Mineralwasser, grünes Gemüse wie Grünkohl und Brokkoli sowie Sesam.\n\nUnd dann sind da noch die Omega drei Fettsäuren. Leinöl, Walnüsse, Chiasamen und Rapsöl liefern eine pflanzliche Variante. Für bestimmte langkettige Omega drei Fettsäuren gibt es zusätzlich Präparate aus Algenöl.\n\nKlingt nach viel? Keine Sorge. Im Alltag läuft es auf ein paar einfache Gewohnheiten hinaus. Nimm verlässlich dein B zwölf. Verwende Jodsalz. Iss täglich Hülsenfrüchte, Vollkorn, Gemüse, Nüsse und Samen. Und lass ab und zu deine Blutwerte checken.\n\nWenn du dir unsicher bist, kann dir eine qualifizierte Ernährungsberatung helfen, deinen Speiseplan zu prüfen. Besonders wichtig ist das in Schwangerschaft, Stillzeit oder bei Kindern. Für alle anderen gilt: Mit etwas Wissen wird vegan nicht kompliziert, sondern einfach eine neue, bunte Art zu essen.",
+    "sources": [
+      {
+        "url": "https://www.verbraucherzentrale.de/wissen/lebensmittel/nahrungsergaenzungsmittel/vegane-ernaehrung-welche-nahrungsergaenzung-ist-sinnvoll-13323",
+        "title": "Vegane Ernährung – welche Nahrungsergänzung ist sinnvoll?",
+        "publisher": "Verbraucherzentrale"
+      },
+      {
+        "url": "https://www.bfr.bund.de/fragen-und-antworten/thema/fragen-und-antworten-zu-eisen-in-lebensmitteln/",
+        "title": "Fragen und Antworten zu Eisen in Lebensmitteln",
+        "publisher": "Bundesinstitut für Risikobewertung"
+      }
+    ]
+  },
+  {
+    "theme": "vegetarian",
+    "format": "audio",
+    "topic": "Hülsenfrüchte: das unterschätzte Superfood",
+    "title": "Hülsenfrüchte: klein, aber stark",
+    "images": [
+      {
+        "prompt": "Gläser mit Linsen, Bohnen und Kichererbsen",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Dampfender Topf mit Linsencurry",
+        "atFraction": 0.5
+      },
+      {
+        "prompt": "Hummus mit Gemüsesticks",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Linsen, Bohnen, Erbsen und Kichererbsen. Für viele klingt das nach Omas Eintopf. Dabei gehören Hülsenfrüchte zu den spannendsten Lebensmitteln überhaupt. Und seit die Deutsche Gesellschaft für Ernährung ihre Empfehlungen überarbeitet hat, spielen sie eine noch größere Rolle. Lass uns anschauen, warum.\n\nIm Jahr zweitausendvierundzwanzig hat die DGE neue lebensmittelbezogene Empfehlungen vorgestellt. Die Kernbotschaft lautet: Etwa drei Viertel deiner Lebensmittel sollten pflanzlich sein, ein Viertel tierisch. Zum ersten Mal wurden dabei nicht nur die Gesundheit, sondern auch Umweltaspekte wie Treibhausgase und Landnutzung mit einbezogen. Und genau hier glänzen Hülsenfrüchte.\n\nDie Empfehlung lautet, regelmäßig Hülsenfrüchte zu essen, als Orientierung etwa einhundertfünfundzwanzig Gramm pro Woche in gekochter Form. Das ist ungefähr eine ordentliche Portion. Gleichzeitig soll der Fleischkonsum sinken, auf höchstens dreihundert Gramm Fleisch und Wurst pro Woche.\n\nWas macht Hülsenfrüchte so wertvoll? Erstens liefern sie reichlich Eiweiß. Damit sind sie eine der besten pflanzlichen Proteinquellen. Zweitens stecken viele Ballaststoffe drin. Die sättigen lange, sind gut für deine Verdauung und lassen den Blutzucker langsamer ansteigen. Drittens bringen sie Mineralstoffe wie Eisen, Magnesium und Zink mit. Und viertens sind sie günstig, lange haltbar und im Anbau vergleichsweise klimafreundlich.\n\nJetzt denkst du vielleicht an das Thema Blähungen. Ja, das kann passieren, vor allem am Anfang. Dein Darm gewöhnt sich aber an die Ballaststoffe, wenn du regelmäßig kleinere Mengen isst. Getrocknete Hülsenfrüchte solltest du einweichen und gut durchgaren. Das Einweichwasser schüttest du weg. Gewürze wie Kümmel, Fenchel oder Ingwer können zusätzlich helfen. Und rote Linsen sind oft besonders bekömmlich.\n\nWichtig ist noch ein Sicherheitshinweis. Rohe Hülsenfrüchte enthalten Stoffe, die unverträglich sind. Deshalb immer gut kochen. Bei Dosenware ist das schon passiert, du kannst sie direkt verwenden, am besten kurz abgespült.\n\nWie bekommst du mehr davon in deinen Alltag? Hier ein paar Ideen. Ersetze in der Bolognese die Hälfte oder sogar das ganze Hackfleisch durch rote Linsen. Wirf eine Dose Kichererbsen in deinen Salat. Mach dir einen Hummus als Brotaufstrich. Probiere ein Chili mit Kidneybohnen und schwarzen Bohnen. Oder koche ein Linsencurry mit Kokosmilch, das ist in zwanzig Minuten fertig.\n\nDu musst dabei nicht perfekt sein. Die neuen Empfehlungen sind eine Orientierung, kein starres Regelwerk. Schon ein oder zwei Hülsenfrucht-Mahlzeiten pro Woche sind ein echter Fortschritt für deine Gesundheit und für das Klima.\n\nAlso, vielleicht wird ja heute Abend das kleine Glas Linsen aus der hintersten Ecke deines Vorratsschranks zum Star auf deinem Teller.\n\nUnd noch ein Wort zum Geldbeutel. Ein Kilo getrocknete Linsen kostet oft nur wenige Euro und ergibt viele Portionen. Damit gehören Hülsenfrüchte zu den günstigsten Eiweißquellen, die du kaufen kannst. Wer wenig Zeit hat, greift zur Dose oder zum Glas. Das ist völlig in Ordnung und spart dir Einweichen und lange Kochzeiten.",
+    "sources": [
+      {
+        "url": "https://www.pharmazeutische-zeitung.de/drei-viertel-pflanzlich-ein-viertel-tierisch-145959/",
+        "title": "Drei Viertel pflanzlich, ein Viertel tierisch",
+        "publisher": "Pharmazeutische Zeitung"
+      },
+      {
+        "url": "https://www.zm-online.de/artikel/2024/zm-2024-07/maximal-ein-ei",
+        "title": "Maximal ein Ei",
+        "publisher": "zm – Zahnärztliche Mitteilungen"
+      }
+    ]
+  },
+  {
+    "theme": "keto",
+    "format": "audio",
+    "topic": "Was in der Ketose im Körper passiert",
+    "title": "Ketose: Was passiert im Körper?",
+    "images": [
+      {
+        "prompt": "Abstrakte Darstellung einer Zelle mit Energieblitzen",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Teller mit Lachs, Brokkoli und Olivenöl",
+        "atFraction": 0.45
+      },
+      {
+        "prompt": "Person mit Wasserflasche, leicht müde",
+        "atFraction": 0.7
+      }
+    ],
+    "script": "Keto ist eine der bekanntesten Ernährungsformen der letzten Jahre. In sozialen Medien hört man von schnellem Abnehmen und viel Energie. Aber was passiert eigentlich in deinem Körper, wenn du ketogen isst? Und worauf solltest du achten? Schauen wir uns das in Ruhe an.\n\nNormalerweise nutzt dein Körper vor allem Kohlenhydrate als Energiequelle. Aus Brot, Nudeln, Reis oder Obst wird Glukose, also Traubenzucker. Den verbrennen deine Zellen, und was übrig bleibt, wird in Leber und Muskeln gespeichert.\n\nBei der ketogenen Ernährung drehst du dieses System fast komplett um. Du isst nur sehr wenige Kohlenhydrate, oft wird eine Grenze von etwa fünfzig Gramm am Tag oder weniger genannt. Zum Vergleich: Das steckt schon in zwei bis drei Scheiben Brot. Dafür isst du viel Fett und moderat Eiweiß.\n\nNach einigen Tagen sind die Kohlenhydratspeicher weitgehend leer. Jetzt beginnt die Leber, aus Fett sogenannte Ketonkörper herzustellen. Diese können viele Organe, auch das Gehirn, als Ersatzenergie nutzen. Diesen Stoffwechselzustand nennt man Ketose.\n\nViele Menschen nehmen am Anfang schnell ab. Ein Teil davon ist allerdings Wasser, denn die geleerten Kohlenhydratspeicher binden viel Wasser. Außerdem sättigen fett- und eiweißreiche Mahlzeiten oft gut, sodass man insgesamt weniger isst.\n\nDie Umstellung ist aber nicht ohne. In den ersten Tagen berichten viele von Müdigkeit, Kopfschmerzen, Gereiztheit oder Konzentrationsproblemen. Das wird oft als Keto-Grippe bezeichnet. Genug trinken und auf ausreichend Salz und Mineralstoffe achten kann helfen.\n\nLangfristig gibt es weitere Punkte, die Fachleute kritisch sehen. Weil Obst, Vollkorn und viele Hülsenfrüchte wegfallen, fehlen schnell Ballaststoffe. Verstopfung ist eine häufige Folge. Auch die Versorgung mit einigen Vitaminen und Mineralstoffen kann leiden. Und je nachdem, welche Fette du isst, kann sich das auf deine Blutfettwerte auswirken. Ein Unterschied macht es, ob du Olivenöl, Nüsse und Avocado isst oder vor allem Wurst und Butter.\n\nDazu kommt der Alltag. Keto erfordert viel Planung. Essen gehen, spontane Einladungen oder ein Stück Geburtstagskuchen werden schnell kompliziert. Viele Menschen halten diese Ernährung deshalb nicht dauerhaft durch, und das verlorene Gewicht kommt dann oft zurück.\n\nIn der Medizin hat die ketogene Ernährung durchaus ihren Platz. Bei bestimmten Formen der Epilepsie wird sie zum Beispiel gezielt und unter ärztlicher Begleitung eingesetzt.\n\nWenn du Keto ausprobieren möchtest, dann sprich vorher mit deinem Arzt oder deiner Ärztin, besonders wenn du Vorerkrankungen hast, Medikamente nimmst, schwanger bist oder stillst. Und frag dich ehrlich: Ist das eine Ernährung, mit der ich mich auf Dauer wohlfühle? Denn am Ende zählt nicht der schnellste Effekt, sondern das, was du langfristig gerne lebst.\n\nEin letzter Hinweis noch: Wenn du Keto testest, achte besonders auf die Qualität. Viel Gemüse mit wenig Kohlenhydraten, gute Öle, Nüsse und Samen machen einen großen Unterschied für deine Versorgung.",
+    "sources": [
+      {
+        "url": "https://www.helsana.ch/de/blog/ernaehrung/gewicht-abnehmen/ketogene-diaet.html",
+        "title": "Ketogene Diät: Sinn oder Unsinn?",
+        "publisher": "Helsana"
+      }
+    ]
+  },
+  {
+    "theme": null,
+    "format": "audio",
+    "topic": "Die 10 Regeln der DGE für den Alltag",
+    "title": "10 Regeln für gutes Essen",
+    "images": [
+      {
+        "prompt": "Gedeckter Tisch mit Wasserkaraffe und Gemüse",
+        "atFraction": 0
+      },
+      {
+        "prompt": "Obstschale mit fünf verschiedenen Früchten",
+        "atFraction": 0.35
+      },
+      {
+        "prompt": "Menschen beim gemeinsamen Essen am Tisch",
+        "atFraction": 0.8
+      }
+    ],
+    "script": "Gesunde Ernährung kann sich manchmal anfühlen wie ein Dschungel aus Trends, Verboten und Superfoods. Die Deutsche Gesellschaft für Ernährung hat dagegen etwas sehr Bodenständiges: zehn Regeln, die einen guten Rahmen geben. Hier bekommst du sie kompakt und alltagstauglich.\n\nRegel eins: Am besten Wasser trinken. Rund anderthalb Liter am Tag sind eine gute Orientierung. Wasser und ungesüßter Tee sind ideal. Zuckerhaltige Getränke liefern dagegen viele Kalorien, ohne satt zu machen.\n\nRegel zwei: Obst und Gemüse, und zwar reichlich. Die bekannte Faustregel lautet fünf am Tag, also drei Portionen Gemüse und zwei Portionen Obst. Eine Portion ist ungefähr eine Handvoll.\n\nRegel drei: Vollkorn wählen. Vollkornbrot, Vollkornnudeln, Naturreis oder Haferflocken liefern mehr Ballaststoffe als die hellen Varianten. Sie halten länger satt und sind gut für den Darm.\n\nRegel vier: Mit Hülsenfrüchten und Nüssen die Ernährung bereichern. Linsen, Bohnen oder Kichererbsen sollten regelmäßig auf den Teller, und eine kleine Handvoll Nüsse am Tag ist eine gute Idee.\n\nRegel fünf: Pflanzliche Öle bevorzugen. Rapsöl ist ein echter Allrounder, Olivenöl, Walnussöl und Leinöl sind ebenfalls gute Wahl. Bei Butter, Schmalz und versteckten Fetten in Fertigprodukten lieber zurückhaltend sein.\n\nRegel sechs: Milch und Milchprodukte jeden Tag, Fisch etwa einmal pro Woche. Milchprodukte liefern Kalzium. Fettreicher Fisch wie Lachs oder Hering bringt wertvolle Omega drei Fettsäuren mit.\n\nRegel sieben: Wenn Fleisch, dann nicht mehr als dreihundert Gramm pro Woche. Das umfasst auch Wurst. Für viele ist das deutlich weniger als gewohnt, aber genau hier liegt ein großer Hebel für Gesundheit und Klima.\n\nRegel acht: Zucker und Salz einsparen. Gesüßte Lebensmittel und Getränke sind oft die versteckten Zuckerquellen. Beim Salz hilft es, mit Kräutern und Gewürzen zu würzen und Fertigprodukte seltener zu kaufen.\n\nRegel neun: Schonend zubereiten und achtsam essen. Gemüse lieber dünsten als lange kochen, damit Vitamine erhalten bleiben. Und nimm dir Zeit für deine Mahlzeiten. Wer langsam isst und auf sein Sättigungsgefühl hört, isst oft automatisch passender.\n\nRegel zehn: In Bewegung bleiben. Ernährung und Bewegung gehören zusammen. Jeder Schritt zählt, ob Radfahren zur Arbeit, Treppe statt Aufzug oder ein Spaziergang nach dem Essen.\n\nDas Schöne an diesen Regeln: Sie sind kein Diätplan mit Verboten. Sie sind ein Kompass. Du musst nicht alle zehn auf einmal umsetzen. Such dir eine aus, die dir heute leicht fällt. Vielleicht ein Glas Wasser mehr oder eine Portion Gemüse extra zum Abendessen.\n\nUnd wenn du in einer Woche merkst, dass das klappt, nimm dir die nächste vor. So entsteht Schritt für Schritt eine Ernährung, die zu dir passt und die dir richtig guttut.\n\nÜbrigens: Die Regeln gelten nicht nur für dich allein. Sie funktionieren auch wunderbar in der WG, in der Familie oder mit Freunden. Gemeinsam kochen macht mehr Spaß und hilft, neue Gewohnheiten durchzuhalten.",
+    "sources": [
+      {
+        "url": "https://www.dak.de/dak/gesundheit/essen-und-trinken/ernaehrungstipps/die-10-regeln-einer-gesunden-ernaehrung_17726",
+        "title": "10 Regeln der DGE für eine gesunde Ernährung",
+        "publisher": "DAK-Gesundheit"
+      }
+    ]
+  }
+]

@@ -17,7 +17,11 @@
     "build:shared": "pnpm --filter @wizzn/shared build",
     "dev:admin": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/admin dev",
     "dev:all": "./scripts/dev.sh",
-    "dev:web": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/web dev"
+    "dev:web": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/web dev",
+    "db:seed:samples": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api db:seed:samples",
+    "setup:google": "node --env-file=.env scripts/setup/google.mjs",
+    "setup:apple": "node --env-file=.env scripts/setup/apple.mjs",
+    "setup:apple:secret": "node --env-file=.env scripts/setup/apple-client-secret.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
