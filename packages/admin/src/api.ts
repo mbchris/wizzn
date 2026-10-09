@@ -17,7 +17,7 @@ export async function api<T>(path: string, { method = 'GET', body }: RequestOpti
     method,
     credentials: 'include',
     headers: body === undefined ? {} : { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    body: body === undefined ? null : JSON.stringify(body),
   })
   const data: unknown = await res.json().catch(() => null)
   if (!res.ok) {

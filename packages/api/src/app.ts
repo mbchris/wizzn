@@ -2,7 +2,9 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { logger } from 'hono/logger'
 import { adminRoutes } from './routes/admin.js'
+import { feedRoutes } from './routes/feed.js'
 import { fieldRoutes } from './routes/fields.js'
+import type { FeedRepo } from './feed-repo.js'
 import { healthRoutes } from './routes/health.js'
 import { meRoutes } from './routes/me.js'
 import type { AdminRepo, AuthPort, JobQueue, Repos } from './types.js'
@@ -12,10 +14,11 @@ export interface AppDeps {
   repos: Repos
   corsOrigins: string[]
   admin?: { emails: string[]; repo: AdminRepo; queue: JobQueue }
+  feed?: FeedRepo
   logRequests?: boolean
 }
 
-export function createApp({ auth, repos, corsOrigins, admin, logRequests = false }: AppDeps) {
+export function createApp({ auth, repos, corsOrigins, admin, feed, logRequests = false }: AppDeps) {
   const app = new Hono()
   if (logRequests) app.use('*', logger())
   app.use('/api/*', cors({ origin: corsOrigins, credentials: true }))
@@ -23,6 +26,7 @@ export function createApp({ auth, repos, corsOrigins, admin, logRequests = false
   app.route('/health', healthRoutes(repos))
   app.route('/api/fields', fieldRoutes(repos))
   app.route('/api/me', meRoutes(auth, repos))
+  if (feed) app.route('/api', feedRoutes(auth, feed))
   if (admin) app.route('/api/admin', adminRoutes(auth, admin.emails, admin.repo, admin.queue))
   app.onError((err, c) => {
     console.error(err)

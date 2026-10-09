@@ -1,0 +1,7 @@
+{
+  "appId": "app.wizzn",
+  "appName": "wizzn",
+  "webDir": "www",
+  "ios": { "contentInset": "never" },
+  "android": { "allowMixedContent": false }
+}

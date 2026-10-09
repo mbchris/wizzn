@@ -1,4 +1,4 @@
-import { date, index, integer, pgTable, primaryKey, text, time, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { date, index, integer, pgTable, primaryKey, text, time, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { unitFormat, field, theme, unit } from './content.js'
 import { user } from './auth.js'
 
@@ -31,7 +31,11 @@ export const completionEvent = pgTable(
     completedAt: timestamp('completed_at').notNull().defaultNow(),
     localDate: date('local_date').notNull(),
   },
-  (t) => [index('completion_user_date_idx').on(t.userId, t.localDate)],
+  (t) => [
+    index('completion_user_date_idx').on(t.userId, t.localDate),
+    // A unit counts once per user (XP/streak are derived from this table)
+    uniqueIndex('completion_user_unit_uq').on(t.userId, t.unitId),
+  ],
 )
 
 export const feedImpression = pgTable(

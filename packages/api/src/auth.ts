@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { anonymous } from 'better-auth/plugins'
+import { anonymous, bearer } from 'better-auth/plugins'
 import type { Db } from './db/client.js'
 import type { Env } from './env.js'
 import { account, session, user, verification } from './db/schema/index.js'
@@ -13,6 +13,7 @@ export function createAuth(db: Db, env: Env) {
     trustedOrigins: env.CORS_ORIGINS,
     emailAndPassword: { enabled: true },
     // Spec §2: try first, account later. Apple/Google providers are added in M4.
-    plugins: [anonymous()],
+    // bearer: the Capacitor app sends `Authorization: Bearer <token>` (WebView cookies are unreliable)
+    plugins: [anonymous(), bearer()],
   })
 }

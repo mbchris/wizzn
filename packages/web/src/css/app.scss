@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+
+:root {
+  --wz-bg: #14121c;
+  --wz-ink: #ffffff;
+  --wz-muted: rgba(255, 255, 255, 0.7);
+  --wz-violet: #6c4bf4;
+  --wz-coral: #ff8a65;
+  --wz-safe-top: env(safe-area-inset-top, 0px);
+  --wz-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body, #q-app { height: 100%; background: var(--wz-bg); }
+body { font-family: 'Nunito', system-ui, sans-serif; color: var(--wz-ink); overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+
+/* Field colours: one gradient per launch field */
+.wz-field-nutrition { --wz-a: #2ec4b6; --wz-b: #a8e063; }
+.wz-field-partnership { --wz-a: #ff6b9d; --wz-b: #ffa36c; }
+.wz-field-finance { --wz-a: #4361ee; --wz-b: #4cc9f0; }
+.wz-field-sports { --wz-a: #f77f00; --wz-b: #fcbf49; }
+.wz-field-psychology { --wz-a: #7b2ff7; --wz-b: #c77dff; }
+
+.wz-gradient { background: linear-gradient(160deg, var(--wz-a, #6c4bf4) 0%, var(--wz-b, #ff8a65) 100%); }
+.wz-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.2); font-weight: 800; font-size: 13px; backdrop-filter: blur(6px); }
+.wz-title { font-weight: 900; font-size: 26px; line-height: 1.15; letter-spacing: -0.01em; }
+.wz-glass { background: rgba(20, 18, 28, 0.35); backdrop-filter: blur(10px); border-radius: 24px; }

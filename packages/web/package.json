@@ -1,0 +1,30 @@
+{
+  "name": "@wizzn/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "quasar dev",
+    "dev:ios": "quasar dev -m capacitor -T ios",
+    "dev:android": "quasar dev -m capacitor -T android",
+    "build": "quasar build",
+    "build:ios": "quasar build -m capacitor -T ios",
+    "build:android": "quasar build -m capacitor -T android",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "echo \"web: no unit tests yet\"",
+    "postinstall": "quasar prepare"
+  },
+  "dependencies": {
+    "@quasar/extras": "^1.17.0",
+    "@wizzn/shared": "workspace:*",
+    "quasar": "^2.18.0",
+    "vue": "^3.5.0",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^2.3.0",
+    "sass-embedded": "^1.89.0",
+    "typescript": "^5.8.3",
+    "vue-tsc": "^2.2.0"
+  }
+}

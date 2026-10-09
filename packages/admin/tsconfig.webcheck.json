@@ -1,0 +1,45 @@
+{
+  "extends": "./.quasar/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": "../web",
+    "paths": {
+      "src/*": [
+        "./src/*"
+      ],
+      "components/*": [
+        "./src/components/*"
+      ],
+      "pages/*": [
+        "./src/pages/*"
+      ],
+      "layouts/*": [
+        "./src/layouts/*"
+      ],
+      "#q-app/wrappers": [
+        "../admin/node_modules/@quasar/app-vite/types/app-wrappers.d.ts"
+      ],
+      "vue": [
+        "../admin/node_modules/vue"
+      ],
+      "vue-router": [
+        "../admin/node_modules/vue-router"
+      ],
+      "quasar": [
+        "../admin/node_modules/quasar"
+      ],
+      "@wizzn/shared": [
+        "../shared/src/index.ts"
+      ],
+      "zod": [
+        "../shared/node_modules/zod"
+      ]
+    }
+  },
+  "include": [
+    "../web/src/**/*.ts",
+    "../web/src/**/*.vue",
+    "./.quasar/*.d.ts",
+    "../web/quasar.config.ts"
+  ]
+}

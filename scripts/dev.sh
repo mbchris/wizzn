@@ -33,7 +33,7 @@ fi
 MODEL="${MODEL:-qwen3:8b}"
 
 # 2. Dependencies
-if [[ $FRESH -eq 1 || ! -d node_modules || ! -d packages/admin/node_modules ]]; then
+if [[ $FRESH -eq 1 || ! -d node_modules || ! -d packages/admin/node_modules || ! -d packages/web/node_modules ]]; then
   c_info "Installing dependencies"
   pnpm install
 fi
@@ -85,7 +85,7 @@ run() {
 
 cleanup() {
   echo
-  c_info "Stopping api, worker, admin"
+  c_info "Stopping api, worker, admin, web"
   # bash 3.2 (macOS) safe with set -u
   for pid in ${PIDS[@]+"${PIDS[@]}"}; do pkill -P "$pid" 2>/dev/null || true; kill "$pid" 2>/dev/null || true; done
   [[ -n "$OLLAMA_PID" ]] && kill "$OLLAMA_PID" 2>/dev/null || true
@@ -96,6 +96,7 @@ trap cleanup EXIT INT TERM
 run api    "1;34" pnpm --filter @wizzn/api dev
 run worker "1;32" pnpm --filter @wizzn/api dev:worker
 run admin  "1;36" pnpm --filter @wizzn/admin dev
+run web    "1;33" pnpm --filter @wizzn/web dev
 
 printf 'Waiting for API'
 for _ in $(seq 1 60); do
@@ -106,6 +107,7 @@ done
 cat <<INFO
 
   API     http://localhost:3000   (health: /health/ready)
+  App     http://localhost:9000   (mobile app in the browser; use device mode in DevTools)
   Admin   http://localhost:9100   (first time: "Konto anlegen" with an ADMIN_EMAILS address)
   Media   http://localhost:8081
   Model   $MODEL

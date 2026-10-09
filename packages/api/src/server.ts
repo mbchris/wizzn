@@ -1,6 +1,7 @@
 import { serve } from '@hono/node-server'
 import { createAdminRepo } from './admin-repo.js'
 import { createApp } from './app.js'
+import { createFeedRepo } from './feed-repo.js'
 import { createAuth } from './auth.js'
 import { createDb } from './db/client.js'
 import { loadEnv } from './env.js'
@@ -26,6 +27,7 @@ const authPort: AuthPort = {
 }
 
 const app = createApp({ auth: authPort, repos: createRepos(db), corsOrigins: env.CORS_ORIGINS,
+  feed: createFeedRepo(db, media.publicUrl),
   admin: {
     emails: env.ADMIN_EMAILS,
     repo: createAdminRepo(db, media.publicUrl),
