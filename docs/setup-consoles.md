@@ -4,10 +4,12 @@ Scripts in `scripts/setup/` create the store/console resources for `app.fourki.w
 
 | Command | Creates |
 |---|---|
-| `pnpm setup:google` | GCP project, billing link, APIs, Firebase, Android + iOS Firebase apps, SHA fingerprints, `fcm-sender` service account → `setup-out/google-services.json`, `GoogleService-Info.plist`, `google.env` |
+| `pnpm setup:google` | GCP project, billing link, APIs, Firebase, Android Firebase app, SHA fingerprints, `fcm-sender` service account → `setup-out/google-services.json`, `google.env` |
 | `pnpm setup:google -- --create-key` | same + service-account key `setup-out/fcm-sender.json` (run once) |
 | `pnpm setup:apple` | Bundle ID + capabilities (Push, Sign in with Apple, IAP); checks App Store Connect app record |
 | `pnpm setup:apple:secret` | Sign in with Apple client secret JWT → `setup-out/apple.env` (valid 6 months) |
+
+**Push:** Android → FCM (Firebase), iOS → APNs directly with the APNs `.p8` key. Firebase is used for nothing else.
 
 Outputs land in `setup-out/` (gitignored). Put `.p8` keys in `secrets/` (gitignored).
 
@@ -30,22 +32,21 @@ Android SHA-1 (debug): `keytool -list -v -keystore ~/.android/debug.keystore -al
 ```bash
 pnpm setup:apple                    # bundle id + capabilities
 #   manual: create app record in App Store Connect, APNs key, SIWA key (links printed)
-#   set APP_STORE_ID, APNS_KEY_ID, APPLE_SIWA_KEY_ID in .env
+#   set APP_STORE_ID, APNS_KEY_ID(+_PATH), APPLE_SIWA_KEY_ID in .env
 pnpm setup:apple                    # re-run → confirms app record
 
 pnpm setup:google -- --create-key   # Firebase + FCM
-#   manual: OAuth consent screen, Web + iOS OAuth clients, upload APNs .p8 to Firebase
-pnpm setup:google                   # re-run → configs now contain OAuth client ids
+#   manual: OAuth consent screen, Web + iOS OAuth clients
+pnpm setup:google                   # re-run → google-services.json now contains the web client id
 
 pnpm setup:apple:secret             # Better Auth Apple secret
 ```
 
 ## 3. Use the outputs
 - `setup-out/google.env` + `setup-out/apple.env` → merge into `packages/api/.env` (prod: Coolify env). Fill `GOOGLE_CLIENT_SECRET` from Credentials → Web client.
-- `setup-out/fcm-sender.json` → API/worker push credentials (prod: mount as secret, never commit).
-- After `npx cap add android|ios` in `packages/web`:
-  - `google-services.json` → `src-capacitor/android/app/`
-  - `GoogleService-Info.plist` → `src-capacitor/ios/App/App/` (add to Xcode target)
+- `setup-out/fcm-sender.json` → Android push credentials for API/worker (prod: mount as secret, never commit).
+- `secrets/AuthKey_APNS.p8` + `APNS_KEY_ID` + `APPLE_TEAM_ID` + `APP_ID` (topic) → iOS push credentials for API/worker.
+- After `npx cap add android` in `packages/web`: `google-services.json` → `src-capacitor/android/app/`. iOS needs no Firebase file.
 
 ## Manual-only steps (no public API)
 | Where | Step |
@@ -54,7 +55,6 @@ pnpm setup:apple:secret             # Better Auth Apple secret
 | Apple Developer → Keys | APNs key; Sign in with Apple key |
 | Apple Developer → Identifiers | Services ID (only for Apple sign-in on Android/web) |
 | Google Cloud → Auth | OAuth consent screen (Branding); Web + iOS OAuth clients |
-| Firebase → Cloud Messaging | Upload APNs key |
 
 ## Maintenance
 - `APPLE_CLIENT_SECRET` expires after 6 months → `pnpm setup:apple:secret`, redeploy.

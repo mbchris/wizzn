@@ -101,17 +101,25 @@ async function main(): Promise<void> {
   const files = (await readdir(samplesDir)).filter((f) => f.endsWith('.json')).sort()
   let created = 0
   let skipped = 0
+  const failed: string[] = []
   for (const file of files) {
     const fieldSlug = file.replace(/\.json$/, '')
     const samples = z.array(sampleSchema).parse(JSON.parse(await readFile(new URL(file, samplesDir), 'utf8')))
     for (const s of samples) {
-      const r = await insertSample(fieldSlug, s)
-      if (r === 'created') created++
-      else skipped++
-      console.log(`${r === 'created' ? '+' : '='} [${fieldSlug}/${s.format}] ${s.title}`)
+      // One unit failing (e.g. TTS) must not stop the others; it rolls back and is retried on the next run
+      try {
+        const r = await insertSample(fieldSlug, s)
+        if (r === 'created') created++
+        else skipped++
+        console.log(`${r === 'created' ? '+' : '='} [${fieldSlug}/${s.format}] ${s.title}`)
+      } catch (err) {
+        failed.push(`[${fieldSlug}/${s.format}] ${s.title}: ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`)
+        console.error(`✗ [${fieldSlug}/${s.format}] ${s.title}`, err)
+      }
     }
   }
-  console.log(`Sample units: ${created} created, ${skipped} already present`)
+  console.log(`Sample units: ${created} created, ${skipped} already present, ${failed.length} failed`)
+  for (const f of failed) console.log(`  ✗ ${f}`)
   await pool.end()
 }
 

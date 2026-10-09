@@ -1,0 +1,1 @@
+ALTER TABLE "streak" ADD COLUMN "freezes_month" text;

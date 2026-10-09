@@ -30,6 +30,7 @@ export function createRepos(db: Db): Repos {
       return {
         id: user.id,
         name: user.name,
+        email: user.isAnonymous ? null : user.email,
         isAnonymous: user.isAnonymous,
         timezone: profile?.timezone ?? 'Europe/Berlin',
         formats: profile?.formats ?? ['audio', 'written'],

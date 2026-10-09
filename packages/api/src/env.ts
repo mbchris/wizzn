@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { DEFAULT_FREE_DAILY_CAP } from '@wizzn/shared'
 
 const csv = z.string().transform((s) => s.split(',').map((v) => v.trim()).filter(Boolean))
 
@@ -15,6 +16,7 @@ export const envSchema = z.object({
   SEARCH_URL: z.string().url(),
   TTS_URL: z.string().url(),
   TTS_VOICE: z.string().min(1),
+  TTS_LENGTH_SCALE: z.coerce.number().min(0.5).max(2).default(1.2),
   TTS_PROVIDER: z.enum(['silent', 'piper']).default('silent'),
   IMAGE_PROVIDER: z.enum(['placeholder', 'api']).default('placeholder'),
   IMAGE_BASE_URL: z.string().url().optional(),
@@ -24,6 +26,20 @@ export const envSchema = z.object({
   MEDIA_DRIVER: z.enum(['local', 's3']).default('local'),
   MEDIA_DIR: z.string().default('./media-data'),
   MEDIA_PUBLIC_URL: z.string().url(),
+  // M4 — monetisation & sign-in (all optional in dev)
+  FREE_DAILY_CAP: z.coerce.number().int().min(1).default(DEFAULT_FREE_DAILY_CAP),
+  /** Exact Authorization header value configured for the RevenueCat webhook */
+  REVENUECAT_WEBHOOK_AUTH: z.string().default(''),
+  /** RevenueCat secret API key (v1) used to refresh entitlements right after a purchase */
+  REVENUECAT_SECRET_KEY: z.string().default(''),
+  /** Bundle id of the iOS app; enables Sign in with Apple (native id tokens) when set */
+  APPLE_APP_BUNDLE_ID: z.string().default(''),
+  /** Services ID + client secret JWT, only needed for the web redirect flow */
+  APPLE_CLIENT_ID: z.string().default(''),
+  APPLE_CLIENT_SECRET: z.string().default(''),
+  /** Comma-separated OAuth client ids: web first, then iOS and Android (all accepted as id token audience) */
+  GOOGLE_CLIENT_IDS: csv.default(''),
+  GOOGLE_CLIENT_SECRET: z.string().default(''),
 })
 export type Env = z.infer<typeof envSchema>
 

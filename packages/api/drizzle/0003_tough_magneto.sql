@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "completion_user_unit_uq" ON "completion_event" USING btree ("user_id","unit_id");

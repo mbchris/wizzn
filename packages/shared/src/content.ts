@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+/** Spec §1: audio units run 3–5 minutes */
+export const AUDIO_MIN_SEC = 180
+export const AUDIO_MAX_SEC = 300
+
 export const unitFormatSchema = z.enum(['audio', 'written'])
 export type UnitFormat = z.infer<typeof unitFormatSchema>
 
@@ -31,7 +35,7 @@ export const audioUnitSchema = z
   .object({
     format: z.literal('audio'),
     script: z.string().min(1),
-    durationSec: z.number().int().min(180).max(300),
+    durationSec: z.number().int().min(AUDIO_MIN_SEC).max(AUDIO_MAX_SEC),
     audioId: z.string().min(1),
     images: z
       .array(z.object({ imageId: z.string().min(1), showAtSec: z.number().int().min(0) }))

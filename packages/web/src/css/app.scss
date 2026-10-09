@@ -1,26 +1,138 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap');
+// wizzn "Dopamine Rebound" design tokens (LAYOUT.md)
+// Dark-mode only: deep backgrounds + one neon gradient per category.
 
 :root {
-  --wz-bg: #14121c;
+  --wz-bg: #0b0c10;
+  --wz-surface: #12161a;
+  --wz-surface-2: #1a1e25;
   --wz-ink: #ffffff;
-  --wz-muted: rgba(255, 255, 255, 0.7);
-  --wz-violet: #6c4bf4;
+  --wz-muted: rgba(255, 255, 255, 0.64);
+  --wz-faint: rgba(255, 255, 255, 0.1);
+  --wz-line: rgba(255, 255, 255, 0.14);
+  --wz-mint: #00e599;
+  --wz-cyan: #60efff;
+  --wz-pink: #e94057;
+  --wz-violet: #8a2387;
   --wz-coral: #ff8a65;
+  /* App-wide brand gradient (onboarding CTA, wordmark) */
+  --wz-brand: linear-gradient(90deg, #00ff87 0%, #60efff 50%, #c86dd7 100%);
   --wz-safe-top: env(safe-area-inset-top, 0px);
   --wz-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --wz-topbar-h: 52px;
+  /* Android/Web: M3 NavigationBar 80dp */
+  --wz-nav-h: 80px;
+  --wz-hit: 48px;
+  --wz-font: Roboto, 'Google Sans', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --wz-font-display: var(--wz-font);
+
+  /* Neutral accent until a category class sets its own */
+  --wz-a: #00e599;
+  --wz-b: #60efff;
+  --wz-c: #60efff;
+  --wz-glow: #00e599;
+  --wz-on-accent: #04110b;
+  --wz-field-bg: var(--wz-bg);
+}
+
+/* iOS (HIG): SF Pro, 49pt tab bar, 44pt hit targets. Quasar sets .platform-ios on <body>. */
+body.platform-ios {
+  --wz-nav-h: 49px;
+  --wz-hit: 44px;
+  --wz-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --wz-font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
 }
 
 html, body, #q-app { height: 100%; background: var(--wz-bg); }
-body { font-family: 'Nunito', system-ui, sans-serif; color: var(--wz-ink); overscroll-behavior: none; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: var(--wz-font);
+  color: var(--wz-ink);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
 
-/* Field colours: one gradient per launch field */
-.wz-field-nutrition { --wz-a: #2ec4b6; --wz-b: #a8e063; }
-.wz-field-partnership { --wz-a: #ff6b9d; --wz-b: #ffa36c; }
-.wz-field-finance { --wz-a: #4361ee; --wz-b: #4cc9f0; }
-.wz-field-sports { --wz-a: #f77f00; --wz-b: #fcbf49; }
-.wz-field-psychology { --wz-a: #7b2ff7; --wz-b: #c77dff; }
+/* Category palettes — "Color schema" table in LAYOUT.md */
+.wz-field-psychology { --wz-a: #8a2387; --wz-b: #e94057; --wz-c: #f27121; --wz-glow: #e94057; --wz-on-accent: #ffffff; --wz-field-bg: #0b0c10; }
+.wz-field-finance { --wz-a: #00ff87; --wz-b: #60efff; --wz-c: #60efff; --wz-glow: #00ff87; --wz-on-accent: #04140c; --wz-field-bg: #0e1318; }
+.wz-field-partnership { --wz-a: #ff0844; --wz-b: #ffb199; --wz-c: #ffb199; --wz-glow: #ff0844; --wz-on-accent: #ffffff; --wz-field-bg: #140d14; }
+.wz-field-nutrition { --wz-a: #a8ff78; --wz-b: #78ffd6; --wz-c: #78ffd6; --wz-glow: #a8ff78; --wz-on-accent: #08150c; --wz-field-bg: #0d1510; }
+.wz-field-sports { --wz-a: #ff416c; --wz-b: #ff4b2b; --wz-c: #ff4b2b; --wz-glow: #ff416c; --wz-on-accent: #ffffff; --wz-field-bg: #0d0f14; }
 
-.wz-gradient { background: linear-gradient(160deg, var(--wz-a, #6c4bf4) 0%, var(--wz-b, #ff8a65) 100%); }
-.wz-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: rgba(255, 255, 255, 0.2); font-weight: 800; font-size: 13px; backdrop-filter: blur(6px); }
-.wz-title { font-weight: 900; font-size: 26px; line-height: 1.15; letter-spacing: -0.01em; }
-.wz-glass { background: rgba(20, 18, 28, 0.35); backdrop-filter: blur(10px); border-radius: 24px; }
+.wz-accent-gradient { background: linear-gradient(90deg, var(--wz-a), var(--wz-b), var(--wz-c)); }
+.wz-gradient { background: linear-gradient(160deg, var(--wz-a) 0%, var(--wz-c) 100%); }
+.wz-accent-text { background: linear-gradient(90deg, var(--wz-a), var(--wz-c)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+.wz-title {
+  font-family: var(--wz-font-display);
+  font-weight: 800;
+  font-size: clamp(22px, 6.6vw, 28px);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+
+/* Frosted glass pill (buttons, chips, citations) */
+.wz-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--wz-line);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--wz-ink);
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+.wz-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.wz-glass {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--wz-faint);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 24px;
+}
+
+/* Glowing gradient call to action */
+.wz-cta {
+  background: var(--wz-brand);
+  color: #0b0c10;
+  font-weight: 800;
+  box-shadow: 0 0 24px rgba(96, 239, 255, 0.3);
+}
+
+.wz-hit { min-width: var(--wz-hit); min-height: var(--wz-hit); }
+
+.wz-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--wz-hit);
+  height: var(--wz-hit);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--wz-ink);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

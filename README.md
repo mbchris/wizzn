@@ -26,6 +26,17 @@ pnpm dev:admin      # admin http://localhost:9100 → "Konto anlegen" with an AD
 ```
 Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length), `IMAGE_PROVIDER=placeholder` (SVG).
 
+## Streaks, premium & sign-in (M4)
+Rules live in `packages/shared/src/gamification.ts` (XP, levels, streak freezes, weekly goal, badges, daily cap).
+```bash
+# packages/api/.env — see .env.api.template (FREE_DAILY_CAP, REVENUECAT_*, APPLE_*, GOOGLE_*)
+(cd packages/web/src-capacitor && pnpm install --ignore-workspace)   # native plugins: RevenueCat, social login (synced by quasar dev)
+cd packages/web && REVENUECAT_IOS_KEY=appl_... GOOGLE_WEB_CLIENT_ID=... GOOGLE_IOS_CLIENT_ID=... API_URL=http://<Mac-LAN-IP>:3000 pnpm dev:ios
+```
+- Purchases and Apple/Google sign-in only work in the native app; the browser shows the paywall and profile without them.
+- RevenueCat: entitlement id `premium`, app user id = wizzn user id, webhook → `https://<api>/api/webhooks/revenuecat`.
+- Test the cap quickly with `FREE_DAILY_CAP=1`.
+
 ## Deploy
 Coolify → Docker Compose resource → `docker-compose.yml`. Container start runs migrations + seed.
 

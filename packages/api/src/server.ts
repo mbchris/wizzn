@@ -8,12 +8,20 @@ import { loadEnv } from './env.js'
 import { sendUnitJob, startBoss } from './jobs/boss.js'
 import { QUEUES } from './jobs/queues.js'
 import { createLocalMediaStore } from './providers/media-store.js'
+import { createProgressRepo } from './progress-repo.js'
 import { createRepos } from './repos.js'
+import { createRevenueCatClient } from './revenuecat.js'
 import type { AuthPort } from './types.js'
 
 const env = loadEnv()
 const { db, pool } = createDb(env.DATABASE_URL)
-const auth = createAuth(db, env)
+const progress = createProgressRepo(db)
+const auth = createAuth(db, env, {
+  async onAnonymousLinked(from, to) {
+    const outcome = await progress.transferUserData(from, to)
+    console.log(`anonymous ${from} linked to ${to}: ${outcome}`)
+  },
+})
 const boss = await startBoss(env.DATABASE_URL)
 const media = createLocalMediaStore(env.MEDIA_DIR, env.MEDIA_PUBLIC_URL)
 
@@ -28,6 +36,12 @@ const authPort: AuthPort = {
 
 const app = createApp({ auth: authPort, repos: createRepos(db), corsOrigins: env.CORS_ORIGINS,
   feed: createFeedRepo(db, media.publicUrl),
+  progress: {
+    repo: progress,
+    freeDailyCap: env.FREE_DAILY_CAP,
+    webhookAuth: env.REVENUECAT_WEBHOOK_AUTH,
+    ...(env.REVENUECAT_SECRET_KEY ? { revenueCat: createRevenueCatClient(env.REVENUECAT_SECRET_KEY) } : {}),
+  },
   admin: {
     emails: env.ADMIN_EMAILS,
     repo: createAdminRepo(db, media.publicUrl),

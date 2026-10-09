@@ -54,6 +54,8 @@ export const streak = pgTable('streak', {
   longest: integer('longest').notNull().default(0),
   lastLocalDate: date('last_local_date'),
   freezesLeft: integer('freezes_left').notNull().default(0),
+  // YYYY-MM of the last premium freeze refill (spec §7: 2/month)
+  freezesMonth: text('freezes_month'),
 })
 
 export const xpLedger = pgTable(

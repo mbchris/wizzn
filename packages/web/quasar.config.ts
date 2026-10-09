@@ -8,7 +8,14 @@ export default defineConfig(() => ({
     target: { browser: ['es2022', 'safari15', 'chrome115'] },
     vueRouterMode: 'hash',
     typescript: { strict: true, vueShim: true },
-    env: { API_URL: process.env.API_URL ?? 'http://localhost:3000' },
+    env: {
+      API_URL: process.env.API_URL ?? 'http://localhost:3000',
+      // M4: public SDK keys / OAuth client ids (not secrets)
+      REVENUECAT_IOS_KEY: process.env.REVENUECAT_IOS_KEY ?? '',
+      REVENUECAT_ANDROID_KEY: process.env.REVENUECAT_ANDROID_KEY ?? '',
+      GOOGLE_WEB_CLIENT_ID: process.env.GOOGLE_WEB_CLIENT_ID ?? '',
+      GOOGLE_IOS_CLIENT_ID: process.env.GOOGLE_IOS_CLIENT_ID ?? '',
+    },
   },
   devServer: { port: 9000, open: false },
   framework: {

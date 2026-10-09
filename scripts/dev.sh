@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Starts the full local stack: Docker infra, DB migrations + seed, Ollama, API, worker, admin.
-# Usage: ./scripts/dev.sh            (Ctrl+C stops api/worker/admin; Docker keeps running)
+# Starts the full local stack: Docker infra, Piper TTS (if TTS_PROVIDER=piper), DB migrations + seed, Ollama, API, worker, admin.
+# Usage: ./scripts/dev.sh            (Ctrl+C stops api/worker/admin/piper; Docker keeps running)
 #        ./scripts/dev.sh --fresh    (also re-runs pnpm install + db:generate)
 set -euo pipefail
 
@@ -29,7 +29,7 @@ fi
 if ! grep -qE '^ADMIN_EMAILS=.+' "$ENV_FILE"; then
   c_warn "ADMIN_EMAILS is empty in $ENV_FILE — the admin app will answer 'Forbidden'."
 fi
-[[ -z "$MODEL" ]] && MODEL="$(grep -E '^LLM_MODEL=' "$ENV_FILE" | cut -d= -f2- || true)"
+[[ -z "$MODEL" ]] && MODEL="$(grep -E '^LLM_MODEL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
 MODEL="${MODEL:-qwen3:8b}"
 
 # 2. Dependencies
@@ -46,6 +46,49 @@ for _ in $(seq 1 30); do
   if docker compose -f docker-compose.dev.yml exec -T postgres pg_isready -U wizzn >/dev/null 2>&1; then echo ' ok'; break; fi
   printf '.'; sleep 1
 done
+
+# 3b. Piper TTS (only when TTS_PROVIDER=piper) — must run before seeding, sample audio is rendered there
+PIPER_PID=""
+TTS_PROVIDER="$(grep -E '^TTS_PROVIDER=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+if [[ "$TTS_PROVIDER" == "piper" ]]; then
+  need python3 "Install Python 3 (brew install python)."
+  TTS_URL="$(grep -E '^TTS_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"; TTS_URL="${TTS_URL:-http://localhost:5100/synthesize}"
+  VOICE="$(grep -E '^TTS_VOICE=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"; VOICE="${VOICE:-de_DE-thorsten-high}"
+  PIPER_PORT="${TTS_URL##*:}"; PIPER_PORT="${PIPER_PORT%%/*}"
+  PIPER_DIR="$ROOT/.piper"; VOICES="$PIPER_DIR/voices"
+  if [[ ! -x "$PIPER_DIR/venv/bin/python" ]]; then
+    c_info "Installing Piper TTS into .piper/venv (first time only)"
+    python3 -m venv "$PIPER_DIR/venv"
+    "$PIPER_DIR/venv/bin/pip" install -q --upgrade pip "piper-tts[http]"
+  fi
+  if [[ ! -f "$VOICES/$VOICE.onnx" ]]; then
+    # de_DE-thorsten-high → de/de_DE/thorsten/high (curl uses the macOS keychain; Python's urllib often lacks root certs)
+    LOCALE="${VOICE%%-*}"; REST="${VOICE#*-}"; NAME="${REST%-*}"; QUALITY="${REST##*-}"
+    BASE="https://huggingface.co/rhasspy/piper-voices/resolve/main/${LOCALE%%_*}/$LOCALE/$NAME/$QUALITY"
+    c_info "Downloading Piper voice $VOICE"
+    mkdir -p "$VOICES"
+    curl -fsSL -o "$VOICES/$VOICE.onnx" "$BASE/$VOICE.onnx"
+    curl -fsSL -o "$VOICES/$VOICE.onnx.json" "$BASE/$VOICE.onnx.json"
+  fi
+  if [[ "$PIPER_PORT" == "5000" ]]; then
+    c_warn "Port 5000 is macOS AirPlay Receiver (answers 403). Set TTS_URL=http://localhost:5100 in $ENV_FILE."
+  fi
+  # Probe with a real synthesis request: anything else on the port (e.g. AirPlay) must not count as Piper
+  piper_ok() { curl -sf -o /dev/null -X POST -H 'content-type: application/json' -d '{"text":"Test"}' "$TTS_URL"; }
+  if piper_ok; then
+    c_info "Piper already running on :$PIPER_PORT"
+  elif curl -s -o /dev/null "http://localhost:$PIPER_PORT"; then
+    c_err "Port $PIPER_PORT is used by another program (not Piper). Change TTS_URL in $ENV_FILE."; exit 1
+  else
+    c_info "Starting Piper on :$PIPER_PORT (log: /tmp/wizzn-piper.log)"
+    "$PIPER_DIR/venv/bin/python" -m piper.http_server -m "$VOICES/$VOICE.onnx" --data-dir "$VOICES" --port "$PIPER_PORT" >/tmp/wizzn-piper.log 2>&1 &
+    PIPER_PID=$!
+    for _ in $(seq 1 60); do piper_ok && break; sleep 1; done
+    piper_ok || { c_err "Piper did not start — see /tmp/wizzn-piper.log"; exit 1; }
+  fi
+else
+  c_warn "TTS_PROVIDER=${TTS_PROVIDER:-silent} — audio units are silent. Set TTS_PROVIDER=piper in $ENV_FILE for real speech."
+fi
 
 # 4. Database
 c_info "Building shared package"
@@ -91,6 +134,7 @@ cleanup() {
   # bash 3.2 (macOS) safe with set -u
   for pid in ${PIDS[@]+"${PIDS[@]}"}; do pkill -P "$pid" 2>/dev/null || true; kill "$pid" 2>/dev/null || true; done
   [[ -n "$OLLAMA_PID" ]] && kill "$OLLAMA_PID" 2>/dev/null || true
+  [[ -n "$PIPER_PID" ]] && kill "$PIPER_PID" 2>/dev/null || true
   c_info "Docker infra still running (stop with: docker compose -f docker-compose.dev.yml down)"
 }
 trap cleanup EXIT INT TERM
@@ -113,6 +157,7 @@ cat <<INFO
   Admin   http://localhost:9100   (first time: "Konto anlegen" with an ADMIN_EMAILS address)
   Media   http://localhost:8081
   Model   $MODEL
+  TTS     ${TTS_PROVIDER:-silent}${PIPER_PORT:+ (Piper :$PIPER_PORT)}
 
   Ctrl+C to stop.
 INFO

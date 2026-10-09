@@ -50,7 +50,7 @@ else {
 
 // Steps Apple offers no API for
 const keys = 'https://developer.apple.com/account/resources/authkeys/list'
-if (!process.env.APNS_KEY_ID) manual(`Create a Key with "Apple Push Notifications service (APNs)" → download .p8 (once!) → upload to Firebase Cloud Messaging (see Google steps), set APNS_KEY_ID: ${keys}`)
+if (!process.env.APNS_KEY_ID) manual(`Create a Key with "Apple Push Notifications service (APNs)" → download .p8 (once!) → save as APNS_KEY_PATH, set APNS_KEY_ID (API/worker sends iOS push directly to APNs): ${keys}`)
 if (!process.env.APPLE_SIWA_KEY_ID) manual(`Create a Key with "Sign in with Apple" (primary App ID ${APP_ID}) → save .p8 as APPLE_SIWA_KEY_PATH, set APPLE_SIWA_KEY_ID: ${keys}`)
 if (!process.env.APPLE_SERVICES_ID) manual(`Optional (Apple sign-in on Android/web): create a Services ID (e.g. ${APP_ID}.signin), enable Sign in with Apple, domain = API host, return URL <BETTER_AUTH_URL>/api/auth/callback/apple: https://developer.apple.com/account/resources/identifiers/list/serviceId`)
 manual('Then run `pnpm setup:apple:secret` to generate APPLE_CLIENT_SECRET for Better Auth')

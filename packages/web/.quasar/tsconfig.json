@@ -78,17 +78,44 @@
       "@capacitor/android": [
         "./../src-capacitor/node_modules/@capacitor/android"
       ],
+      "@capacitor/android/*": [
+        "./../src-capacitor/node_modules/@capacitor/android/*"
+      ],
       "@capacitor/app": [
         "./../src-capacitor/node_modules/@capacitor/app"
+      ],
+      "@capacitor/app/*": [
+        "./../src-capacitor/node_modules/@capacitor/app/*"
       ],
       "@capacitor/cli": [
         "./../src-capacitor/node_modules/@capacitor/cli"
       ],
+      "@capacitor/cli/*": [
+        "./../src-capacitor/node_modules/@capacitor/cli/*"
+      ],
       "@capacitor/core": [
         "./../src-capacitor/node_modules/@capacitor/core"
       ],
+      "@capacitor/core/*": [
+        "./../src-capacitor/node_modules/@capacitor/core/*"
+      ],
       "@capacitor/ios": [
         "./../src-capacitor/node_modules/@capacitor/ios"
+      ],
+      "@capacitor/ios/*": [
+        "./../src-capacitor/node_modules/@capacitor/ios/*"
+      ],
+      "@capgo/capacitor-social-login": [
+        "./../src-capacitor/node_modules/@capgo/capacitor-social-login"
+      ],
+      "@capgo/capacitor-social-login/*": [
+        "./../src-capacitor/node_modules/@capgo/capacitor-social-login/*"
+      ],
+      "@revenuecat/purchases-capacitor": [
+        "./../src-capacitor/node_modules/@revenuecat/purchases-capacitor"
+      ],
+      "@revenuecat/purchases-capacitor/*": [
+        "./../src-capacitor/node_modules/@revenuecat/purchases-capacitor/*"
       ]
     }
   },

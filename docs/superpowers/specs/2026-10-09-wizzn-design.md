@@ -60,7 +60,7 @@ netcup VPS (Coolify, Traefik TLS)
 ├─ postgres  Coolify-managed, daily backups
 ├─ searxng   self-hosted metasearch for research
 └─ piper     German TTS HTTP service
-External: LLM API (OpenAI-compatible), image API, RevenueCat, FCM/APNs
+External: LLM API (OpenAI-compatible), image API, RevenueCat, FCM (Android), APNs (iOS)
 ```
 
 ### Monorepo
@@ -158,7 +158,7 @@ Source      = { url: string; title: string; publisher: string }
 
 - **Better Auth:** anonymous session on first launch, later linked to Sign in with Apple / Google / email. Apple sign-in is mandatory on iOS once Google sign-in is offered.
 - **Subscriptions:** RevenueCat SDK in the app; RevenueCat webhook → `entitlement`. The API decides access.
-- **Push:** Capacitor push plugin + FCM (APNs via FCM). Worker cron: streak-at-risk reminder at the user's `reminder_time`.
+- **Push:** Capacitor push plugin; Android via FCM, iOS directly via APNs (token-based `.p8` key). Firebase is used only for Android FCM. Worker cron: streak-at-risk reminder at the user's `reminder_time`.
 - **Audio:** native audio plugin for lock-screen and background playback; offline downloads for premium users.
 
 ## 10. Operations & Compliance

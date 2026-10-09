@@ -20,6 +20,8 @@ export interface FieldDto {
 export interface MeDto {
   id: string
   name: string
+  /** null for anonymous users */
+  email: string | null
   isAnonymous: boolean
   timezone: string
   formats: z.infer<typeof unitFormatSchema>[]

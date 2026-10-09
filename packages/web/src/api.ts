@@ -1,4 +1,4 @@
-import type { CompletionInput, CompletionResult, FeedResponse, FieldDto, InterestsInput, MeDto } from '@wizzn/shared'
+import type { CompletionInput, CompletionResult, FeedResponse, FieldDto, InterestsInput, MeDto, PremiumDto, ProgressDto } from '@wizzn/shared'
 
 const TOKEN_KEY = 'wizzn.token'
 
@@ -60,10 +60,33 @@ export async function ensureSession(): Promise<MeDto> {
   return request<MeDto>('/api/me')
 }
 
+export type SocialProvider = 'apple' | 'google'
+
+/**
+ * Native id token → Better Auth session. The current (anonymous) bearer token is sent along, so the
+ * server links the accounts and moves the progress (anonymous plugin onLinkAccount).
+ */
+export async function signInWithIdToken(provider: SocialProvider, idToken: string): Promise<MeDto> {
+  const res = await request<{ token: string }>('/api/auth/sign-in/social', 'POST', { provider, idToken: { token: idToken } })
+  memoryToken = res.token
+  writeToken(res.token)
+  return request<MeDto>('/api/me')
+}
+
+/** Ends the account session; the app continues with a fresh anonymous session */
+export async function signOut(): Promise<MeDto> {
+  await request<unknown>('/api/auth/sign-out', 'POST', {}).catch(() => undefined)
+  memoryToken = null
+  writeToken(null)
+  return ensureSession()
+}
+
 export const api = {
   fields: () => request<FieldDto[]>('/api/fields'),
   me: () => request<MeDto>('/api/me'),
   saveInterests: (input: InterestsInput) => request<MeDto>('/api/me/interests', 'PUT', input),
   feed: (limit = 10) => request<FeedResponse>(`/api/feed?limit=${limit}`),
   complete: (unitId: string, input: CompletionInput) => request<CompletionResult>(`/api/units/${unitId}/complete`, 'POST', input),
+  progress: () => request<ProgressDto>('/api/me/progress'),
+  refreshSubscription: () => request<PremiumDto>('/api/me/subscription/refresh', 'POST', {}),
 }

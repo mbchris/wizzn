@@ -17,8 +17,6 @@ export interface FeedRepo {
   loadUnits(ids: string[]): Promise<Map<string, Omit<FeedUnitDto, 'discovery'>>>
   recordImpressions(userId: string, unitIds: string[]): Promise<void>
   getPublishedContent(unitId: string): Promise<UnitContent | null>
-  /** Returns false when the completion already existed */
-  insertCompletion(userId: string, unitId: string, localDate: string): Promise<boolean>
 }
 
 export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): FeedRepo {
@@ -94,11 +92,6 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
       const row = await db.query.unit.findFirst({ where: and(eq(unit.id, unitId), eq(unit.status, 'published')), columns: { contentJson: true } })
       const parsed = unitContentSchema.safeParse(row?.contentJson)
       return parsed.success ? parsed.data : null
-    },
-
-    async insertCompletion(userId, unitId, localDate) {
-      const rows = await db.insert(completionEvent).values({ userId, unitId, localDate }).onConflictDoNothing().returning({ id: completionEvent.id })
-      return rows.length === 1
     },
   }
 }

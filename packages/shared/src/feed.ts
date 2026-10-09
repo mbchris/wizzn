@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { UnitContent, UnitFormat } from './content.js'
+import type { CompletionRewardsDto, DailyCapDto } from './gamification.js'
 
 export const FEED_PAGE_SIZE = 10
 /** Spec §6: units served in the last 14 days are not shown again */
@@ -24,6 +25,8 @@ export interface FeedUnitDto {
 
 export interface FeedResponse {
   units: FeedUnitDto[]
+  /** When reached (free tier), `units` is empty and the app shows the paywall */
+  cap: DailyCapDto
 }
 
 export const completionInputSchema = z.discriminatedUnion('format', [
@@ -36,7 +39,9 @@ export interface CompletionResult {
   completed: boolean
   /** false when the unit was already completed earlier */
   firstTime: boolean
-  reason?: 'not_enough_progress' | 'format_mismatch'
+  reason?: 'not_enough_progress' | 'format_mismatch' | 'daily_cap'
+  /** Only on the first completion of a unit */
+  rewards?: CompletionRewardsDto
 }
 
 export function isCompletion(content: UnitContent, input: CompletionInput): CompletionResult['reason'] | null {

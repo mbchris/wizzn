@@ -11,7 +11,7 @@ export function createProviders(env: Env) {
     llm: createLlmClient({ baseUrl: env.LLM_BASE_URL, model: env.LLM_MODEL, apiKey: env.LLM_API_KEY }),
     search: createSearxngClient(env.SEARCH_URL),
     fetchPage: createPageFetcher(),
-    tts: env.TTS_PROVIDER === 'piper' ? createPiperTts(env.TTS_URL, env.TTS_VOICE) : createSilentTts(),
+    tts: env.TTS_PROVIDER === 'piper' ? createPiperTts(env.TTS_URL, env.TTS_VOICE, fetch, env.TTS_LENGTH_SCALE) : createSilentTts(),
     images: createImageClient(env),
     media: createLocalMediaStore(env.MEDIA_DIR, env.MEDIA_PUBLIC_URL),
   }

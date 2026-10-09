@@ -21,7 +21,8 @@
     "db:seed:samples": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api db:seed:samples",
     "setup:google": "node --env-file=.env scripts/setup/google.mjs",
     "setup:apple": "node --env-file=.env scripts/setup/apple.mjs",
-    "setup:apple:secret": "node --env-file=.env scripts/setup/apple-client-secret.mjs"
+    "setup:apple:secret": "node --env-file=.env scripts/setup/apple-client-secret.mjs",
+    "verify:m4": "node scripts/verify-m4.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
