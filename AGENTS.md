@@ -1,6 +1,6 @@
 # AGENTS.md — AI Coding Agent Conventions
 
-> Guidelines for AI agents working on the **bandstr** monorepo.
+> Guidelines for AI agents working on the **wizzn** monorepo.
 
 ## Tech Stack
 
@@ -30,15 +30,9 @@
 │   └── shared/              # Shared types/utilities
 │
 ├── docs/
-│   ├── feature_plan.md      # Iteration roadmap
-│   └── backlog/             # Parseable task files per iteration
-│       ├── iter-1-foundation.md
-│       ├── iter-2-content.md
-│       ├── iter-3-calendar.md
-│       ├── iter-4-voting.md
-│       ├── iter-5-setlist.md
-│       ├── iter-6-rehearsal.md
-│       └── bugfixing.md
+│   ├── superpowers/specs/   # Design specs
+│   ├── superpowers/plans/   # Milestone implementation plans (M1–M5)
+│   └── backlog/bugfixing.md
 │
 ├── scripts/
 │   ├── sync-backlog.sh      # GitHub Issues & Projects sync
@@ -59,7 +53,7 @@
 
 The command is "implement". Ask the user which iteration to be implemented and show the available ones.
 
-1. **Read** the assigned task from `docs/backlog/iter-N-*.md`
+1. **Read** the assigned task from `docs/superpowers/plans/*-mN-*.md`
 2. **Implement** the feature, checking off acceptance criteria as you go
 3. **Tick off** the feature in the backlog once it is implemented
 4. **Commit** with message format: `feat(iter-N): description — closes #N`
@@ -97,4 +91,8 @@ Executing commands can get stuck. Try to execute them, but if nothing happens wi
 
 Always make sure that the database can be set up from scratch. 
 Update the scripts accordingly.
-Update the readme and "bandstr container shell" information accordingly
+Update the readme and "wizzn container shell" information accordingly
+
+# GitHub issue sync
+
+Whenever a spec is being written, write the spec back to either the mentioned GitHub issue - if not GitHub issue is mentioned, create a new one in https://github.com/prj120/wizzn/issues

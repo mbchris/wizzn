@@ -1,0 +1,12 @@
+# APM dependencies
+apm_modules/
+
+node_modules/
+dist/
+coverage/
+.env
+packages/api/.env
+.env.api
+.env.web
+*.log
+media-data/

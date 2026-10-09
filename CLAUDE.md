@@ -2,7 +2,7 @@
 
 ## Platform Design Guidelines & Icon Mapping (Issue #36)
 
-The bandstr application is deployed cross-platform to Web, iOS (Capacitor), and Android (Capacitor).
+The wizzn application is deployed cross-platform to Web, iOS (Capacitor), and Android (Capacitor).
 
 ### Dual Icon Set Architecture
 - **Android & Web:** Google Material Icons (`material-icons`).
