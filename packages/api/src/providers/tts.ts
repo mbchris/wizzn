@@ -23,7 +23,6 @@ export function createSilentTts(sampleRate = 8000): TtsClient {
   }
 }
 
-/** Piper HTTP server (`python -m piper.http_server`): POST JSON { text, voice } to /synthesize → WAV. */
 /** Aim inside the 3–5 min window with headroom, so rounding never lands on the edge */
 const TARGET_MIN_SEC = AUDIO_MIN_SEC + 5
 const TARGET_MAX_SEC = AUDIO_MAX_SEC - 5
@@ -53,18 +52,90 @@ const inWindow = (sec: number): boolean => sec >= AUDIO_MIN_SEC && sec <= AUDIO_
 
 /**
  * Piper HTTP server (`python -m piper.http_server`): POST JSON { text, voice, length_scale } to /synthesize → WAV.
+ */
+export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof fetch = fetch, lengthScale = 1): TtsClient {
+  const render: Render = (text, scale) => postWav(fetchFn, baseUrl, { text, voice, length_scale: scale })
+  return fitToWindow(render, lengthScale)
+}
+
+/**
+ * Chatterbox Multilingual (`scripts/tts/chatterbox_server.py`, same /synthesize contract). Its generation length is
+ * limited, so the script is sent in sentence-group chunks and the WAVs are joined. The server caches raw renders and
+ * applies length_scale as a time-stretch, so pace re-renders cost little.
+ */
+export function createChatterboxTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = CHUNK_CHARS): TtsClient {
+  const render: Render = async (text, scale) => {
+    const parts: Buffer[] = []
+    for (const chunk of splitIntoChunks(text, maxChunkChars)) parts.push(await postWav(fetchFn, baseUrl, { text: chunk, length_scale: scale }))
+    return concatWav(parts)
+  }
+  return fitToWindow(render, lengthScale)
+}
+
+type Render = (text: string, scale: number) => Promise<Buffer>
+
+async function postWav(fetchFn: typeof fetch, url: string, body: Record<string, unknown>): Promise<Buffer> {
+  const res = await fetchFn(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+  if (!res.ok) throw new Error(`TTS HTTP ${res.status}`)
+  return Buffer.from(await res.arrayBuffer())
+}
+
+/** Chatterbox stays reliable up to a few sentences per generation */
+const CHUNK_CHARS = 280
+
+/** Packs whole sentences into chunks of ≤ maxChars; overlong sentences are split at commas, then at spaces */
+export function splitIntoChunks(text: string, maxChars = CHUNK_CHARS): string[] {
+  const pieces: string[] = []
+  const split = (s: string, sep: RegExp): string[] => s.split(sep).map((x) => x.trim()).filter(Boolean)
+  for (const sentence of split(text, /(?<=[.!?…:;])\s+|\n+/)) {
+    if (sentence.length <= maxChars) { pieces.push(sentence); continue }
+    for (const clause of split(sentence, /(?<=,)\s+/)) {
+      if (clause.length <= maxChars) { pieces.push(clause); continue }
+      let line = ''
+      for (const word of clause.split(/\s+/)) {
+        if (line && line.length + 1 + word.length > maxChars) { pieces.push(line); line = word } else line = line ? `${line} ${word}` : word
+      }
+      if (line) pieces.push(line)
+    }
+  }
+  const chunks: string[] = []
+  for (const piece of pieces) {
+    const last = chunks[chunks.length - 1]
+    if (last && last.length + 1 + piece.length <= maxChars) chunks[chunks.length - 1] = `${last} ${piece}`
+    else chunks.push(piece)
+  }
+  return chunks
+}
+
+/** Joins WAVs of the same format: header of the first, data chunks concatenated */
+export function concatWav(wavs: Buffer[]): Buffer {
+  if (wavs.length === 0) throw new Error('No audio to join')
+  const first = dataChunk(wavs[0]!)
+  const data = Buffer.concat(wavs.map((w) => { const d = dataChunk(w); return w.subarray(d.start, d.end) }))
+  const out = Buffer.concat([wavs[0]!.subarray(0, first.start), data])
+  out.writeUInt32LE(data.length, first.start - 4)
+  out.writeUInt32LE(out.length - 8, 4)
+  return out
+}
+
+function dataChunk(wav: Buffer): { start: number; end: number } {
+  if (wav.length < 44 || wav.toString('ascii', 0, 4) !== 'RIFF') throw new Error('Not a WAV file')
+  let offset = 12
+  while (offset + 8 <= wav.length) {
+    const size = wav.readUInt32LE(offset + 4)
+    if (wav.toString('ascii', offset, offset + 4) === 'data') return { start: offset + 8, end: Math.min(wav.length, offset + 8 + size) }
+    offset += 8 + size
+  }
+  throw new Error('WAV has no data chunk')
+}
+
+/**
  * Units must run 3–5 min: renders up to MAX_RENDERS times with an adjusted pace, then pads up to MAX_PAD_SEC of
  * trailing silence; otherwise fails with a message that says what to change.
  */
-export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof fetch = fetch, lengthScale = 1): TtsClient {
+function fitToWindow(renderWav: Render, lengthScale: number): TtsClient {
   async function render(text: string, scale: number): Promise<TtsResult> {
-    const res = await fetchFn(baseUrl, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text, voice, length_scale: scale }),
-    })
-    if (!res.ok) throw new Error(`TTS HTTP ${res.status}`)
-    const audio = Buffer.from(await res.arrayBuffer())
+    const audio = await renderWav(text, scale)
     return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)) }
   }
   return {

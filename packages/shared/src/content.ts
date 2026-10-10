@@ -44,18 +44,19 @@ export function formatLicense(c: Pick<ImageCredit, 'license' | 'licenseVersion'>
   return c.licenseVersion && c.license !== 'pdm' ? `${label} ${c.licenseVersion}` : label
 }
 
-const wordCount = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length
+export const wordCount = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length
 
-// Spec: 3–5 slides, ≤ 60 words body each, ≥ 1 source
+// Spec: 3–6 slides, ≤ 120 words body each, ≥ 1 source; cover is optional so pre-#4 units stay valid
 export const slideSchema = z.object({
   title: z.string().min(1).max(80),
-  body: z.string().min(1).refine((b) => wordCount(b) <= 60, { message: 'Slide body exceeds 60 words' }),
+  body: z.string().min(1).refine((b) => wordCount(b) <= 120, { message: 'Slide body exceeds 120 words' }),
   imageId: z.string().optional(),
 })
 
 export const writtenUnitSchema = z.object({
   format: z.literal('written'),
-  slides: z.array(slideSchema).min(3).max(5),
+  cover: z.object({ hook: z.string().min(1), imageId: z.string().min(1) }).optional(),
+  slides: z.array(slideSchema).min(3).max(6),
   sources: z.array(sourceSchema).min(1).max(3),
 })
 export type WrittenUnit = z.infer<typeof writtenUnitSchema>

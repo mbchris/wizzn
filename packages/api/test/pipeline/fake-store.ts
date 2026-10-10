@@ -14,7 +14,7 @@ export class FakeStore implements PipelineStore {
       format,
       status,
       contentJson: null,
-      brief: { fieldName: 'Finanzen', themeName: 'Budget', topic: 'Die 50/30/20-Regel', context: '', adviceDisclaimer: true },
+      brief: { fieldSlug: 'finance', fieldName: 'Finanzen', themeName: 'Budget', topic: 'Die 50/30/20-Regel', context: '', adviceDisclaimer: true },
     })
   }
   async getUnit(id: string) {

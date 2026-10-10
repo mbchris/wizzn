@@ -1,15 +1,35 @@
 import { z } from 'zod'
-import type { ImageCredit, UnitContent, UnitFormat } from './content.js'
+import { wordCount, type ImageCredit, type UnitContent, type UnitFormat, type WrittenUnit } from './content.js'
 import type { CompletionRewardsDto, DailyCapDto } from './gamification.js'
 
 export const FEED_PAGE_SIZE = 10
 /** Spec §6: units served in the last 14 days are not shown again */
-export const IMPRESSION_COOLDOWN_DAYS = 14
+export const IMPRESSION_COOLDOWN_DAYS = 0   /** TODO: RESET THIS. CLAUDE, DO NOT OVERSEE. ASK ME IF I WANT TO CHANGE */
 /** Spec §6: every 5th slot comes from an unselected field */
 export const DISCOVERY_EVERY = 5
 /** Spec §1: written = last slide + ≥ 15 s dwell; audio = ≥ 90 % played */
 export const WRITTEN_MIN_DWELL_SEC = 15
 export const AUDIO_MIN_PLAYED = 0.9
+/** Issue #4: German reading speed on mobile; dwell gate is a fraction of the estimated reading time */
+export const READING_WPM = 200
+export const WRITTEN_DWELL_FRACTION = 0.3
+
+/** Cover counts as a page (it is page 0 in the app) */
+export function writtenPageCount(u: WrittenUnit): number {
+  return u.slides.length + (u.cover ? 1 : 0)
+}
+
+export function writtenWordCount(u: WrittenUnit): number {
+  return (u.cover ? wordCount(u.cover.hook) : 0) + u.slides.reduce((sum, s) => sum + wordCount(s.body), 0)
+}
+
+export function readingMinutes(u: WrittenUnit): number {
+  return Math.max(1, Math.round(writtenWordCount(u) / READING_WPM))
+}
+
+export function writtenMinDwellSec(u: WrittenUnit): number {
+  return Math.max(WRITTEN_MIN_DWELL_SEC, Math.round((writtenWordCount(u) / READING_WPM) * 60 * WRITTEN_DWELL_FRACTION))
+}
 
 export interface FeedUnitDto {
   id: string
@@ -49,7 +69,7 @@ export interface CompletionResult {
 export function isCompletion(content: UnitContent, input: CompletionInput): CompletionResult['reason'] | null {
   if (content.format !== input.format) return 'format_mismatch'
   if (content.format === 'written' && input.format === 'written') {
-    return input.slidesSeen >= content.slides.length && input.dwellSec >= WRITTEN_MIN_DWELL_SEC ? null : 'not_enough_progress'
+    return input.slidesSeen >= writtenPageCount(content) && input.dwellSec >= writtenMinDwellSec(content) ? null : 'not_enough_progress'
   }
   if (content.format === 'audio' && input.format === 'audio') {
     return input.listenedSec >= content.durationSec * AUDIO_MIN_PLAYED ? null : 'not_enough_progress'

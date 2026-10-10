@@ -10,19 +10,26 @@ export interface ImageClient {
 }
 
 /** One house style for every unit (spec §4: fixed style prompt). */
+/** Matches the app's dark neon UI (web/src/css/app.scss: --wz-bg, --wz-mint, --wz-cyan, --wz-brand). */
 export const IMAGE_STYLE =
-  'Flache, freundliche Illustration, verspielt, weiche Pastellfarben, klare Formen, kein Text, quadratisch, heller Hintergrund.'
+  'Modern flat vector illustration with subtle depth, clean geometric shapes, minimal and uncluttered, one clear central subject. ' +
+  'Dark near-black background (#0b0c10, deep charcoal-navy), subject lit with vibrant neon accents: mint green (#00e599), ' +
+  'electric cyan (#60efff) and a touch of soft violet (#c86dd7), smooth gradients between them and a soft glow around highlights. ' +
+  'High contrast, moody, premium, sleek tech aesthetic like a dark-mode mobile app. ' +
+  'No pastel colors, no white or light background, no photorealism, no text, no letters, no logos, no watermark. Square composition.'
 
-const PALETTE = ['#FFB5A7', '#B8E0D2', '#CDB4DB', '#FFE5A5', '#A2D2FF', '#C1E1C1']
+/** Placeholder colors from the app theme: dark backgrounds, neon foregrounds. */
+const BG_PALETTE = ['#0b0c10', '#12161a', '#1a1e25', '#0e1318']
+const PALETTE = ['#00e599', '#60efff', '#c86dd7', '#00ff87', '#e94057', '#ff8a65']
 
 export function createPlaceholderImages(): ImageClient {
   return {
     async generate(prompt) {
       const h = createHash('sha256').update(prompt).digest()
-      const bg = PALETTE[h[0]! % PALETTE.length]!
+      const bg = BG_PALETTE[h[0]! % BG_PALETTE.length]!
       const fg = PALETTE[h[1]! % PALETTE.length]!
       const label = escapeXml(prompt.slice(0, 40))
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="${bg}"/><circle cx="${128 + (h[2]! % 256)}" cy="${128 + (h[3]! % 256)}" r="${80 + (h[4]! % 80)}" fill="${fg}"/><text x="256" y="480" font-family="sans-serif" font-size="18" text-anchor="middle" fill="#333">${label}</text></svg>`
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="${bg}"/><circle cx="${128 + (h[2]! % 256)}" cy="${128 + (h[3]! % 256)}" r="${80 + (h[4]! % 80)}" fill="${fg}"/><text x="256" y="480" font-family="sans-serif" font-size="18" text-anchor="middle" fill="#ffffff">${label}</text></svg>`
       return { data: Buffer.from(svg), contentType: 'image/svg+xml' }
     },
   }

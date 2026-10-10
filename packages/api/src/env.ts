@@ -21,7 +21,7 @@ export const envSchema = z.object({
   TTS_URL: z.string().url(),
   TTS_VOICE: z.string().min(1),
   TTS_LENGTH_SCALE: z.coerce.number().min(0.5).max(2).default(1.2),
-  TTS_PROVIDER: z.enum(['silent', 'piper']).default('silent'),
+  TTS_PROVIDER: z.enum(['silent', 'piper', 'chatterbox']).default('silent'),
   IMAGE_PROVIDER: z.enum(['placeholder', 'api']).default('placeholder'),
   IMAGE_BASE_URL: z.string().url().optional(),
   IMAGE_MODEL: z.string().optional(),
@@ -56,11 +56,19 @@ export const envSchema = z.object({
   OPENVERSE_CLIENT_SECRET: z.string().default(''),
   STOCK_MIN_EDGE_PX: z.coerce.number().int().positive().default(800),
   STOCK_MAX_BYTES: z.coerce.number().int().positive().default(5_000_000),
+  /** Issue #4: knowledge sources; tier decides the order, omit `web` to disable the open-web fallback */
+  RESEARCH_PROVIDERS: csv.pipe(z.array(z.enum(['curated', 'wikipedia', 'europepmc', 'web']))).default('curated,wikipedia,europepmc,web'),
+  /** Fewer usable sources from tiers 1–3 → open-web fallback */
+  RESEARCH_MIN_SOURCES: z.coerce.number().int().min(0).default(2),
   /** ImageRouter b64_ephemeral: no 30-day retention at the provider */
   IMAGE_EPHEMERAL: bool(true),
 }).superRefine((env, ctx) => {
   if (env.STOCK_IMAGE_PROVIDERS.includes('commons') && !env.STOCK_USER_AGENT.trim()) {
     ctx.addIssue({ code: 'custom', path: ['STOCK_USER_AGENT'], message: 'required when STOCK_IMAGE_PROVIDERS includes commons' })
+  }
+  // Wikimedia API policy: unidentified clients are throttled to 10 req/min
+  if (env.RESEARCH_PROVIDERS.includes('wikipedia') && !env.STOCK_USER_AGENT.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['STOCK_USER_AGENT'], message: 'required when RESEARCH_PROVIDERS includes wikipedia' })
   }
 })
 export type Env = z.infer<typeof envSchema>

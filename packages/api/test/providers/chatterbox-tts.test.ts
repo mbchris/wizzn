@@ -1,0 +1,34 @@
+import { describe, expect, it } from 'vitest'
+import { concatWav, createChatterboxTts, silentWav, splitIntoChunks, wavDurationSec } from '../../src/providers/tts.js'
+
+describe('splitIntoChunks', () => {
+  it('packs whole sentences up to the limit', () => {
+    expect(splitIntoChunks('Eins ist hier. Zwei ist da! Drei?', 30)).toEqual(['Eins ist hier. Zwei ist da!', 'Drei?'])
+  })
+  it('splits overlong sentences at commas, then words', () => {
+    const chunks = splitIntoChunks(`${'wort '.repeat(30).trim()}, kurz.`, 40)
+    expect(chunks.every((c) => c.length <= 40)).toBe(true)
+    expect(chunks.join(' ').split(/\s+/)).toHaveLength(31)
+  })
+})
+
+describe('concatWav', () => {
+  it('sums durations and fixes headers', () => {
+    const out = concatWav([silentWav(2, 800), silentWav(3, 800)])
+    expect(wavDurationSec(out)).toBe(5)
+    expect(out.readUInt32LE(4)).toBe(out.length - 8)
+  })
+})
+
+describe('createChatterboxTts', () => {
+  it('posts one request per chunk and joins the audio', async () => {
+    const bodies: { text: string; length_scale: number }[] = []
+    const fetchFn = (async (_url: string, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)))
+      return new Response(silentWav(100, 800))
+    }) as typeof fetch
+    const r = await createChatterboxTts('http://tts/synthesize', fetchFn, 1, 20).synthesize('Erster Satz hier. Zweiter Satz da.')
+    expect(bodies.map((b) => b.text)).toEqual(['Erster Satz hier.', 'Zweiter Satz da.'])
+    expect(r.durationSec).toBe(200)
+  })
+})

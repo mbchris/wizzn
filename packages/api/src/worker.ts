@@ -13,6 +13,7 @@ const boss = await startBoss(env.DATABASE_URL)
 const deps: PipelineDeps = {
   ...createProviders(env),
   stockConfig: { minEdgePx: env.STOCK_MIN_EDGE_PX, maxBytes: env.STOCK_MAX_BYTES },
+  researchMinSources: env.RESEARCH_MIN_SOURCES,
   store: createDbPipelineStore(db),
   enqueue: async (queue, unitId) => {
     await sendUnitJob(boss, queue, unitId)

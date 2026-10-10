@@ -19,6 +19,7 @@ function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}, im
     approve: async () => 'ok',
     reject: async () => 'ok',
     requeue: async () => 'ok',
+    deleteUnit: async () => 'ok',
     ...overrides,
   }
   const app = createApp({
@@ -63,6 +64,33 @@ describe('/api/admin', () => {
     const blocked = setup(admin, { requeue: async () => 'invalid_state' })
     await blocked.app.request(`/api/admin/units/${UNIT}/requeue`, { method: 'POST', headers })
     expect(blocked.enqueued).toEqual([])
+  })
+
+  describe('POST /units/bulk', () => {
+    const U2 = '9f1c2a3e-1b2c-4d5e-8f90-123456789abc'
+    const bulk = (app: ReturnType<typeof setup>['app'], body: unknown) => app.request('/api/admin/units/bulk', { method: 'POST', headers, body: JSON.stringify(body) })
+
+    it('validates action and ids', async () => {
+      const { app } = setup()
+      expect((await bulk(app, { action: 'nuke', ids: [UNIT] })).status).toBe(400)
+      expect((await bulk(app, { action: 'delete', ids: [] })).status).toBe(400)
+      expect((await bulk(app, { action: 'delete', ids: ['nope'] })).status).toBe(400)
+    })
+    it('regenerates and enqueues only the units that could be requeued', async () => {
+      const { app, enqueued } = setup(admin, { requeue: async (id) => (id === UNIT ? 'ok' : 'invalid_state') })
+      const res = await bulk(app, { action: 'regenerate', ids: [UNIT, U2] })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ done: [UNIT], skipped: [{ id: U2, reason: 'invalid_state' }] })
+      expect(enqueued).toEqual([UNIT])
+    })
+    it('deletes without enqueueing and reports units with user history', async () => {
+      const deleted: string[] = []
+      const { app, enqueued } = setup(admin, { deleteUnit: async (id) => (id === UNIT ? (deleted.push(id), 'ok') : 'has_history') })
+      const res = await bulk(app, { action: 'delete', ids: [UNIT, U2, UNIT] })
+      expect(await res.json()).toEqual({ done: [UNIT], skipped: [{ id: U2, reason: 'has_history' }] })
+      expect(deleted).toEqual([UNIT])
+      expect(enqueued).toEqual([])
+    })
   })
 
   describe('POST /units/:id/assets/:assetId/replace', () => {

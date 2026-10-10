@@ -78,7 +78,7 @@ async function follow(f: FieldDto): Promise<void> {
       </article>
     </div>
 
-    <q-btn flat rounded no-caps color="white" class="full-width q-mt-lg" :icon="pIcon('settings')" label="Themen &amp; Format anpassen" @click="router.push('/onboarding')" />
+    <q-btn flat rounded no-caps color="white" class="full-width q-mt-lg" :icon="pIcon('settings')" label="Themen anpassen" @click="router.push('/onboarding')" />
   </div>
 </template>
 

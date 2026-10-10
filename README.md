@@ -33,6 +33,14 @@ Units get Openverse / Wikimedia Commons images first; the AI image provider is t
 - `OPENVERSE_CLIENT_ID` / `OPENVERSE_CLIENT_SECRET` — optional OAuth for higher Openverse quota. Register via `pnpm setup:openverse` (set `OPENVERSE_EMAIL` first, then click the verification email).
 - `STOCK_MIN_EDGE_PX` (800) / `STOCK_MAX_BYTES` (5000000) — minimum shorter edge and max download size.
 
+### Knowledge sources (issue #4)
+
+Research queries reputable tiers first: 1 curated authorities per field (`packages/api/src/pipeline/source-registry.ts`), 2 German Wikipedia, 3 Europe PMC reviews (nutrition, sports, psychology), 4 open web (fallback only).
+
+- `RESEARCH_PROVIDERS=curated,wikipedia,europepmc,web` — enabled providers; tier decides the order. Drop `web` to disable the open-web fallback.
+- `RESEARCH_MIN_SOURCES` (2) — fewer usable tier 1–3 sources trigger the web fallback.
+- `STOCK_USER_AGENT` — also required when `wikipedia` is enabled (Wikimedia API policy).
+
 AI fallback via ImageRouter: `IMAGE_PROVIDER=api`, `IMAGE_BASE_URL=https://api.imagerouter.io/v1/openai`, `IMAGE_MODEL=black-forest-labs/FLUX-2-klein-4b`, `IMAGE_API_KEY`. `IMAGE_EPHEMERAL=true` (default) sends `b64_ephemeral` so ImageRouter keeps no copy for 30 days.
 
 ## Streaks, premium & sign-in (M4)

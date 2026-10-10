@@ -80,7 +80,7 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
         contentJson: row.contentJson,
         promptVersion: row.promptVersion,
         model: row.model,
-        sources: row.sources.map(({ url, title, publisher }) => ({ url, title, publisher })),
+        sources: row.sources.map(({ url, title, publisher, tier, provider }) => ({ url, title, publisher, tier, provider })),
         assets: row.assets.map((a) => ({ id: a.id, kind: a.kind, url: mediaUrl(a.path), durationSec: a.durationSec, origin: a.origin, credit: a.credit ?? null, stockQuery: a.stockQuery })),
         checkReport: (row.checkReport?.reportJson as CheckReport | undefined) ?? null,
       }
@@ -105,7 +105,8 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
 
     reject: (id, reason) => move(id, 'rejected', { failureReason: reason }),
 
-    requeue: (id) => move(id, 'queued', { failureReason: null }),
+    // Clearing publishedAt keeps a regenerated unit consistent until it is approved again
+    requeue: (id) => move(id, 'queued', { failureReason: null, publishedAt: null }),
   }
 }
 

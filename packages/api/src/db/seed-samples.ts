@@ -6,7 +6,7 @@
  */
 import { readFile, readdir } from 'node:fs/promises'
 import { and, eq } from 'drizzle-orm'
-import { draftAudioSchema, draftWrittenSchema, scheduleImages, sourceSchema, unitContentSchema } from '@wizzn/shared'
+import { draftAudioSchema, scheduleImages, slideSchema, sourceSchema, unitContentSchema } from '@wizzn/shared'
 import { z } from 'zod'
 import { loadEnv } from '../env.js'
 import { createProviders } from '../providers/index.js'
@@ -19,8 +19,13 @@ const CREATED_BY = 'seed:samples'
 const samplesDir = new URL('./samples/', import.meta.url)
 
 const base = z.object({ theme: z.string().nullable(), topic: z.string().min(3), sources: z.array(sourceSchema).min(1).max(3) })
+// Samples are short pre-#4 units (no cover); draftWrittenSchema now requires the long form, so they keep their own shape
+const legacyWrittenSample = z.object({
+  title: z.string().min(3).max(80),
+  slides: z.array(slideSchema.omit({ imageId: true }).extend({ imagePrompt: z.string().min(3).optional() })).min(3).max(5),
+})
 const sampleSchema = z.union([
-  base.extend({ format: z.literal('written') }).merge(draftWrittenSchema),
+  base.extend({ format: z.literal('written') }).merge(legacyWrittenSample),
   base.extend({ format: z.literal('audio') }).merge(draftAudioSchema),
 ])
 type Sample = z.infer<typeof sampleSchema>

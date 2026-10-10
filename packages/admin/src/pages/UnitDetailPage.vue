@@ -16,6 +16,14 @@ const busy = ref(false)
 const swapping = ref<Record<string, boolean>>({})
 const images = computed(() => (unit.value?.assets ?? []).filter((a) => a.kind === 'image'))
 const editable = computed(() => unit.value?.status === 'in_review')
+/** Issue #4: source tiers and the derived trust level */
+const TIER_LABEL: Record<number, string> = { 1: 'Stufe 1 · kuratiert', 2: 'Stufe 2 · Wikipedia', 3: 'Stufe 3 · Studie', 4: 'Stufe 4 · Web' }
+const TIER_COLOR: Record<number, string> = { 1: 'positive', 2: 'primary', 3: 'teal', 4: 'orange' }
+const TRUST: Record<string, { label: string; color: string }> = {
+  high: { label: 'Quellenlage: hoch', color: 'positive' },
+  mixed: { label: 'Quellenlage: gemischt', color: 'orange' },
+  low: { label: 'Quellenlage: niedrig', color: 'negative' },
+}
 const previewContent = computed<unknown>(() => {
   try {
     return JSON.parse(json.value)
@@ -58,7 +66,18 @@ async function swap(assetId: string, mode: ReplaceImageMode): Promise<void> {
 
 const save = () => act('Gespeichert', () => api(`/api/admin/units/${props.id}`, { method: 'PUT', body: { title: title.value, contentJson: previewContent.value } }))
 const approve = () => act('Veröffentlicht', () => api(`/api/admin/units/${props.id}/approve`, { method: 'POST' }))
-const requeue = () => act('Neu in der Pipeline', () => api(`/api/admin/units/${props.id}/requeue`, { method: 'POST' }))
+const REGENERATABLE = ['in_review', 'failed', 'rejected', 'published'] as const
+const canRegenerate = computed(() => !!unit.value && (REGENERATABLE as readonly string[]).includes(unit.value.status))
+const doRequeue = () => act('Neu in der Pipeline', () => api(`/api/admin/units/${props.id}/requeue`, { method: 'POST' }))
+function requeue(): void {
+  if (unit.value?.status !== 'published') return void doRequeue()
+  $q.dialog({
+    title: 'Neu generieren',
+    message: 'Der Wissenshappen wird aus dem Feed genommen und mit dem aktuellen Auftrag und den aktuellen Prompts neu erstellt. Danach muss er erneut freigegeben werden.',
+    ok: { label: 'Neu generieren', color: 'primary' },
+    cancel: { label: 'Abbrechen', flat: true },
+  }).onOk(() => void doRequeue())
+}
 function reject(): void {
   $q.dialog({ title: 'Ablehnen', message: 'Begründung', prompt: { model: '', type: 'text' }, cancel: true }).onOk((reason: string) => {
     void act('Abgelehnt', () => api(`/api/admin/units/${props.id}/reject`, { method: 'POST', body: { reason } }))
@@ -81,7 +100,7 @@ onMounted(load)
           <q-space />
           <q-btn color="positive" icon="done" label="Freigeben" :disable="!editable || busy" @click="approve" />
           <q-btn color="negative" flat icon="block" label="Ablehnen" :disable="!editable || busy" @click="reject" />
-          <q-btn flat icon="replay" label="Neu generieren" :disable="busy || !['in_review', 'failed', 'rejected'].includes(unit.status)" @click="requeue" />
+          <q-btn flat icon="replay" label="Neu generieren" :disable="busy || !canRegenerate" @click="requeue" />
         </div>
         <q-banner v-if="unit.failureReason" class="bg-red-1 text-negative">{{ unit.failureReason }}</q-banner>
 
@@ -89,6 +108,8 @@ onMounted(load)
           <q-card-section class="row items-center">
             <q-icon :name="unit.checkReport.passed ? 'verified' : 'warning'" :color="unit.checkReport.passed ? 'positive' : 'orange'" size="md" class="q-mr-sm" />
             <div class="text-subtitle1">KI-Check {{ unit.checkReport.passed ? 'bestanden' : 'mit Hinweisen' }}</div>
+            <q-space />
+            <q-badge v-if="unit.checkReport.trust" :color="TRUST[unit.checkReport.trust]!.color" :label="TRUST[unit.checkReport.trust]!.label" />
           </q-card-section>
           <q-list dense separator>
             <q-item v-for="(c, i) in unit.checkReport.claims" :key="'c' + i">
@@ -134,6 +155,9 @@ onMounted(load)
               <q-item-section>
                 <q-item-label>{{ s.publisher }}</q-item-label>
                 <q-item-label caption>{{ s.title }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <q-badge outline :color="TIER_COLOR[s.tier]" :label="TIER_LABEL[s.tier]" />
               </q-item-section>
             </q-item>
           </q-list>

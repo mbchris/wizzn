@@ -16,7 +16,7 @@ import type { ImageClient } from '../providers/image.js'
 import type { LlmClient } from '../providers/llm.js'
 import { extFor, type MediaStore } from '../providers/media-store.js'
 import type { PageFetcher } from '../providers/fetch-page.js'
-import type { SearchClient } from '../providers/search.js'
+import type { ResearchProvider } from '../providers/research/types.js'
 import type { TtsClient } from '../providers/tts.js'
 import { wavToMp3 } from '../providers/transcode.js'
 import { QUEUES, type QueueName } from '../jobs/queues.js'
@@ -25,17 +25,20 @@ import {
   checkPrompt,
   draftAudioPrompt,
   draftWrittenPrompt,
-  searchQuery,
-  sourcePickPrompt,
-  type ResearchedSource,
+  pickEditorial,
 } from './prompts.js'
+import { longestSharedRun } from './overlap.js'
+import { researchSources } from './research.js'
 import { resolveImage, type ImageSlot, type ResolvedImage } from './images.js'
 import type { NewAsset, PipelineStore, PipelineUnit } from './store.js'
 
 export interface PipelineDeps {
   store: PipelineStore
   llm: LlmClient
-  search: SearchClient
+  /** Knowledge sources by tier (issue #4) */
+  research: ResearchProvider[]
+  /** Fewer usable tier 1–3 sources → open-web fallback */
+  researchMinSources: number
   fetchPage: PageFetcher
   tts: TtsClient
   images: ImageClient
@@ -45,6 +48,8 @@ export interface PipelineDeps {
   fetchFn?: typeof fetch
   enqueue(queue: QueueName, unitId: string): Promise<void>
   transcode?: (wav: Buffer) => Promise<Buffer | null>
+  /** Picks style and story arc when the brief leaves them open; injectable for tests */
+  random?: () => number
 }
 
 export type StepName = 'research' | 'draft' | 'check' | 'media'
@@ -74,29 +79,19 @@ export async function runStep(step: StepName, unitId: string, deps: PipelineDeps
 }
 
 const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise<void>> = {
-  async research(unit, { search, fetchPage, llm, store }) {
-    const results = await search.search(searchQuery(unit.brief))
-    if (results.length === 0) throw new Error('No search results')
-    const { picks } = await llm.chatJson(sourcePickPrompt(unit.brief, results), sourcePickSchema)
-    const sources: ResearchedSource[] = []
-    for (const pick of picks) {
-      const r = results[pick.index]
-      if (!r) continue
-      const page = await fetchPage(r.url)
-      if (!page.ok || page.text.length < 200) continue
-      sources.push({ url: r.url, title: page.title || r.title, publisher: pick.publisher, excerpt: page.text })
-    }
-    if (sources.length === 0) throw new Error('No usable sources (all picks unreachable or empty)')
-    await store.replaceSources(unit.id, sources)
+  async research(unit, { research, fetchPage, llm, store, researchMinSources }) {
+    await store.replaceSources(unit.id, await researchSources(unit.brief, { research, fetchPage, llm, minSources: researchMinSources }))
   },
 
-  async draft(unit, { llm, store }) {
+  async draft(unit, { llm, store, random }) {
     const sources = await store.getSources(unit.id)
+    // Per unit, so the variants of one brief get different voices
+    const editorial = pickEditorial(unit.brief, random)
     const draft =
       unit.format === 'written'
-        ? await llm.chatJson(draftWrittenPrompt(unit.brief, sources), draftWrittenSchema)
-        : await llm.chatJson(draftAudioPrompt(unit.brief, sources), draftAudioSchema)
-    await store.saveDraft(unit.id, { title: draft.title, contentJson: draft, promptVersion: PROMPT_VERSION, model: llm.model })
+        ? await llm.chatJson(draftWrittenPrompt(unit.brief, sources, editorial), draftWrittenSchema)
+        : await llm.chatJson(draftAudioPrompt(unit.brief, sources, editorial), draftAudioSchema)
+    await store.saveDraft(unit.id, { title: draft.title, contentJson: { ...draft, editorial }, promptVersion: PROMPT_VERSION, model: llm.model })
   },
 
   async check(unit, { llm, store, fetchPage }) {
@@ -110,7 +105,8 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
         return { url: s.url, ok: page.ok, status: page.status }
       }),
     )
-    await store.saveCheck(unit.id, evaluateCheck(llmResult, links))
+    const verbatim = { tiers: sources.map((s) => s.tier), maxVerbatimRun: longestSharedRun(text, sources.map((s) => s.excerpt)) }
+    await store.saveCheck(unit.id, evaluateCheck(llmResult, links, verbatim))
   },
 
   async media(unit, deps) {
@@ -118,16 +114,22 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
     const sources = (await deps.store.getSources(unit.id)).map(({ url, title, publisher }) => ({ url, title, publisher }))
     if (unit.format === 'written') {
       const draft = draftWrittenSchema.parse(current?.contentJson)
-      const slots = draft.slides.flatMap((s) => (s.imagePrompt ? [{ prompt: s.imagePrompt, query: s.imageQuery }] : []))
+      // Cover first so it gets the best stock match; the shared exclude set keeps slide images distinct
+      const slots = [
+        { prompt: draft.cover.imagePrompt, query: draft.cover.imageQuery },
+        ...draft.slides.flatMap((s) => (s.imagePrompt ? [{ prompt: s.imagePrompt, query: s.imageQuery }] : [])),
+      ]
       const resolved = await resolveSlots(unit.id, slots, deps)
-      const assets = await deps.store.replaceAssets(unit.id, resolved.map(toImageAsset))
+      const [coverAsset, ...slideAssets] = await deps.store.replaceAssets(unit.id, resolved.map(toImageAsset))
+      if (!coverAsset) throw new Error('Cover image asset missing')
       let next = 0
       const slides = draft.slides.map(({ title, body, imagePrompt }) => ({
         title,
         body,
-        ...(imagePrompt ? { imageId: assets[next++]?.id } : {}),
+        ...(imagePrompt ? { imageId: slideAssets[next++]?.id } : {}),
       }))
-      await deps.store.saveContent(unit.id, writtenUnitSchema.parse({ format: 'written', slides, sources }))
+      const cover = { hook: draft.hook, imageId: coverAsset.id }
+      await deps.store.saveContent(unit.id, writtenUnitSchema.parse({ format: 'written', cover, slides, sources }))
       return
     }
     const draft = draftAudioSchema.parse(current?.contentJson)
@@ -180,7 +182,7 @@ function toImageAsset(r: ResolvedImage & { prompt: string }): NewAsset {
 function draftText(format: PipelineUnit['format'], json: unknown): string {
   if (format === 'written') {
     const d: DraftWritten = draftWrittenSchema.parse(json)
-    return [d.title, ...d.slides.map((s) => `${s.title}: ${s.body}`)].join('\n\n')
+    return [d.title, d.hook, ...d.slides.map((s) => `${s.title}: ${s.body}`)].join('\n\n')
   }
   const d: DraftAudio = draftAudioSchema.parse(json)
   return `${d.title}\n\n${d.script}`

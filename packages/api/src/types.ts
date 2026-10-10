@@ -24,7 +24,7 @@ export interface AppVariables {
   user: SessionUser
 }
 
-export type AdminActionResult = 'ok' | 'not_found' | 'invalid_state' | 'invalid_content'
+export type AdminActionResult = 'ok' | 'not_found' | 'invalid_state' | 'invalid_content' | 'has_history'
 
 export interface AdminRepo {
   createBrief(input: BriefInput, createdBy: string): Promise<{ briefId: string; unitIds: string[] }>
@@ -34,8 +34,10 @@ export interface AdminRepo {
   editUnit(id: string, edit: UnitEdit): Promise<AdminActionResult>
   approve(id: string): Promise<AdminActionResult>
   reject(id: string, reason: string): Promise<AdminActionResult>
-  /** Moves failed/rejected/in_review back to queued; caller enqueues research */
+  /** Moves failed/rejected/in_review/published back to queued; caller enqueues research */
   requeue(id: string): Promise<AdminActionResult>
+  /** Hard delete; refused while a worker processes the unit or once users have seen/completed it */
+  deleteUnit(id: string): Promise<AdminActionResult>
 }
 
 export interface JobQueue {

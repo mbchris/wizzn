@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canTransition } from '../src/unit-status.js'
+import { canDelete, canTransition } from '../src/unit-status.js'
 import { FIELD_SEEDS } from '../src/fields.js'
 
 describe('canTransition', () => {
@@ -16,6 +16,17 @@ describe('canTransition', () => {
     expect(canTransition('in_review', 'rejected')).toBe(true)
   })
   it('failed units can be requeued', () => expect(canTransition('failed', 'queued')).toBe(true))
+  it('published units can be regenerated', () => expect(canTransition('published', 'queued')).toBe(true))
+  it('units mid-pipeline cannot be requeued', () => expect(canTransition('drafting', 'queued')).toBe(false))
+})
+
+describe('canDelete', () => {
+  it('allows idle units', () => {
+    for (const s of ['queued', 'in_review', 'published', 'rejected', 'failed'] as const) expect(canDelete(s)).toBe(true)
+  })
+  it('blocks units a worker is processing', () => {
+    for (const s of ['researching', 'drafting', 'checking', 'rendering_media'] as const) expect(canDelete(s)).toBe(false)
+  })
 })
 
 describe('FIELD_SEEDS', () => {

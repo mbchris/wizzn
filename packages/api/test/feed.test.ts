@@ -14,6 +14,14 @@ const written: UnitContent = {
   sources: [{ url: 'https://a.de', title: 't', publisher: 'p' }],
 }
 const done = JSON.stringify({ format: 'written', slidesSeen: 3, dwellSec: 20 })
+const LONG = '7f1c2a3e-1b2c-4d5e-8f90-123456789abe'
+// Issue #4: cover + 5 × 95 words + 25-word hook = 500 words → 6 pages, 45 s
+const longWritten: UnitContent = {
+  format: 'written',
+  cover: { hook: Array(25).fill('wort').join(' '), imageId: 'c1' },
+  slides: Array(5).fill({ title: 'a', body: Array(95).fill('wort').join(' ') }),
+  sources: [{ url: 'https://a.de', title: 't', publisher: 'p' }],
+}
 
 function fakeFeed(prefs: Partial<FeedPrefs> = {}) {
   const impressions: string[] = []
@@ -23,7 +31,7 @@ function fakeFeed(prefs: Partial<FeedPrefs> = {}) {
     loadUnits: async (ids) =>
       new Map(ids.map((id) => [id, { id, title: id, format: 'written' as const, field: { id: 'A', slug: 'finance', nameDe: 'Finanzen', adviceDisclaimer: true }, content: written, media: {} }])),
     recordImpressions: async (_u, ids) => void impressions.push(...ids),
-    getPublishedContent: async (id) => ([UNIT, UNIT2].includes(id) ? written : null),
+    getPublishedContent: async (id) => (id === LONG ? longWritten : [UNIT, UNIT2].includes(id) ? written : null),
   }
   return { repo, impressions }
 }
@@ -59,6 +67,12 @@ describe('GET /api/feed', () => {
 })
 
 describe('POST /api/units/:id/complete', () => {
+  it('requires cover + all slides and length-based dwell for long-form units', async () => {
+    const post = (body: object) => app(fakeFeed().repo).request(`/api/units/${LONG}/complete`, { method: 'POST', headers, body: JSON.stringify(body) })
+    expect(await (await post({ format: 'written', slidesSeen: 5, dwellSec: 60 })).json()).toMatchObject({ completed: false, reason: 'not_enough_progress' })
+    expect(await (await post({ format: 'written', slidesSeen: 6, dwellSec: 30 })).json()).toMatchObject({ completed: false, reason: 'not_enough_progress' })
+    expect(await (await post({ format: 'written', slidesSeen: 6, dwellSec: 45 })).json()).toMatchObject({ completed: true })
+  })
   it('records the first completion only once and returns rewards', async () => {
     const progress = fakeProgress()
     const a = app(fakeFeed().repo, progress)

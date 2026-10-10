@@ -3,23 +3,36 @@ import { createPageFetcher } from './fetch-page.js'
 import { createApiImages, createPlaceholderImages, type ImageClient } from './image.js'
 import { createLlmClient } from './llm.js'
 import { createLocalMediaStore } from './media-store.js'
-import { createSearxngClient } from './search.js'
+import { createCuratedProvider } from './research/curated.js'
+import { createEuropePmcProvider } from './research/europepmc.js'
+import type { ResearchProvider } from './research/types.js'
+import { createWebProvider } from './research/web.js'
+import { createWikipediaProvider } from './research/wikipedia.js'
+import { createSearxngClient, type SearchClient } from './search.js'
 import { createStockChain } from './stock-images/chain.js'
 import { createCommonsClient } from './stock-images/commons.js'
 import { createOpenverseClient } from './stock-images/openverse.js'
 import type { StockImageClient } from './stock-images/types.js'
-import { createPiperTts, createSilentTts } from './tts.js'
+import { createChatterboxTts, createPiperTts, createSilentTts, type TtsClient } from './tts.js'
 
 export function createProviders(env: Env) {
+  const search = createSearxngClient(env.SEARCH_URL)
   return {
     llm: createLlmClient({ baseUrl: env.LLM_BASE_URL, model: env.LLM_MODEL, apiKey: env.LLM_API_KEY }),
-    search: createSearxngClient(env.SEARCH_URL),
+    search,
+    research: createResearchProviders(env, search),
     fetchPage: createPageFetcher(),
-    tts: env.TTS_PROVIDER === 'piper' ? createPiperTts(env.TTS_URL, env.TTS_VOICE, fetch, env.TTS_LENGTH_SCALE) : createSilentTts(),
+    tts: createTts(env),
     images: createImageClient(env),
     stock: createStockClient(env),
     media: createLocalMediaStore(env.MEDIA_DIR, env.MEDIA_PUBLIC_URL),
   }
+}
+
+function createTts(env: Env): TtsClient {
+  if (env.TTS_PROVIDER === 'piper') return createPiperTts(env.TTS_URL, env.TTS_VOICE, fetch, env.TTS_LENGTH_SCALE)
+  if (env.TTS_PROVIDER === 'chatterbox') return createChatterboxTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE)
+  return createSilentTts()
 }
 
 function createImageClient(env: Env): ImageClient {
@@ -35,4 +48,13 @@ function createStockClient(env: Env): StockImageClient | null {
       : createCommonsClient({ userAgent: env.STOCK_USER_AGENT }),
   )
   return clients.length ? createStockChain(clients) : null
+}
+
+function createResearchProviders(env: Env, search: SearchClient): ResearchProvider[] {
+  return env.RESEARCH_PROVIDERS.map((name) => {
+    if (name === 'curated') return createCuratedProvider(search)
+    if (name === 'wikipedia') return createWikipediaProvider({ userAgent: env.STOCK_USER_AGENT })
+    if (name === 'europepmc') return createEuropePmcProvider()
+    return createWebProvider(search)
+  })
 }

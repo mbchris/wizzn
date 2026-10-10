@@ -78,7 +78,7 @@ for _ in $(seq 1 30); do
   printf '.'; sleep 1
 done
 
-# 3b. Piper TTS (only when TTS_PROVIDER=piper) — must run before seeding, sample audio is rendered there
+# 3b. TTS server (TTS_PROVIDER=piper|chatterbox) — must run before seeding, sample audio is rendered there
 PIPER_PID=""
 TTS_PROVIDER="$(grep -E '^TTS_PROVIDER=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
 if [[ "$TTS_PROVIDER" == "piper" ]]; then
@@ -117,8 +117,35 @@ if [[ "$TTS_PROVIDER" == "piper" ]]; then
     for _ in $(seq 1 60); do piper_ok && break; sleep 1; done
     piper_ok || { c_err "Piper did not start — see /tmp/wizzn-piper.log"; exit 1; }
   fi
+elif [[ "$TTS_PROVIDER" == "chatterbox" ]]; then
+  # Chatterbox Multilingual (German, local, MIT). Pinned deps need Python 3.11 → uv provides it.
+  need uv "Install uv (brew install uv)."
+  TTS_URL="$(grep -E '^TTS_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"; TTS_URL="${TTS_URL:-http://localhost:5100/synthesize}"
+  VOICE="$(grep -E '^TTS_VOICE=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+  CB_PORT="${TTS_URL##*:}"; CB_PORT="${CB_PORT%%/*}"; CB_BASE="${TTS_URL%/synthesize}"
+  CB_DIR="$ROOT/.chatterbox"
+  if [[ ! -x "$CB_DIR/venv/bin/python" ]]; then
+    c_info "Installing Chatterbox TTS into .chatterbox/venv (first time only)"
+    uv venv -q --python 3.11 "$CB_DIR/venv"
+    VIRTUAL_ENV="$CB_DIR/venv" uv pip install -q chatterbox-tts
+  fi
+  CB_ARGS=(--port "$CB_PORT" --cache-dir "$CB_DIR/cache")
+  # TTS_VOICE = path to a ~10 s clean German reference WAV (relative to repo root) to clone; else built-in voice
+  if [[ -n "$VOICE" && -f "$ROOT/$VOICE" ]]; then CB_ARGS+=(--ref "$ROOT/$VOICE"); elif [[ -n "$VOICE" && -f "$VOICE" ]]; then CB_ARGS+=(--ref "$VOICE"); fi
+  cb_ok() { curl -sf -o /dev/null "$CB_BASE/health"; }
+  if cb_ok; then
+    c_info "Chatterbox already running on :$CB_PORT"
+  elif curl -s -o /dev/null "http://localhost:$CB_PORT"; then
+    c_err "Port $CB_PORT is used by another program (not Chatterbox). Change TTS_URL in $ENV_FILE."; exit 1
+  else
+    c_info "Starting Chatterbox on :$CB_PORT (log: /tmp/wizzn-chatterbox.log; first start downloads the model)"
+    "$CB_DIR/venv/bin/python" "$ROOT/scripts/tts/chatterbox_server.py" "${CB_ARGS[@]}" >/tmp/wizzn-chatterbox.log 2>&1 &
+    PIPER_PID=$!
+    for _ in $(seq 1 900); do cb_ok && break; kill -0 "$PIPER_PID" 2>/dev/null || break; sleep 1; done
+    cb_ok || { c_err "Chatterbox did not start — see /tmp/wizzn-chatterbox.log"; exit 1; }
+  fi
 else
-  c_warn "TTS_PROVIDER=${TTS_PROVIDER:-silent} — audio units are silent. Set TTS_PROVIDER=piper in $ENV_FILE for real speech."
+  c_warn "TTS_PROVIDER=${TTS_PROVIDER:-silent} — audio units are silent. Set TTS_PROVIDER=chatterbox (or piper) in $ENV_FILE for real speech."
 fi
 
 # 4. Database
@@ -200,7 +227,7 @@ cat <<INFO
   Admin   http://localhost:9100   (first time: "Konto anlegen" with an ADMIN_EMAILS address)
   Media   http://localhost:8081
   Model   $MODEL
-  TTS     ${TTS_PROVIDER:-silent}${PIPER_PORT:+ (Piper :$PIPER_PORT)}
+  TTS     ${TTS_PROVIDER:-silent}${PIPER_PORT:+ (Piper :$PIPER_PORT)}${CB_PORT:+ (Chatterbox :$CB_PORT)}
 
   Ctrl+C to stop.
 INFO

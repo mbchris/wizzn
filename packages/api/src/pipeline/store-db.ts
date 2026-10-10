@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import type { CheckReport, UnitStatus } from '@wizzn/shared'
+import { editorialSchema, type CheckReport, type UnitStatus } from '@wizzn/shared'
 import type { Db } from '../db/client.js'
 import { asset, checkReport, source, unit } from '../db/schema/index.js'
 import type { ResearchedSource } from './prompts.js'
@@ -34,11 +34,14 @@ export function createDbPipelineStore(db: Db): PipelineStore {
         status: row.status,
         contentJson: row.contentJson,
         brief: {
+          fieldSlug: row.brief.field.slug,
           fieldName: row.brief.field.nameDe,
           themeName: row.brief.theme?.nameDe ?? null,
           topic: row.brief.topic,
           context: row.brief.context,
           adviceDisclaimer: row.brief.field.adviceDisclaimer,
+          style: editorialSchema.shape.style.safeParse(row.brief.style).data ?? null,
+          arc: editorialSchema.shape.arc.safeParse(row.brief.storyArc).data ?? null,
         },
       }
     },
@@ -61,7 +64,7 @@ export function createDbPipelineStore(db: Db): PipelineStore {
 
     async getSources(unitId) {
       const rows = await db.select().from(source).where(eq(source.unitId, unitId)).orderBy(source.position)
-      return rows.map(({ url, title, publisher, excerpt }) => ({ url, title, publisher, excerpt }))
+      return rows.map(({ url, title, publisher, excerpt, tier, provider }) => ({ url, title, publisher, excerpt, tier, provider: provider as ResearchedSource['provider'] }))
     },
 
     async saveDraft(unitId, d) {

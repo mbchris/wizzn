@@ -1,22 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { FieldDto, UnitFormat } from '@wizzn/shared'
+import type { FieldDto } from '@wizzn/shared'
 import { api, ensureSession } from 'src/api'
-import SegmentedControl from 'components/SegmentedControl.vue'
 import { usePlatform } from 'src/composables/usePlatform'
 import { useFeedFilter } from 'src/composables/useFeedFilter'
 import { fieldEmoji } from 'src/utils/fields'
 
-type FormatChoice = 'both' | UnitFormat
-
 const router = useRouter()
 const { pIcon } = usePlatform()
-const step = ref<1 | 2 | 3>(1)
+const step = ref<1 | 2>(1)
 const fields = ref<FieldDto[]>([])
 const fieldIds = ref<string[]>([])
 const themeIds = ref<string[]>([])
-const format = ref<FormatChoice>('both')
 const error = ref('')
 const saving = ref(false)
 
@@ -33,7 +29,6 @@ onMounted(async () => {
     fieldIds.value = [...new Set(me.interests.map((i) => i.fieldId))]
     canClose.value = me.interests.length > 0
     themeIds.value = me.interests.flatMap((i) => (i.themeId ? [i.themeId] : []))
-    if (me.formats.length === 1 && me.formats[0]) format.value = me.formats[0]
   } catch {
     error.value = 'Keine Verbindung zum Server. Bitte später erneut versuchen.'
   }
@@ -47,7 +42,8 @@ async function finish(): Promise<void> {
     await api.saveInterests({
       fieldIds: fieldIds.value,
       themeIds: themeIds.value.filter((t) => chosenFields.value.some((f) => f.themes.some((th) => th.id === t))),
-      formats: format.value === 'both' ? ['audio', 'written'] : [format.value],
+      // Not user-selectable: the feed always mixes slides and audio
+      formats: ['audio', 'written'],
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     })
     stale.value = true
@@ -65,10 +61,10 @@ async function finish(): Promise<void> {
     <q-page-container>
       <q-page class="wz-onb column no-wrap">
         <div class="row items-center q-mb-md">
-          <q-btn v-if="step > 1" flat round dense :icon="pIcon('back')" color="white" aria-label="Zurück" @click="step = (step - 1) as 1 | 2" />
+          <q-btn v-if="step > 1" flat round dense :icon="pIcon('back')" color="white" aria-label="Zurück" @click="step = 1" />
           <q-btn v-else-if="canClose" flat round dense :icon="pIcon('close')" color="white" aria-label="Schließen" @click="router.replace('/feed')" />
           <q-space />
-          <div class="wz-dots row q-gutter-xs"><span v-for="n in 3" :key="n" :class="{ on: n <= step }" /></div>
+          <div class="wz-dots row q-gutter-xs"><span v-for="n in 2" :key="n" :class="{ on: n <= step }" /></div>
         </div>
 
         <template v-if="step === 1">
@@ -90,7 +86,7 @@ async function finish(): Promise<void> {
           </div>
         </template>
 
-        <template v-else-if="step === 2">
+        <template v-else>
           <div class="wz-title">Was interessiert dich besonders?</div>
           <div class="wz-lead">Optional – diese Themen zeigen wir dir zuerst.</div>
           <div v-for="f in chosenFields" :key="f.id" class="q-mb-lg" :class="`wz-field-${f.slug}`">
@@ -101,20 +97,6 @@ async function finish(): Promise<void> {
           </div>
         </template>
 
-        <template v-else>
-          <div class="wz-title">Wie lernst du am liebsten?</div>
-          <div class="wz-lead">Hören für unterwegs, Slides zum schnellen Durchwischen.</div>
-          <div class="wz-format-label">Format</div>
-          <SegmentedControl
-            v-model="format"
-            stacked
-            :options="[
-              { label: 'Audio', value: 'audio', icon: pIcon('headphones') },
-              { label: 'Slides', value: 'written', icon: pIcon('description') },
-              { label: 'Gemischt', value: 'both', icon: pIcon('bolt') },
-            ]"
-          />
-        </template>
 
         <q-space />
         <div v-if="error" class="text-negative q-mb-sm">{{ error }}</div>
@@ -126,8 +108,8 @@ async function finish(): Promise<void> {
           class="wz-cta full-width q-mt-lg"
           :disable="fieldIds.length === 0"
           :loading="saving"
-          :label="step < 3 ? 'Weiter' : 'Starte deine Reise'"
-          @click="step < 3 ? (step = (step + 1) as 2 | 3) : finish()"
+          :label="step < 2 ? 'Weiter' : 'Starte deine Reise'"
+          @click="step < 2 ? (step = 2) : finish()"
         />
       </q-page>
     </q-page-container>
@@ -161,5 +143,4 @@ async function finish(): Promise<void> {
 
 .wz-chip { min-height: 40px; border: 1.5px solid rgba(255, 255, 255, 0.22); border-radius: 999px; padding: 8px 14px; background: transparent; color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
 .wz-chip.on { border-color: transparent; background: linear-gradient(90deg, var(--wz-a), var(--wz-c)); color: var(--wz-on-accent); box-shadow: 0 0 12px color-mix(in srgb, var(--wz-glow) 45%, transparent); }
-.wz-format-label { color: var(--wz-muted); text-align: center; margin-bottom: 10px; }
 </style>

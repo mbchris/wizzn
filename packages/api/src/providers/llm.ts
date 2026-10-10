@@ -42,17 +42,20 @@ export function createLlmClient({ baseUrl, model, apiKey, fetchFn = fetch, tempe
     model,
     async chatJson<T>(messages: ChatMessage[], schema: ZodType<T>): Promise<T> {
       let history = messages
+      let lastError = ''
       for (let attempt = 0; attempt < 2; attempt++) {
         const raw = await complete(history)
         const problem = validate(raw, schema)
         if (problem.ok) return problem.value
+        lastError = problem.error
         history = [
           ...history,
           { role: 'assistant', content: raw },
           { role: 'user', content: `Die Antwort war ungültig: ${problem.error}. Antworte erneut, nur mit gültigem JSON im geforderten Format.` },
         ]
       }
-      throw new Error('LLM output failed validation twice')
+      // Keep the zod issues: the message lands in unit.error and is the only clue in the admin UI
+      throw new Error(`LLM output failed validation twice: ${lastError.slice(0, 500)}`)
     },
   }
 }

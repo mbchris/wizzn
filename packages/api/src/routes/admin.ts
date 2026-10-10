@@ -1,6 +1,6 @@
 import { Hono, type Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { briefInputSchema, rejectSchema, replaceImageSchema, unitEditSchema, unitListQuerySchema } from '@wizzn/shared'
+import { briefInputSchema, bulkActionSchema, rejectSchema, type BulkResultDto, replaceImageSchema, unitEditSchema, unitListQuerySchema } from '@wizzn/shared'
 import { z } from 'zod'
 import { requireAdmin } from '../middleware/require-admin.js'
 import type { ImageReplacer } from '../pipeline/replace-image.js'
@@ -12,6 +12,7 @@ function respond(c: Context, result: AdminActionResult) {
   if (result === 'ok') return c.json({ ok: true })
   if (result === 'not_found') return c.json({ error: 'Not Found' }, 404)
   if (result === 'invalid_content') return c.json({ error: 'Content does not match the unit schema' }, 400)
+  if (result === 'has_history') return c.json({ error: 'Unit has user history' }, 409)
   return c.json({ error: 'Action not allowed in the current status' }, 409)
 }
 
@@ -40,6 +41,21 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
       const result = await repo.requeue(id)
       if (result === 'ok') await queue.enqueueResearch(id)
       return respond(c, result)
+    })
+    .post('/units/bulk', zValidator('json', bulkActionSchema), async (c) => {
+      const { action, ids } = c.req.valid('json')
+      const out: BulkResultDto = { done: [], skipped: [] }
+      // Sequential: each unit uses its own compare-and-set, and enqueueing stays in order
+      for (const id of new Set(ids)) {
+        const result = action === 'delete' ? await repo.deleteUnit(id) : await repo.requeue(id)
+        if (result === 'ok') {
+          if (action === 'regenerate') await queue.enqueueResearch(id)
+          out.done.push(id)
+        } else {
+          out.skipped.push({ id, reason: result === 'invalid_content' ? 'invalid_state' : result })
+        }
+      }
+      return c.json(out)
     })
     .post(
       '/units/:id/assets/:assetId/replace',

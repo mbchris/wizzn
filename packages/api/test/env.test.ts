@@ -41,10 +41,20 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ ...valid, STOCK_IMAGE_PROVIDERS: 'openverse,commons', STOCK_USER_AGENT: '' })).toThrow(/STOCK_USER_AGENT/)
   })
   it('accepts openverse alone without a user agent', () => {
-    expect(loadEnv({ ...valid, STOCK_IMAGE_PROVIDERS: 'openverse', STOCK_USER_AGENT: '' }).STOCK_IMAGE_PROVIDERS).toEqual(['openverse'])
+    expect(loadEnv({ ...valid, STOCK_IMAGE_PROVIDERS: 'openverse', STOCK_USER_AGENT: '', RESEARCH_PROVIDERS: 'curated,europepmc,web' }).STOCK_IMAGE_PROVIDERS).toEqual(['openverse'])
   })
   it('treats an empty provider list as stock disabled', () => {
-    expect(loadEnv({ ...valid, STOCK_IMAGE_PROVIDERS: '', STOCK_USER_AGENT: '' }).STOCK_IMAGE_PROVIDERS).toEqual([])
+    expect(loadEnv({ ...valid, STOCK_IMAGE_PROVIDERS: '', STOCK_USER_AGENT: '', RESEARCH_PROVIDERS: 'curated,europepmc,web' }).STOCK_IMAGE_PROVIDERS).toEqual([])
+  })
+  it('defaults research settings', () => {
+    const env = loadEnv(valid)
+    expect(env.RESEARCH_PROVIDERS).toEqual(['curated', 'wikipedia', 'europepmc', 'web'])
+    expect(env.RESEARCH_MIN_SOURCES).toBe(2)
+  })
+  it('requires STOCK_USER_AGENT when wikipedia research is enabled', () => {
+    expect(() => loadEnv({ ...valid, STOCK_IMAGE_PROVIDERS: 'openverse', STOCK_USER_AGENT: '' })).toThrow(/wikipedia/)
+    expect(() => loadEnv({ ...valid, RESEARCH_PROVIDERS: 'curated,foo' })).toThrow(/RESEARCH_PROVIDERS/)
+    expect(() => loadEnv({ ...valid, RESEARCH_MIN_SOURCES: '-1' })).toThrow(/RESEARCH_MIN_SOURCES/)
   })
   it('rejects unknown stock providers', () => {
     expect(() => loadEnv({ ...valid, STOCK_IMAGE_PROVIDERS: 'foo' })).toThrow(/STOCK_IMAGE_PROVIDERS/)

@@ -6,7 +6,7 @@ Focus are users who are addicted to the dopamin effect that apps likes instagram
 
 The self-generated content can be either:
 - audio content: 3-5 minutes of inspiration, completed per lesson. 1 to 3 target pictures / drawings to emphasize
-- written content: 3-5 slider pages of a particular topic with linkout to the actul source. the slider pages complete the small aspect of the topic.
+- written content: a cover page (head image, title, hook) plus 4-6 slider pages, 2-3 minutes of reading (420-600 words), with linkout to the actual sources. Sources come from reputable providers first (curated authorities, Wikipedia, scientific reviews).
 
 Content is fully AI pre-generated. For the content administrators, there is a way to add content and context for which the AI created the appropriate content.
 

@@ -1,0 +1,5 @@
+{"version":"6.9","hitCount":3,"request":{"resultType":"core"},"resultList":{"result":[
+{"id":"38000001","source":"MED","pmid":"38000001","doi":"10.1000/a","title":"Protein intake and muscle hypertrophy: a systematic review and meta-analysis.","pubYear":"2023","journalInfo":{"journal":{"title":"British Journal of Sports Medicine"}},"abstractText":"<h4>Background</h4>Protein supplementation augments gains in muscle mass<sup>1</sup> during resistance training. <h4>Results</h4>Pooled data from 49 trials (n=1863) …","citedByCount":999},
+{"id":"38000002","source":"MED","pmid":"38000002","title":"No abstract review.","pubYear":"2022","journalInfo":{"journal":{"title":"Nutrients"}},"citedByCount":3},
+{"id":"PMC999","source":"PMC","title":"Dietary protein in older adults: review.","pubYear":"2021","journalInfo":{"journal":{"title":"Nutrients"}},"abstractText":"Older adults need more protein.","citedByCount":0}
+]}}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref } from 'vue'
-import { WRITTEN_MIN_DWELL_SEC, type FeedUnitDto, type WrittenUnit } from '@wizzn/shared'
+import { readingMinutes, writtenMinDwellSec, writtenPageCount, type FeedUnitDto, type WrittenUnit } from '@wizzn/shared'
 import { useCompletion, useDwell } from 'src/composables/useCompletion'
 import { usePlatform } from 'src/composables/usePlatform'
 import SourceFooter from 'components/SourceFooter.vue'
@@ -13,14 +13,19 @@ const track = ref<HTMLElement | null>(null)
 const index = ref(0)
 const maxSeen = ref(1)
 const slides = computed(() => props.unit.content.slides)
-const pct = computed(() => Math.round(((index.value + 1) / slides.value.length) * 100))
-const onLast = computed(() => index.value === slides.value.length - 1)
+/** Issue #4: optional cover is page 0; pre-#4 units have none */
+const cover = computed(() => props.unit.content.cover ?? null)
+const pages = computed(() => writtenPageCount(props.unit.content))
+const minDwell = computed(() => writtenMinDwellSec(props.unit.content))
+const minutes = computed(() => readingMinutes(props.unit.content))
+const pct = computed(() => Math.round(((index.value + 1) / pages.value) * 100))
+const onLast = computed(() => index.value === pages.value - 1)
 const { completed, report } = useCompletion(props.unit.id)
 const dwell = useDwell(() => props.active)
 onUnmounted(dwell.stop)
 
-const ready = computed(() => maxSeen.value >= slides.value.length && dwell.seconds.value >= WRITTEN_MIN_DWELL_SEC)
-const waitSec = computed(() => Math.max(0, WRITTEN_MIN_DWELL_SEC - dwell.seconds.value))
+const ready = computed(() => maxSeen.value >= pages.value && dwell.seconds.value >= minDwell.value)
+const waitSec = computed(() => Math.max(0, minDwell.value - dwell.seconds.value))
 
 /** Line-broken or "•"-separated bodies render as bullets (TikTok caption style) */
 function bullets(body: string): string[] | null {
@@ -48,13 +53,25 @@ function complete(): void {
   <div class="wz-written">
     <div class="wz-deck">
       <div class="wz-deck-head">
-        <span>Folie {{ index + 1 }} von {{ slides.length }}</span>
+        <span>Folie {{ index + 1 }} von {{ pages }}</span>
         <span>[ {{ pct }}% ]</span>
       </div>
       <div class="wz-deck-bar"><div :style="{ width: `${pct}%` }" /></div>
 
       <div ref="track" class="wz-track" @scroll.passive="onScroll">
-        <section v-for="(s, i) in slides" :key="i" class="wz-slide" :aria-label="`Folie ${i + 1}`">
+        <section v-if="cover" class="wz-slide wz-cover" aria-label="Titelseite">
+          <div v-if="unit.media[cover.imageId]" class="wz-cover-img">
+            <img :src="unit.media[cover.imageId]" :alt="unit.credits?.[cover.imageId]?.title ?? ''" draggable="false" />
+            <ImageCredit :credit="unit.credits?.[cover.imageId]" />
+          </div>
+          <span class="wz-cover-time">
+            <q-icon :name="pIcon('reading_time')" size="14px" />
+            ≈ {{ minutes }} Min. Lesezeit
+          </span>
+          <h3 class="wz-slide-title">{{ unit.title }}</h3>
+          <p class="wz-slide-body">{{ cover.hook }}</p>
+        </section>
+        <section v-for="(s, i) in slides" :key="i" class="wz-slide" :aria-label="`Folie ${i + 1 + (cover ? 1 : 0)}`">
           <h3 class="wz-slide-title">{{ s.title }}</h3>
           <ul v-if="bullets(s.body)" class="wz-slide-body">
             <li v-for="(b, j) in bullets(s.body)" :key="j">{{ b }}</li>
@@ -68,7 +85,7 @@ function complete(): void {
       </div>
 
       <div class="wz-dots" aria-hidden="true">
-        <span v-for="(_s, i) in slides" :key="i" :class="{ on: i === index }" />
+        <span v-for="i in pages" :key="i" :class="{ on: i - 1 === index }" />
       </div>
     </div>
 
@@ -78,13 +95,13 @@ function complete(): void {
       v-if="onLast || completed"
       :ready="ready"
       :completed="completed"
-      :fill="Math.min(1, dwell.seconds.value / WRITTEN_MIN_DWELL_SEC)"
+      :fill="Math.min(1, dwell.seconds.value / minDwell)"
       label="Einheit abschließen (+1)"
       :pending-label="`Noch ${waitSec}s lesen …`"
       @complete="complete"
     />
     <button v-else type="button" class="wz-next" @click="go(index + 1)">
-      Wische für den nächsten Tipp ({{ index + 1 }}/{{ slides.length }})
+      Wische für den nächsten Tipp ({{ index + 1 }}/{{ pages }})
       <q-icon :name="pIcon('chevron_right')" size="18px" />
     </button>
   </div>
@@ -109,6 +126,11 @@ ul.wz-slide-body { padding-left: 1.1em; display: flex; flex-direction: column; g
 ul.wz-slide-body li::marker { color: var(--wz-glow); }
 .wz-slide-img { position: relative; flex: 1; min-height: 110px; margin-top: 14px; border-radius: 18px; overflow: hidden; }
 .wz-slide-img img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; }
+
+/* Cover: head image on top, title + hook below (Instagram-post shape, issue #4) */
+.wz-cover-img { position: relative; flex: 0 0 55%; min-height: 160px; margin-bottom: 14px; border-radius: 18px; overflow: hidden; }
+.wz-cover-img img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; }
+.wz-cover-time { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; margin-bottom: 8px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.85); background: color-mix(in srgb, var(--wz-glow) 22%, transparent); }
 
 .wz-dots { display: flex; justify-content: center; gap: 10px; padding-top: 10px; }
 .wz-dots span { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.55); transition: all 0.2s; }

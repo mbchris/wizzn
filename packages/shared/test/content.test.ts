@@ -8,12 +8,18 @@ describe('writtenUnitSchema', () => {
   it('accepts 3 slides with a source', () => {
     expect(writtenUnitSchema.safeParse({ format: 'written', slides: [slide, slide, slide], sources: [source] }).success).toBe(true)
   })
-  it('rejects 2 or 6 slides', () => {
+  // Issue #4: up to 6 slides with ≤ 120 words; optional cover keeps pre-#4 units valid
+  it('rejects 2 or 7 slides, accepts 6', () => {
     expect(writtenUnitSchema.safeParse({ format: 'written', slides: [slide, slide], sources: [source] }).success).toBe(false)
-    expect(writtenUnitSchema.safeParse({ format: 'written', slides: Array(6).fill(slide), sources: [source] }).success).toBe(false)
+    expect(writtenUnitSchema.safeParse({ format: 'written', slides: Array(7).fill(slide), sources: [source] }).success).toBe(false)
+    expect(writtenUnitSchema.safeParse({ format: 'written', slides: Array(6).fill(slide), sources: [source] }).success).toBe(true)
   })
-  it('rejects a slide body over 60 words', () => {
-    const long = { title: 'T', body: Array(61).fill('wort').join(' ') }
+  it('accepts an optional cover', () => {
+    expect(writtenUnitSchema.safeParse({ format: 'written', cover: { hook: 'Hook', imageId: 'i1' }, slides: [slide, slide, slide], sources: [source] }).success).toBe(true)
+    expect(writtenUnitSchema.safeParse({ format: 'written', cover: { hook: 'Hook' }, slides: [slide, slide, slide], sources: [source] }).success).toBe(false)
+  })
+  it('rejects a slide body over 120 words', () => {
+    const long = { title: 'T', body: Array(121).fill('wort').join(' ') }
     expect(writtenUnitSchema.safeParse({ format: 'written', slides: [long, slide, slide], sources: [source] }).success).toBe(false)
   })
   it('rejects missing sources', () => {

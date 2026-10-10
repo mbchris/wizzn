@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm'
-import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { UNIT_STATUSES, type ImageCredit } from '@wizzn/shared'
+import { boolean, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { UNIT_STATUSES, type ImageCredit, type SourceTier } from '@wizzn/shared'
 
 export const unitFormat = pgEnum('unit_format', ['audio', 'written'])
 export const unitStatus = pgEnum('unit_status', UNIT_STATUSES)
@@ -27,6 +27,9 @@ export const contentBrief = pgTable('content_brief', {
   themeId: uuid('theme_id').references(() => theme.id),
   topic: text('topic').notNull(),
   context: text('context').notNull().default(''),
+  /** Editorial voice / story plot (EDITORIAL_STYLES / STORY_ARCS); null → random per unit */
+  style: text('style'),
+  storyArc: text('story_arc'),
   format: unitFormat('format').notNull(),
   count: integer('count').notNull().default(1),
   createdBy: text('created_by').notNull(),
@@ -63,6 +66,9 @@ export const source = pgTable('source', {
   title: text('title').notNull(),
   publisher: text('publisher').notNull(),
   excerpt: text('excerpt').notNull().default(''),
+  // Issue #4: 1 curated, 2 wikipedia, 3 europepmc, 4 web; pre-#4 rows are unknown → 4
+  tier: smallint('tier').$type<SourceTier>().notNull().default(4),
+  provider: text('provider').notNull().default('web'),
   lastCheckedAt: timestamp('last_checked_at'),
 })
 

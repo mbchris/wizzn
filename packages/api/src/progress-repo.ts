@@ -23,7 +23,10 @@ type Conn = Db | Tx
 export interface ProgressRepo {
   getPremium(userId: string, now: Date): Promise<PremiumDto>
   countDoneOn(userId: string, localDate: string): Promise<number>
-  /** Inserts the completion and applies streak, XP and badges atomically; null when the unit was completed before */
+  /**
+   * Inserts the completion and applies streak, XP and badges atomically; null when the unit — or its paired
+   * slides/audio sibling — was completed before (one topic is rewarded once, whichever variant was consumed).
+   */
   recordCompletion(userId: string, unitId: string, today: string, premium: boolean, cap: number): Promise<CompletionRewardsDto | null>
   getProgress(userId: string, today: string, premium: PremiumDto, cap: number): Promise<ProgressDto>
   /** Returns false when the user does not exist (e.g. a RevenueCat anonymous id) */
@@ -83,6 +86,16 @@ export function createProgressRepo(db: Db): ProgressRepo {
 
     async recordCompletion(userId, unitId, today, premium, cap) {
       return db.transaction(async (tx) => {
+        const [own] = await tx.select({ pairId: unit.pairId }).from(unit).where(eq(unit.id, unitId))
+        if (own?.pairId) {
+          const [sibling] = await tx
+            .select({ id: completionEvent.id })
+            .from(completionEvent)
+            .innerJoin(unit, eq(unit.id, completionEvent.unitId))
+            .where(and(eq(completionEvent.userId, userId), eq(unit.pairId, own.pairId)))
+            .limit(1)
+          if (sibling) return null
+        }
         const inserted = await tx.insert(completionEvent).values({ userId, unitId, localDate: today }).onConflictDoNothing().returning({ id: completionEvent.id })
         if (inserted.length === 0) return null
         // Serialises concurrent completions of one user so day/week bonuses are paid once

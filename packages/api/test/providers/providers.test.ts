@@ -89,3 +89,24 @@ describe('api images (ImageRouter compatible)', () => {
     expect(calls[0]!.body).toMatchObject({ response_format: 'b64_ephemeral' })
   })
 })
+
+describe('createProviders research wiring', () => {
+  it('builds research providers from RESEARCH_PROVIDERS', async () => {
+    const { createProviders } = await import('../../src/providers/index.js')
+    const { loadEnv } = await import('../../src/env.js')
+    const base = {
+      DATABASE_URL: 'postgres://u:p@localhost:5432/db',
+      BETTER_AUTH_SECRET: 'x'.repeat(32),
+      BETTER_AUTH_URL: 'http://localhost:3000',
+      LLM_BASE_URL: 'http://llm',
+      LLM_MODEL: 'm',
+      SEARCH_URL: 'http://sx',
+      TTS_URL: 'http://tts',
+      TTS_VOICE: 'v',
+      STOCK_USER_AGENT: 'wizzn-test/1.0 (a@b.c)',
+      MEDIA_PUBLIC_URL: 'http://localhost:3000/media',
+    }
+    expect(createProviders(loadEnv(base)).research.map((p) => p.name)).toEqual(['curated', 'wikipedia', 'europepmc', 'web'])
+    expect(createProviders(loadEnv({ ...base, RESEARCH_PROVIDERS: 'web,curated' })).research.map((p) => p.name)).toEqual(['web', 'curated'])
+  })
+})
