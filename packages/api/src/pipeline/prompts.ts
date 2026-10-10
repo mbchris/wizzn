@@ -76,3 +76,14 @@ export function checkPrompt(content: string, sources: ResearchedSource[]): ChatM
     },
   ]
 }
+
+export function imagePickPrompt(prompt: string, candidates: { title: string; tags: string[] }[]): ChatMessage[] {
+  const list = candidates.map((c, i) => `[${i}] ${c.title} — ${c.tags.join(', ')}`).join('\n')
+  return [
+    { role: 'system', content: 'Du wählst passende Stockbilder für "wizzn", eine App mit kurzen Wissenshappen. Antworte ausschließlich mit JSON.' },
+    {
+      role: 'user',
+      content: `Gesuchtes Motiv: ${prompt}\n\nKandidaten:\n${list}\n\nWähle das Bild, das am besten zum Motiv passt. JSON: {"index": number|null} — null wenn keines passt.`,
+    },
+  ]
+}
