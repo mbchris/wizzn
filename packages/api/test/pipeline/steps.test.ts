@@ -223,6 +223,21 @@ describe('pipeline', () => {
     expect(check).toContain(`Die 50/30/20-Regel\n\n${words(30)}`)
   })
 
+  it('researches a written/audio pair only once and shares the sources', async () => {
+    const store = new FakeStore()
+    store.add('pw', 'written')
+    store.add('pa', 'audio')
+    store.pairs.set('pw', 'p1').set('pa', 'p1')
+    let searches = 0
+    const d = deps(store, { research: [createWebProvider({ search: async () => (searches++, [{ url: 'https://vz.de/a', title: 'A', snippet: '' }, { url: 'https://bafin.de/b', title: 'B', snippet: '' }]) })] })
+    await runStep('research', 'pw', d)
+    await runStep('research', 'pa', d)
+    expect(searches).toBe(1)
+    expect(store.sources.get('pa')).toEqual(store.sources.get('pw'))
+    expect(store.sources.get('pa')?.length).toBeGreaterThan(0)
+    expect(d.queued).toEqual(['unit.draft:pw', 'unit.draft:pa'])
+  })
+
   it('ignores a duplicate job for a step that already ran', async () => {
     const store = new FakeStore()
     store.add('d1', 'written')

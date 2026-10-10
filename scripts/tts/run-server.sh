@@ -5,6 +5,7 @@
 #
 # Defaults come from .env: port from TTS_URL, voice from TTS_VOICE, Qwen model size from TTS_QWEN_SIZE.
 # Extra args are passed through and win over the defaults. Each engine gets its own venv (.chatterbox/, .qwen-tts/).
+# All output (incl. startup crashes) is also appended to <engine dir>/logs/server.log; /info reports the path.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ENGINE="${1:-}"; shift || true
@@ -17,9 +18,18 @@ VOICE="$(envval TTS_VOICE)"
 # Voice files are given relative to the repo root
 [[ -n "$VOICE" && -f "$ROOT/$VOICE" ]] && VOICE="$ROOT/$VOICE"
 
+# Tee stdout+stderr of this script and the exec'd server into the engine's log file
+start_log() {
+  export TTS_LOG_FILE="$1/logs/server.log"
+  mkdir -p "$(dirname "$TTS_LOG_FILE")"
+  exec > >(tee -a "$TTS_LOG_FILE") 2>&1
+  echo "=== $(date '+%Y-%m-%d %H:%M:%S') $ENGINE server starting (pid $$, port $PORT) — log: $TTS_LOG_FILE"
+}
+
 case "$ENGINE" in
   chatterbox)
     DIR="$ROOT/.chatterbox"
+    start_log "$DIR"
     if [[ ! -x "$DIR/venv/bin/python" ]]; then
       echo "Installing Chatterbox TTS into .chatterbox/venv (first time only)"
       uv venv -q --python 3.11 "$DIR/venv"
@@ -36,6 +46,7 @@ case "$ENGINE" in
     ;;
   qwen)
     DIR="$ROOT/.qwen-tts"
+    start_log "$DIR"
     if [[ ! -x "$DIR/venv/bin/python" ]]; then
       echo "Installing Qwen3-TTS into .qwen-tts/venv (first time only)"
       uv venv -q --python 3.12 "$DIR/venv"

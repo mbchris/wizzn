@@ -3,6 +3,7 @@
  *
  *   pnpm --filter @wizzn/api tts:entry <unitId> [outDir]
  *   pnpm --filter @wizzn/api tts:entry --text "Some script…" [outDir]
+ *   pnpm --filter @wizzn/api tts:entry            (no args → TTS_DEBUG_TEXT from .env)
  *   add --fit to apply the pipeline's 3–5 min duration fitting (default: one render at TTS_LENGTH_SCALE)
  *   add --provider <silent|piper|chatterbox|qwen> and/or --url <http://…/synthesize> to override TTS_PROVIDER / TTS_URL,
  *   e.g. to A/B two engines running on different ports (see `pnpm tts:server`)
@@ -33,10 +34,13 @@ function takeOpt(flag: string): string | undefined {
 const providerOpt = takeOpt('--provider')
 const urlOpt = takeOpt('--url')
 const textIdx = args.indexOf('--text')
-const inlineText = textIdx >= 0 ? args.splice(textIdx, 2)[1] : undefined
+const textArg = textIdx >= 0 ? args.splice(textIdx, 2)[1] : undefined
+// No --text and no unitId → fall back to TTS_DEBUG_TEXT from .env
+const debugText = process.env.TTS_DEBUG_TEXT?.trim() || undefined
+const inlineText = textArg ?? (args.length === 0 ? debugText : undefined)
 const [unitId, outArg] = inlineText ? [undefined, args[0]] : args
 if (!inlineText && !unitId) {
-  console.error('Usage: tts-entry <unitId> [outDir]  |  tts-entry --text "…" [outDir]')
+  console.error('Usage: tts-entry <unitId> [outDir]  |  tts-entry --text "…" [outDir]  |  tts-entry (uses TTS_DEBUG_TEXT)')
   process.exit(1)
 }
 
@@ -50,6 +54,7 @@ if (providerOpt) env.TTS_PROVIDER = providerOpt as (typeof PROVIDERS)[number]
 if (urlOpt) env.TTS_URL = urlOpt
 let script = inlineText
 let name = 'text'
+if (inlineText) console.log(`Text (${textArg !== undefined ? '--text' : 'TTS_DEBUG_TEXT'}):\n  ${inlineText}\n`)
 if (!script) {
   const { db, pool } = createDb(env.DATABASE_URL)
   const [row] = await db.select({ id: unit.id, format: unit.format, title: unit.title, contentJson: unit.contentJson }).from(unit).where(eq(unit.id, unitId!))
@@ -61,7 +66,8 @@ if (!script) {
   console.log(`Unit "${row.title}" — ${script.split(/\s+/).length} words`)
 }
 
-const tts = createTts(env, { fit })
+// A test run: always re-generate, never serve cached renders from the TTS server
+const tts = createTts(env, { fit, noCache: true })
 const sec = (ms: number): string => `${(ms / 1000).toFixed(1)}s`
 
 type ServerInfo = Record<string, unknown> & { stats?: Record<string, number> }
@@ -73,6 +79,11 @@ async function serverInfo(): Promise<ServerInfo | null> {
   } catch {
     return null
   }
+}
+
+/** Mirrors scripts/tts/run-server.sh: <repo>/.<engine dir>/logs/server.log */
+function serverLogFile(): string {
+  return resolve(import.meta.dirname, '../../../..', env.TTS_PROVIDER === 'qwen' ? '.qwen-tts' : '.chatterbox', 'logs/server.log')
 }
 
 const info = await serverInfo()
@@ -90,6 +101,7 @@ if (info) {
   if (params) console.log(`  params        ${Object.entries(params as Record<string, unknown>).map(([k, v]) => `${k}=${v}`).join(' ')}`)
 } else if (env.TTS_PROVIDER === 'chatterbox' || env.TTS_PROVIDER === 'qwen') {
   console.warn(`  (server info unavailable — is \`pnpm tts:server ${env.TTS_PROVIDER}\` running?)`)
+  console.warn(`  log_file      ${serverLogFile()}  (expected location)`)
 }
 
 const t0 = Date.now()
@@ -124,7 +136,7 @@ console.log(`  audio         ${sec(wavDurationMs(speech))}`)
 console.log(`  synthesis     ${sec(synthMs)}  (RTF ${(synthMs / 1000 / Math.max(speech.durationSec, 1)).toFixed(2)} — <1 = faster than real time)`)
 if (after?.stats) {
   console.log(`  server        ${d('requests')} requests, ${d('cache_hits')} from cache, ${d('generated')} generated in ${d('gen_sec').toFixed(1)}s`)
-  if (d('cache_hits') > 0) console.log('  note          cached chunks make this run faster than a fresh render (cache: .<engine>/cache)')
+  if (d('cache_hits') > 0) console.warn('  warning       server served cached chunks despite no_cache — it runs old code, restart `pnpm tts:server`')
 }
 console.log(`  mp3 + loudnorm ${sec(mp3Ms)}`)
 console.log(`  total         ${sec(Date.now() - tStart)}`)

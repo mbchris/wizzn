@@ -58,10 +58,10 @@ export function createImageReplacer(deps: { store: PipelineStore; image: ImageDe
 
       if (currentKey) rejectedStockIds = [...asset.rejectedStockIds, currentKey]
 
-      const { path, origin, credit, stockQuery } = resolved
-      await store.updateAsset(assetId, { path, origin, credit, stockQuery, prompt, ...(rejectedStockIds ? { rejectedStockIds } : {}) })
+      const { path, origin, credit, stockQuery, generator } = resolved
+      await store.updateAsset(assetId, { path, origin, credit, stockQuery, prompt, generator, ...(rejectedStockIds ? { rejectedStockIds } : {}) })
       // Old file stays in the media store (no delete helper)
-      return { ok: true, asset: { id: assetId, kind: 'image', url: mediaUrl(path), durationSec: asset.durationSec ?? null, origin, credit, stockQuery, prompt } }
+      return { ok: true, asset: { id: assetId, kind: 'image', url: mediaUrl(path), durationSec: asset.durationSec ?? null, origin, credit, stockQuery, prompt, generator } }
     },
 
     async revoice(unitId, assetId) {
@@ -81,9 +81,9 @@ export function createImageReplacer(deps: { store: PipelineStore; image: ImageDe
       const next = audioUnitSchema.safeParse({ ...content.data, durationSec: speech.durationSec, images })
       if (!next.success) return { ok: false, error: 'invalid_content' }
 
-      await store.updateAsset(assetId, { path, origin: 'generated', credit: null, stockQuery: null, durationSec: speech.durationSec })
+      await store.updateAsset(assetId, { path, origin: 'generated', credit: null, stockQuery: null, durationSec: speech.durationSec, generator: deps.audio.tts.name })
       await store.saveContent(unitId, next.data)
-      return { ok: true, asset: { id: assetId, kind: 'audio', url: mediaUrl(path), durationSec: speech.durationSec, origin: 'generated', credit: null, stockQuery: null, prompt: null } }
+      return { ok: true, asset: { id: assetId, kind: 'audio', url: mediaUrl(path), durationSec: speech.durationSec, origin: 'generated', credit: null, stockQuery: null, prompt: null, generator: deps.audio.tts.name } }
     },
   }
 }

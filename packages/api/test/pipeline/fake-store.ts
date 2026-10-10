@@ -7,6 +7,7 @@ export class FakeStore implements PipelineStore {
   sources = new Map<string, ResearchedSource[]>()
   assets = new Map<string, (NewAsset & { id: string; rejectedStockIds: string[] })[]>()
   checks = new Map<string, CheckReport>()
+  pairs = new Map<string, string>()
 
   add(id: string, format: UnitFormat, status: UnitStatus = 'queued'): void {
     this.units.set(id, {
@@ -29,6 +30,16 @@ export class FakeStore implements PipelineStore {
   }
   async replaceSources(id: string, s: ResearchedSource[]) {
     this.sources.set(id, s)
+  }
+  async researchOnce(id: string, research: () => Promise<ResearchedSource[]>) {
+    const pairId = this.pairs.get(id)
+    const sibling = pairId ? [...this.pairs].find(([other, p]) => other !== id && p === pairId && this.sources.get(other)?.length)?.[0] : undefined
+    if (sibling) {
+      this.sources.set(id, [...this.sources.get(sibling)!])
+      return 'reused' as const
+    }
+    this.sources.set(id, await research())
+    return 'researched' as const
   }
   async getSources(id: string) {
     return this.sources.get(id) ?? []

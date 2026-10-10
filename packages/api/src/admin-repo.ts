@@ -96,7 +96,7 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
         promptVersion: row.promptVersion,
         model: row.model,
         sources: row.sources.map(({ url, title, publisher, tier, provider }) => ({ url, title, publisher, tier, provider })),
-        assets: row.assets.map((a) => ({ id: a.id, kind: a.kind, url: mediaUrl(a.path), durationSec: a.durationSec, origin: a.origin, credit: a.credit ?? null, stockQuery: a.stockQuery, prompt: a.prompt ?? null })),
+        assets: row.assets.map((a) => ({ id: a.id, kind: a.kind, url: mediaUrl(a.path), durationSec: a.durationSec, origin: a.origin, credit: a.credit ?? null, stockQuery: a.stockQuery, prompt: a.prompt ?? null, generator: a.generator ?? null })),
         checkReport: (row.checkReport?.reportJson as CheckReport | undefined) ?? null,
       }
     },

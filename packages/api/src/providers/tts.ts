@@ -7,6 +7,8 @@ export interface TtsResult {
 }
 
 export interface TtsClient {
+  /** Engine/voice label stored on the audio asset and shown in the admin UI */
+  readonly name: string
   synthesize(text: string): Promise<TtsResult>
 }
 
@@ -15,6 +17,7 @@ const WORDS_PER_MIN = 140
 /** Dev/test: silent WAV with realistic duration, so the pipeline runs without a TTS server. */
 export function createSilentTts(sampleRate = 8000): TtsClient {
   return {
+    name: 'silent (dev)',
     async synthesize(text) {
       const words = text.trim().split(/\s+/).filter(Boolean).length
       const durationSec = Math.max(1, Math.round((words / WORDS_PER_MIN) * 60))
@@ -55,7 +58,7 @@ const inWindow = (sec: number): boolean => sec >= AUDIO_MIN_SEC && sec <= AUDIO_
  */
 export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof fetch = fetch, lengthScale = 1, fit = true): TtsClient {
   const render: Render = (text, scale) => postWav(fetchFn, baseUrl, { text, voice, length_scale: scale })
-  return fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)
+  return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: `piper · ${voice}` }
 }
 
 /**
@@ -63,25 +66,26 @@ export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof f
  * limited, so the script is sent in sentence-group chunks and the WAVs are joined. The server caches raw renders and
  * applies length_scale as a time-stretch, so pace re-renders cost little.
  */
-export function createChatterboxTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = CHUNK_CHARS, fit = true): TtsClient {
+/** `noCache` makes the server re-generate instead of returning cached renders (tts:entry tests) */
+export function createChatterboxTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = CHUNK_CHARS, fit = true, noCache = false): TtsClient {
   const render: Render = async (text, scale) => {
     const parts: Buffer[] = []
-    for (const chunk of splitIntoChunks(text, maxChunkChars)) parts.push(await postWav(fetchFn, baseUrl, { text: chunk, length_scale: scale }))
+    for (const chunk of splitIntoChunks(text, maxChunkChars)) parts.push(await postWav(fetchFn, baseUrl, { text: chunk, length_scale: scale, ...(noCache && { no_cache: true }) }))
     return concatWav(parts)
   }
-  return fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)
+  return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: 'chatterbox-multilingual' }
 }
 
 /**
  * Qwen3-TTS (`scripts/tts/qwen_server.py`, same /synthesize contract and server-side cache as Chatterbox). Handles
  * longer inputs than Chatterbox, so chunks are larger (fewer joins, more natural phrasing).
  */
-export function createQwenTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = QWEN_CHUNK_CHARS, fit = true): TtsClient {
-  return createChatterboxTts(baseUrl, fetchFn, lengthScale, maxChunkChars, fit)
+export function createQwenTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = QWEN_CHUNK_CHARS, fit = true, noCache = false): TtsClient {
+  return { ...createChatterboxTts(baseUrl, fetchFn, lengthScale, maxChunkChars, fit, noCache), name: 'qwen3-tts' }
 }
 
 /** Single render, no 3–5 min duration fitting (debugging / ad-hoc text) */
-function renderOnce(renderWav: Render, lengthScale: number): TtsClient {
+function renderOnce(renderWav: Render, lengthScale: number): Omit<TtsClient, 'name'> {
   return {
     async synthesize(text) {
       const audio = await renderWav(text, clampScale(lengthScale))
@@ -152,7 +156,7 @@ function dataChunk(wav: Buffer): { start: number; end: number } {
  * Units must run 3–5 min: renders up to MAX_RENDERS times with an adjusted pace, then pads up to MAX_PAD_SEC of
  * trailing silence; otherwise fails with a message that says what to change.
  */
-function fitToWindow(renderWav: Render, lengthScale: number): TtsClient {
+function fitToWindow(renderWav: Render, lengthScale: number): Omit<TtsClient, 'name'> {
   async function render(text: string, scale: number): Promise<TtsResult> {
     const audio = await renderWav(text, scale)
     return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)) }

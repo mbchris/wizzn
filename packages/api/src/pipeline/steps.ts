@@ -80,7 +80,8 @@ export async function runStep(step: StepName, unitId: string, deps: PipelineDeps
 
 const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise<void>> = {
   async research(unit, { research, fetchPage, llm, store, researchMinSources }) {
-    await store.replaceSources(unit.id, await researchSources(unit.brief, { research, fetchPage, llm, minSources: researchMinSources }))
+    // Written and audio of one pair share the research: same facts, half the cost
+    await store.researchOnce(unit.id, () => researchSources(unit.brief, { research, fetchPage, llm, minSources: researchMinSources }))
   },
 
   async draft(unit, { llm, store, random }) {
@@ -138,7 +139,7 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
     const audioPath = mp3 ? await deps.media.put(unit.id, mp3, 'mp3') : await deps.media.put(unit.id, speech.audio, extFor(speech.contentType))
     const resolved = await resolveSlots(unit.id, draft.images.map((i) => ({ ...i, field: unit.brief.fieldSlug })), deps)
     const assets = await deps.store.replaceAssets(unit.id, [
-      { kind: 'audio', path: audioPath, durationSec: speech.durationSec },
+      { kind: 'audio', path: audioPath, durationSec: speech.durationSec, generator: deps.tts.name },
       ...resolved.map(toImageAsset),
     ])
     const [audio, ...imgs] = assets
@@ -176,7 +177,7 @@ async function resolveSlots(unitId: string, slots: ImageSlot[], deps: PipelineDe
 }
 
 function toImageAsset(r: ResolvedImage & { prompt: string }): NewAsset {
-  return { kind: 'image', path: r.path, origin: r.origin, credit: r.credit, stockQuery: r.stockQuery, prompt: r.prompt }
+  return { kind: 'image', path: r.path, origin: r.origin, credit: r.credit, stockQuery: r.stockQuery, prompt: r.prompt, generator: r.generator }
 }
 
 function draftText(format: PipelineUnit['format'], json: unknown): string {

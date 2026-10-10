@@ -2,7 +2,7 @@
 """
 Chatterbox Multilingual TTS server for wizzn (German, batch).
 
-  POST /synthesize  JSON {"text": str, "length_scale"?: float}  → audio/wav (16-bit mono)
+  POST /synthesize  JSON {"text": str, "length_scale"?: float, "no_cache"?: bool}  → audio/wav (16-bit mono)
   GET  /health      200 once the model is loaded
   GET  /info        engine, model, voice, parameters + cumulative stats (requests, cache hits, generation time)
 
@@ -72,11 +72,11 @@ class Engine:
         self.voice_key = hashlib.sha256(tag.encode()).hexdigest()[:12]
         print(f"chatterbox: ready (sr={self.sr}, ref={args.ref or 'built-in voice'})", flush=True)
 
-    def raw(self, text: str) -> np.ndarray:
+    def raw(self, text: str, no_cache: bool = False) -> np.ndarray:
         key = hashlib.sha256(f"{self.voice_key}|{text}".encode()).hexdigest()
         path = self.cache / f"{key}.npy"
         self.stats["requests"] += 1
-        if path.exists():
+        if path.exists() and not no_cache:
             self.stats["cache_hits"] += 1
             return np.load(path)
         t0 = time.monotonic()
@@ -113,8 +113,8 @@ class Engine:
             "params": {"exaggeration": a.exaggeration, "cfg_weight": a.cfg_weight, "temperature": a.temperature, "seed": SEED, "pause_sec": PAUSE_SEC, "sample_rate": self.sr},
         }
 
-    def synthesize(self, text: str, length_scale: float) -> bytes:
-        audio = self.raw(text)
+    def synthesize(self, text: str, length_scale: float, no_cache: bool = False) -> bytes:
+        audio = self.raw(text, no_cache)
         if abs(length_scale - 1) > 0.01:
             import librosa
 
@@ -142,7 +142,7 @@ def make_handler(engine: Engine):
             if self.path == "/health":
                 self._send(200, b"ok", "text/plain")
             elif self.path == "/info":
-                self._send(200, json.dumps({**engine.info(), "stats": engine.stats}).encode(), "application/json")
+                self._send(200, json.dumps({**engine.info(), "log_file": os.environ.get("TTS_LOG_FILE", ""), "stats": engine.stats}).encode(), "application/json")
             else:
                 self._send(404, b"not found", "text/plain")
 
@@ -155,7 +155,7 @@ def make_handler(engine: Engine):
                 if not text:
                     return self._send(400, b"text is required", "text/plain")
                 scale = float(req.get("length_scale") or 1)
-                self._send(200, engine.synthesize(text, scale), "audio/wav")
+                self._send(200, engine.synthesize(text, scale, bool(req.get("no_cache"))), "audio/wav")
             except Exception as e:  # noqa: BLE001
                 print(f"chatterbox: error: {e!r}", flush=True)
                 self._send(500, str(e).encode(), "text/plain")

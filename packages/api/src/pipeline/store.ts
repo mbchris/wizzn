@@ -19,6 +19,8 @@ export interface NewAsset {
   stockQuery?: string | null
   /** AI prompt of the slot (final contentJson no longer holds draft prompts) */
   prompt?: string | null
+  /** Model/engine that produced it (TTS voice, image model); null for stock images */
+  generator?: string | null
 }
 
 export interface AssetPatch {
@@ -29,6 +31,7 @@ export interface AssetPatch {
   rejectedStockIds?: string[]
   prompt?: string | null
   durationSec?: number
+  generator?: string | null
 }
 
 /** Persistence used by pipeline steps; Drizzle implementation in store-db.ts, in-memory fake in tests. */
@@ -37,6 +40,12 @@ export interface PipelineStore {
   /** Compare-and-set; returns false if the unit was not in `from` (e.g. a duplicate job). */
   transition(id: string, from: UnitStatus, to: UnitStatus, failureReason?: string): Promise<boolean>
   replaceSources(unitId: string, sources: ResearchedSource[]): Promise<void>
+  /**
+   * Stores sources for the unit, researching at most once per written/audio pair: if the paired sibling
+   * already has sources they are copied, otherwise `research` runs. Pair members are serialized so two
+   * jobs starting together don't both research.
+   */
+  researchOnce(unitId: string, research: () => Promise<ResearchedSource[]>): Promise<'researched' | 'reused'>
   getSources(unitId: string): Promise<ResearchedSource[]>
   saveDraft(unitId: string, draft: { title: string; contentJson: unknown; promptVersion: string; model: string }): Promise<void>
   saveCheck(unitId: string, report: CheckReport): Promise<void>

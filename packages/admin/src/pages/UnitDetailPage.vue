@@ -16,6 +16,15 @@ const busy = ref(false)
 const swapping = ref<Record<string, boolean>>({})
 const images = computed(() => (unit.value?.assets ?? []).filter((a) => a.kind === 'image'))
 const audio = computed(() => (unit.value?.assets ?? []).find((a) => a.kind === 'audio') ?? null)
+/** Research providers with source counts, e.g. "wikipedia ×2 · web ×1" */
+const researchProviders = computed(() => {
+  const counts = new Map<string, number>()
+  for (const s of unit.value?.sources ?? []) counts.set(s.provider, (counts.get(s.provider) ?? 0) + 1)
+  return [...counts].map(([p, n]) => `${p} ×${n}`).join(' · ')
+})
+function imageOrigin(img: Pick<UnitDetailDto['assets'][number], 'credit' | 'generator'>): string {
+  return img.credit ? `Stock · ${img.credit.provider} · ${formatLicense(img.credit)}` : `KI · ${img.generator ?? 'Modell unbekannt'}`
+}
 /** Editable AI prompt per image asset; seeded from the stored prompt */
 const prompts = ref<Record<string, string>>({})
 /** Asset shown large in the preview dialog */
@@ -238,6 +247,32 @@ onMounted(load)
           </q-list>
         </q-card>
 
+        <q-card flat bordered>
+          <q-card-section class="text-subtitle1 q-pb-none">Herkunft</q-card-section>
+          <q-list dense>
+            <q-item>
+              <q-item-section avatar><q-icon name="notes" /></q-item-section>
+              <q-item-section>Text</q-item-section>
+              <q-item-section side>{{ unit.model ?? '–' }}{{ unit.promptVersion ? ` · Prompt ${unit.promptVersion}` : '' }}</q-item-section>
+            </q-item>
+            <q-item>
+              <q-item-section avatar><q-icon name="travel_explore" /></q-item-section>
+              <q-item-section>Recherche</q-item-section>
+              <q-item-section side>{{ researchProviders || '–' }}</q-item-section>
+            </q-item>
+            <q-item v-if="audio">
+              <q-item-section avatar><q-icon name="graphic_eq" /></q-item-section>
+              <q-item-section>Audio</q-item-section>
+              <q-item-section side>{{ audio.generator ?? 'unbekannt' }}</q-item-section>
+            </q-item>
+            <q-item v-for="(img, i) in images" :key="'o' + img.id">
+              <q-item-section avatar><q-icon :name="img.credit ? 'photo_library' : 'auto_fix_high'" /></q-item-section>
+              <q-item-section>{{ unit.format === 'written' && i === 0 ? 'Titelbild' : `Bild ${unit.format === 'written' ? i : i + 1}` }}</q-item-section>
+              <q-item-section side>{{ imageOrigin(img) }}</q-item-section>
+            </q-item>
+          </q-list>
+        </q-card>
+
         <q-card v-if="reviewable && (images.length || audio)" flat bordered>
           <q-card-section class="row items-center q-gutter-sm">
             <div class="text-subtitle1">Medien</div>
@@ -249,7 +284,7 @@ onMounted(load)
             <q-item v-if="audio">
               <q-item-section avatar><q-icon name="graphic_eq" size="md" color="primary" /></q-item-section>
               <q-item-section>
-                <q-item-label>Audio · {{ fmtSec(audio.durationSec) }}</q-item-label>
+                <q-item-label>Audio · {{ fmtSec(audio.durationSec) }} · {{ audio.generator ?? 'Engine unbekannt' }}</q-item-label>
                 <audio :key="audio.url" :src="audio.url" controls preload="none" class="full-width q-mt-xs" />
                 <q-item-label caption>Neu vertonen nutzt das gespeicherte Skript – Änderungen vorher speichern.</q-item-label>
               </q-item-section>
@@ -266,7 +301,7 @@ onMounted(load)
               <q-item-section>
                 <q-item-label>
                   {{ unit.format === 'written' && i === 0 ? 'Titelbild' : `Bild ${unit.format === 'written' ? i : i + 1}` }} ·
-                  {{ img.credit ? `Stock · ${img.credit.provider} · ${formatLicense(img.credit)}` : 'KI-Illustration' }}
+                  {{ imageOrigin(img) }}
                 </q-item-label>
                 <q-item-label v-if="img.stockQuery" caption>Stock-Suche: {{ img.stockQuery }}</q-item-label>
                 <q-input v-model="prompts[img.id]" dense outlined autogrow class="q-mt-xs" label="KI-Prompt (Motiv)" hint="Stil kommt automatisch aus der Kategorie" />
@@ -286,7 +321,7 @@ onMounted(load)
             <q-img :src="zoomed.url" ratio="1" fit="contain" />
             <q-card-section class="q-gutter-sm">
               <div class="text-caption text-grey-7">
-                {{ zoomed.credit ? `Stock · ${zoomed.credit.provider} · ${formatLicense(zoomed.credit)} · ${zoomed.credit.creator ?? 'Unbekannt'}` : 'KI-Illustration' }}
+                {{ zoomed.credit ? `${imageOrigin(zoomed)} · ${zoomed.credit.creator ?? 'Unbekannt'}` : imageOrigin(zoomed) }}
               </div>
               <q-input v-model="prompts[zoomed.id]" dense outlined autogrow label="KI-Prompt (Motiv)" />
             </q-card-section>

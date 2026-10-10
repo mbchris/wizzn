@@ -72,6 +72,8 @@ export interface UnitDetailDto extends UnitSummaryDto {
     stockQuery: string | null
     /** AI prompt of the slot; editable before re-generating the image */
     prompt: string | null
+    /** Model/engine that produced it (TTS voice, image model); null for stock or unknown */
+    generator: string | null
   }[]
   checkReport: CheckReport | null
 }

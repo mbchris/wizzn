@@ -29,6 +29,8 @@ export interface ResolvedImage {
   credit: ImageCredit | null
   stockQuery: string | null
   key: string | null
+  /** AI model for generated images; null for stock (the credit names the source) */
+  generator: string | null
 }
 
 const ALLOWED_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp'])
@@ -49,7 +51,7 @@ export async function resolveImage(
   }
   const img = await deps.images.generate(slot.prompt, { field: slot.field })
   const path = await deps.media.put(unitId, img.data, extFor(img.contentType))
-  return { path, origin: 'generated', credit: null, stockQuery: null, key: null }
+  return { path, origin: 'generated', credit: null, stockQuery: null, key: null, generator: deps.images.name }
 }
 
 /** Stock-only variant for admin swaps: returns null instead of generating an AI image when no stock candidate fits. */
@@ -109,7 +111,7 @@ async function tryStock(
       const { data, mime } = await download(c.imageUrl, deps)
       const path = await deps.media.put(unitId, data, extFor(mime))
       exclude.add(key)
-      return { path, origin: 'stock', credit: c.credit, stockQuery: query, key }
+      return { path, origin: 'stock', credit: c.credit, stockQuery: query, key, generator: null }
     } catch (err) {
       deps.log?.(`stock download ${key} failed: ${(err as Error).message}`)
     }

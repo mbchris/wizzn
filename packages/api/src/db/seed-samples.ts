@@ -195,6 +195,7 @@ async function insertSample(fieldSlug: string, s: Sample, pairId: string): Promi
                 position,
                 kind: 'image' as const,
                 path,
+                generator: images.name,
               })),
             )
             .returning({ id: asset.id, position: asset.position })
@@ -224,12 +225,14 @@ async function insertSample(fieldSlug: string, s: Sample, pairId: string): Promi
             kind: 'audio' as const,
             path: audioPath,
             durationSec: speech.durationSec,
+            generator: tts.name,
           },
           ...imgPaths.map((path, i) => ({
             unitId,
             position: i + 1,
             kind: 'image' as const,
             path,
+            generator: images.name,
           })),
         ])
         .returning({ id: asset.id, position: asset.position })

@@ -86,6 +86,8 @@ export const asset = pgTable('asset', {
   credit: jsonb('credit').$type<ImageCredit>(),
   stockQuery: text('stock_query'),
   prompt: text('prompt'),
+  /** Model/engine that produced the asset (TTS voice, image model); null for stock and pre-provenance rows */
+  generator: text('generator'),
   rejectedStockIds: jsonb('rejected_stock_ids').$type<string[]>().notNull().default([]),
 })
 

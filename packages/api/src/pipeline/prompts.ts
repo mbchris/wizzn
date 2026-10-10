@@ -32,6 +32,7 @@ export type ResearchProviderName = 'curated' | 'wikipedia' | 'europepmc' | 'web'
 const SYSTEM = `Du schreibst für "wizzn", eine App mit kurzen Wissenshappen für Menschen ab 16 in Deutschland.
 Immer auf Augenhöhe und per Du; Stil und Erzählbogen gibt jeder Auftrag vor. Fakten nur aus den gegebenen Quellen.
 Keine expliziten sexuellen Inhalte, keine Heilsversprechen, keine konkreten Anlage- oder Therapieempfehlungen.
+Bezeichne den Beitrag nie über sein Medium (nicht „dieses Audio", „dieser Text", „dieser Post", „diese Folge"); schreib neutral, z. B. „Dieser Beitrag ersetzt keine persönliche Beratung" oder „Das hier ersetzt keine persönliche Beratung".
 Antworte ausschließlich mit JSON.`
 
 const STYLE_GUIDE: Record<EditorialStyle, string> = {

@@ -6,6 +6,8 @@ export interface ImageResult {
 }
 
 export interface ImageClient {
+  /** Model label stored on generated image assets and shown in the admin UI */
+  readonly name: string
   /** `field` is the category slug (e.g. finance) and picks the visual style */
   generate(prompt: string, opts?: { field?: string | null }): Promise<ImageResult>
 }
@@ -60,6 +62,7 @@ const PALETTE = ['#00e599', '#60efff', '#c86dd7', '#00ff87', '#e94057', '#ff8a65
 
 export function createPlaceholderImages(): ImageClient {
   return {
+    name: 'placeholder (dev)',
     async generate(prompt) {
       const h = createHash('sha256').update(prompt).digest()
       const bg = BG_PALETTE[h[0]! % BG_PALETTE.length]!
@@ -81,6 +84,7 @@ export function createApiImages(cfg: { baseUrl: string; model: string; apiKey: s
   // ImageRouter returns b64_ephemeral (no retention on their side); default mirrors env IMAGE_EPHEMERAL.
   const responseFormat = (cfg.ephemeral ?? true) ? 'b64_ephemeral' : 'b64_json'
   return {
+    name: cfg.model,
     async generate(prompt, opts) {
       const res = await fetchFn(`${cfg.baseUrl.replace(/\/$/, '')}/images/generations`, {
         method: 'POST',

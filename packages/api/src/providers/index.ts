@@ -36,11 +36,11 @@ export function createLlm(env: Env): LlmClient {
   return createLlmClient({ baseUrl: env.LLM_BASE_URL, model: env.LLM_MODEL, apiKey: env.LLM_API_KEY })
 }
 
-/** `fit: false` skips the 3–5 min duration fitting (single render) — for debugging */
-export function createTts(env: Env, { fit = true }: { fit?: boolean } = {}): TtsClient {
+/** `fit: false` skips the 3–5 min duration fitting (single render); `noCache` bypasses the server render cache — for debugging */
+export function createTts(env: Env, { fit = true, noCache = false }: { fit?: boolean; noCache?: boolean } = {}): TtsClient {
   if (env.TTS_PROVIDER === 'piper') return createPiperTts(env.TTS_URL, env.TTS_VOICE, fetch, env.TTS_LENGTH_SCALE, fit)
-  if (env.TTS_PROVIDER === 'chatterbox') return createChatterboxTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit)
-  if (env.TTS_PROVIDER === 'qwen') return createQwenTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit)
+  if (env.TTS_PROVIDER === 'chatterbox') return createChatterboxTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit, noCache)
+  if (env.TTS_PROVIDER === 'qwen') return createQwenTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit, noCache)
   return createSilentTts()
 }
 

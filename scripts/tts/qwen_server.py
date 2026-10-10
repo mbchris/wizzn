@@ -2,15 +2,16 @@
 """
 Qwen3-TTS server for wizzn (German, batch). Same contract as chatterbox_server.py:
 
-  POST /synthesize  JSON {"text": str, "length_scale"?: float}  → audio/wav (16-bit mono)
+  POST /synthesize  JSON {"text": str, "length_scale"?: float, "no_cache"?: bool}  → audio/wav (16-bit mono)
   GET  /health      200 once the model is loaded
   GET  /info        engine, model, voice, parameters + cumulative stats (requests, cache hits, generation time)
 
 Voice (--voice, from TTS_VOICE):
   path/to/ref.wav               clone with the Base model; transcript from path/to/ref.txt if present (better),
                                 otherwise speaker-embedding only
-  design:<description>          VoiceDesign: renders ONE reference sample from the description at startup (cached),
-                                then clones it with the Base model → the voice stays identical across chunks/units
+  design:<description>          VoiceDesign model renders every chunk directly from the description (no reference
+                                WAV; fixed seed). Voice may drift slightly between chunks — for a frozen voice,
+                                export one with --export-ref and set TTS_VOICE to that .wav
   <Speaker>[|<instruction>]     CustomVoice preset (e.g. "Ryan" or "Serena|ruhig, sachlich, warm")
 
 The API sends short chunks; raw renders are cached on disk by text hash and length_scale only time-stretches
@@ -91,13 +92,18 @@ class Engine:
         self.stats = {"requests": 0, "cache_hits": 0, "generated": 0, "gen_sec": 0.0, "audio_sec": 0.0}
         self.mode = "custom"
         self.model_id = ""
-        self.speaker = self.instruct = self.clone_prompt = None
+        self.speaker = self.instruct = self.clone_prompt = self.design = None
         voice = args.voice.strip()
 
         self.designed = voice.startswith("design:")
-        if voice.startswith("design:"):
-            ref_path, ref_text = self.designed_reference(voice[len("design:"):].strip())
-            self.use_clone(ref_path, ref_text)
+        if self.designed and args.export_ref:
+            # Only --export-ref renders a reference WAV from the description
+            self.ref_path, self.ref_text = self.designed_reference(voice[len("design:"):].strip())
+        elif self.designed:
+            self.design = voice[len("design:"):].strip()
+            self.model = load("VoiceDesign", "1.7B", self.device)
+            self.model_id = load.last
+            self.mode = "design"
         elif voice.lower().endswith(".wav"):
             txt = Path(voice).with_suffix(".txt")
             self.use_clone(voice, txt.read_text(encoding="utf-8").strip() if txt.is_file() else None)
@@ -115,7 +121,7 @@ class Engine:
         print(f"qwen-tts: ready (voice={voice or 'default'})", flush=True)
 
     def designed_reference(self, description: str):
-        """Renders the description once with VoiceDesign; cached so restarts reuse the identical voice."""
+        """--export-ref only: renders the description once with VoiceDesign into a reference WAV."""
         key = hashlib.sha256(f"{description}|{SEED}".encode()).hexdigest()[:16]
         ref = self.cache / f"design-{key}.wav"
         if not ref.exists():
@@ -145,16 +151,18 @@ class Engine:
 
     def generate(self, text: str):
         torch.manual_seed(SEED)
+        if self.design is not None:
+            return self.model.generate_voice_design(text=text, language=LANGUAGE, instruct=self.design)
         if self.clone_prompt is not None:
             return self.model.generate_voice_clone(text=text, language=LANGUAGE, voice_clone_prompt=self.clone_prompt)
         kwargs = {"instruct": self.instruct} if self.instruct else {}
         return self.model.generate_custom_voice(text=text, language=LANGUAGE, speaker=self.speaker, **kwargs)
 
-    def raw(self, text: str):
+    def raw(self, text: str, no_cache: bool = False):
         key = hashlib.sha256(f"{self.voice_key}|{text}".encode()).hexdigest()
         path = self.cache / f"{key}.npz"
         self.stats["requests"] += 1
-        if path.exists():
+        if path.exists() and not no_cache:
             self.stats["cache_hits"] += 1
             d = np.load(path)
             return d["audio"], int(d["sr"])
@@ -175,20 +183,20 @@ class Engine:
         return {
             "engine": "qwen3-tts",
             "model": self.model_id,
-            "mode": ("design→clone" if self.designed else self.mode),
+            "mode": self.mode,
             "device": self.device,
             "dtype": "bfloat16" if self.device.startswith("cuda") else "float32",
             "language": LANGUAGE,
             "voice": self.args.voice,
             "speaker": self.speaker,
-            "instruct": self.instruct,
+            "instruct": self.instruct or self.design,
             "reference": getattr(self, "ref_path", None),
             "ref_transcript": bool(getattr(self, "ref_text", None)),
             "params": {"seed": SEED, "pause_sec": PAUSE_SEC},
         }
 
-    def synthesize(self, text: str, length_scale: float) -> bytes:
-        audio, sr = self.raw(text)
+    def synthesize(self, text: str, length_scale: float, no_cache: bool = False) -> bytes:
+        audio, sr = self.raw(text, no_cache)
         if abs(length_scale - 1) > 0.01:
             import librosa
 
@@ -211,7 +219,7 @@ def make_handler(engine: Engine):
             if self.path == "/health":
                 self._send(200, b"ok", "text/plain")
             elif self.path == "/info":
-                self._send(200, json.dumps({**engine.info(), "stats": engine.stats}).encode(), "application/json")
+                self._send(200, json.dumps({**engine.info(), "log_file": os.environ.get("TTS_LOG_FILE", ""), "stats": engine.stats}).encode(), "application/json")
             else:
                 self._send(404, b"not found", "text/plain")
 
@@ -223,7 +231,7 @@ def make_handler(engine: Engine):
                 text = str(req.get("text", "")).strip()
                 if not text:
                     return self._send(400, b"text is required", "text/plain")
-                self._send(200, engine.synthesize(text, float(req.get("length_scale") or 1)), "audio/wav")
+                self._send(200, engine.synthesize(text, float(req.get("length_scale") or 1), bool(req.get("no_cache"))), "audio/wav")
             except Exception as e:  # noqa: BLE001
                 print(f"qwen-tts: error: {e!r}", flush=True)
                 self._send(500, str(e).encode(), "text/plain")

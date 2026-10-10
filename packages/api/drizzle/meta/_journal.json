@@ -64,6 +64,13 @@
       "when": 1791640200000,
       "tag": "0008_backfill_unit_pairs",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791640300000,
+      "tag": "0009_asset_generator",
+      "breakpoints": true
     }
   ]
 }

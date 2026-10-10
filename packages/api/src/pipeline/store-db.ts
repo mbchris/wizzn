@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, ne, sql } from 'drizzle-orm'
 import { editorialSchema, type CheckReport, type UnitStatus } from '@wizzn/shared'
 import type { Db } from '../db/client.js'
 import { asset, checkReport, source, unit } from '../db/schema/index.js'
@@ -16,6 +16,7 @@ function toStoredAsset(row: typeof asset.$inferSelect) {
     credit: row.credit,
     stockQuery: row.stockQuery,
     prompt: row.prompt,
+    generator: row.generator,
     rejectedStockIds: row.rejectedStockIds,
   }
 }
@@ -62,6 +63,34 @@ export function createDbPipelineStore(db: Db): PipelineStore {
       })
     },
 
+    async researchOnce(unitId, research) {
+      // Holds one pooled connection while researching a pair member; jobs run with batchSize 1, so this stays bounded
+      return db.transaction(async (tx) => {
+        const [own] = await tx.select({ pairId: unit.pairId }).from(unit).where(eq(unit.id, unitId))
+        let sources: ResearchedSource[] | null = null
+        if (own?.pairId) {
+          await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${own.pairId}::text, 0))`)
+          const rows = await tx
+            .select({ source })
+            .from(source)
+            .innerJoin(unit, eq(unit.id, source.unitId))
+            .where(and(eq(unit.pairId, own.pairId), ne(unit.id, unitId)))
+            .orderBy(source.unitId, source.position)
+          const from = rows[0]?.source.unitId
+          if (from) {
+            sources = rows
+              .filter((r) => r.source.unitId === from)
+              .map(({ source: { url, title, publisher, excerpt, tier, provider } }) => ({ url, title, publisher, excerpt, tier, provider: provider as ResearchedSource['provider'] }))
+          }
+        }
+        const reused = sources !== null
+        sources ??= await research()
+        await tx.delete(source).where(eq(source.unitId, unitId))
+        if (sources.length) await tx.insert(source).values(sources.map((s, position) => ({ unitId, position, ...s, lastCheckedAt: new Date() })))
+        return reused ? 'reused' : 'researched'
+      })
+    },
+
     async getSources(unitId) {
       const rows = await db.select().from(source).where(eq(source.unitId, unitId)).orderBy(source.position)
       return rows.map(({ url, title, publisher, excerpt, tier, provider }) => ({ url, title, publisher, excerpt, tier, provider: provider as ResearchedSource['provider'] }))
@@ -95,6 +124,7 @@ export function createDbPipelineStore(db: Db): PipelineStore {
               credit: a.credit ?? null,
               stockQuery: a.stockQuery ?? null,
               prompt: a.prompt ?? null,
+              generator: a.generator ?? null,
             })),
           )
           .returning({ id: asset.id, kind: asset.kind, position: asset.position })
@@ -124,6 +154,7 @@ export function createDbPipelineStore(db: Db): PipelineStore {
           ...(patch.rejectedStockIds ? { rejectedStockIds: patch.rejectedStockIds } : {}),
           ...(patch.prompt !== undefined ? { prompt: patch.prompt } : {}),
           ...(patch.durationSec !== undefined ? { durationSec: patch.durationSec } : {}),
+          ...(patch.generator !== undefined ? { generator: patch.generator } : {}),
         })
         .where(eq(asset.id, assetId))
     },
