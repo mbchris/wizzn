@@ -5,6 +5,21 @@ import { asset, checkReport, source, unit } from '../db/schema/index.js'
 import type { ResearchedSource } from './prompts.js'
 import type { NewAsset, PipelineStore, PipelineUnit } from './store.js'
 
+function toStoredAsset(row: typeof asset.$inferSelect) {
+  return {
+    id: row.id,
+    unitId: row.unitId,
+    kind: row.kind,
+    path: row.path,
+    ...(row.durationSec !== null ? { durationSec: row.durationSec } : {}),
+    origin: row.origin,
+    credit: row.credit,
+    stockQuery: row.stockQuery,
+    prompt: row.prompt,
+    rejectedStockIds: row.rejectedStockIds,
+  }
+}
+
 export function createDbPipelineStore(db: Db): PipelineStore {
   return {
     async getUnit(id): Promise<PipelineUnit | null> {
@@ -66,11 +81,46 @@ export function createDbPipelineStore(db: Db): PipelineStore {
         if (!assets.length) return []
         const rows = await tx
           .insert(asset)
-          .values(assets.map((a, position) => ({ unitId, position, kind: a.kind, path: a.path, durationSec: a.durationSec ?? null })))
+          .values(
+            assets.map((a, position) => ({
+              unitId,
+              position,
+              kind: a.kind,
+              path: a.path,
+              durationSec: a.durationSec ?? null,
+              origin: a.origin ?? 'generated',
+              credit: a.credit ?? null,
+              stockQuery: a.stockQuery ?? null,
+              prompt: a.prompt ?? null,
+            })),
+          )
           .returning({ id: asset.id, kind: asset.kind, position: asset.position })
         // Callers map ids back by input order
         return rows.sort((a, b) => a.position - b.position).map(({ id, kind }) => ({ id, kind }))
       })
+    },
+
+    async getAsset(assetId) {
+      const [row] = await db.select().from(asset).where(eq(asset.id, assetId))
+      return row ? toStoredAsset(row) : null
+    },
+
+    async listAssets(unitId) {
+      const rows = await db.select().from(asset).where(eq(asset.unitId, unitId)).orderBy(asset.position)
+      return rows.map(toStoredAsset)
+    },
+
+    async updateAsset(assetId, patch) {
+      await db
+        .update(asset)
+        .set({
+          path: patch.path,
+          origin: patch.origin,
+          credit: patch.credit,
+          stockQuery: patch.stockQuery,
+          ...(patch.rejectedStockIds ? { rejectedStockIds: patch.rejectedStockIds } : {}),
+        })
+        .where(eq(asset.id, assetId))
     },
 
     async saveContent(unitId, contentJson) {
