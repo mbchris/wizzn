@@ -30,7 +30,8 @@ export const contentBrief = pgTable('content_brief', {
   /** Editorial voice / story plot (EDITORIAL_STYLES / STORY_ARCS); null → random per unit */
   style: text('style'),
   storyArc: text('story_arc'),
-  format: unitFormat('format').notNull(),
+  // null → each variant becomes a written + audio pair
+  format: unitFormat('format'),
   count: integer('count').notNull().default(1),
   createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -44,6 +45,8 @@ export const unit = pgTable(
     fieldId: uuid('field_id').notNull().references(() => field.id),
     themeId: uuid('theme_id').references(() => theme.id),
     format: unitFormat('format').notNull(),
+    /** Written + audio units on the same topic; the feed shows only one of them */
+    pairId: uuid('pair_id'),
     status: unitStatus('status').notNull().default('queued'),
     title: text('title'),
     contentJson: jsonb('content_json'),
@@ -54,7 +57,7 @@ export const unit = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (t) => [index('unit_feed_idx').on(t.status, t.fieldId, t.format)],
+  (t) => [index('unit_feed_idx').on(t.status, t.fieldId, t.format), index('unit_pair_idx').on(t.pairId)],
 )
 
 export const source = pgTable('source', {

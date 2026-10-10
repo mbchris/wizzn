@@ -53,6 +53,8 @@ function deps(store: FakeStore, over: Partial<PipelineDeps> = {}): PipelineDeps 
     media: { put: async (p, _d, ext) => (stored.push(ext), `${p}/${stored.length}.${ext}`), publicUrl: (p) => `https://m/${p}` },
     enqueue: async (q, id) => void queued.push(`${q}:${id}`),
     transcode: async () => null,
+    stock: null,
+    stockConfig: { minEdgePx: 800, maxBytes: 5_000_000 },
     ...over,
   }
 }

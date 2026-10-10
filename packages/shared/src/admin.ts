@@ -11,11 +11,23 @@ export const briefInputSchema = z.object({
   // null → picked at random per unit
   style: z.enum(EDITORIAL_STYLES).nullable().default(null),
   storyArc: z.enum(STORY_ARCS).nullable().default(null),
-  format: unitFormatSchema,
+  // Omitted → each variant becomes a written + audio pair
+  format: unitFormatSchema.nullable().default(null),
   // Each unit is generated independently from the same brief
   count: z.number().int().min(1).max(10).default(1),
 })
 export type BriefInput = z.infer<typeof briefInputSchema>
+
+export const bulkActionSchema = z.object({
+  action: z.enum(['regenerate', 'delete']),
+  ids: z.array(z.string().uuid()).min(1).max(200),
+})
+export type BulkActionInput = z.infer<typeof bulkActionSchema>
+export type BulkSkipReason = 'not_found' | 'invalid_state' | 'has_history'
+export interface BulkResultDto {
+  done: string[]
+  skipped: { id: string; reason: BulkSkipReason }[]
+}
 
 export const unitListQuerySchema = z.object({
   status: z.enum(UNIT_STATUSES).optional(),

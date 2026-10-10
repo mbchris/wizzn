@@ -33,7 +33,7 @@ describe('stock chain', () => {
     const b = client('b', async () => [cand('3')])
     expect((await createStockChain([a, b], { log }).search('q')).map((c) => c.providerId)).toEqual(['3'])
     expect(log).toHaveBeenCalledTimes(1)
-    expect(log.mock.calls[0][0]).toMatch(/a.*429/)
+    expect(log.mock.calls[0]?.[0]).toMatch(/a.*429/)
   })
   it('falls through on raw errors', async () => {
     const a = client('a', async () => { throw new TypeError('boom') })

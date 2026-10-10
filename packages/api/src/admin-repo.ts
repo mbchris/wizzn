@@ -1,7 +1,7 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm'
-import { canTransition, unitContentSchema, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
+import { canDelete, canTransition, unitContentSchema, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import type { Db } from './db/client.js'
-import { contentBrief, unit } from './db/schema/index.js'
+import { completionEvent, contentBrief, feedImpression, unit } from './db/schema/index.js'
 import type { AdminActionResult, AdminRepo } from './types.js'
 
 type UnitRow = NonNullable<Awaited<ReturnType<typeof loadUnit>>>
@@ -53,7 +53,14 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
         if (!brief) throw new Error('Brief insert failed')
         const units = await tx
           .insert(unit)
-          .values(Array.from({ length: input.count }, () => ({ briefId: brief.id, fieldId: input.fieldId, themeId: input.themeId, format: input.format })))
+          .values(
+            Array.from({ length: input.count }, () => {
+              const base = { briefId: brief.id, fieldId: input.fieldId, themeId: input.themeId }
+              if (input.format) return [{ ...base, format: input.format }]
+              const pairId = crypto.randomUUID()
+              return [{ ...base, format: 'written' as const, pairId }, { ...base, format: 'audio' as const, pairId }]
+            }).flat(),
+          )
           .returning({ id: unit.id })
         return { briefId: brief.id, unitIds: units.map((u) => u.id) }
       })
@@ -107,6 +114,21 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
 
     // Clearing publishedAt keeps a regenerated unit consistent until it is approved again
     requeue: (id) => move(id, 'queued', { failureReason: null, publishedAt: null }),
+
+    async deleteUnit(id) {
+      return db.transaction(async (tx): Promise<AdminActionResult> => {
+        const row = await tx.query.unit.findFirst({ where: eq(unit.id, id), columns: { status: true } })
+        if (!row) return 'not_found'
+        if (!canDelete(row.status)) return 'invalid_state'
+        // Completions feed XP/streaks and impressions the feed history: never drop units users have seen
+        const [done] = await tx.select({ id: completionEvent.unitId }).from(completionEvent).where(eq(completionEvent.unitId, id)).limit(1)
+        const [served] = await tx.select({ id: feedImpression.unitId }).from(feedImpression).where(eq(feedImpression.unitId, id)).limit(1)
+        if (done || served) return 'has_history'
+        // Status guard: a worker may have picked the unit up since the read
+        const deleted = await tx.delete(unit).where(and(eq(unit.id, id), eq(unit.status, row.status))).returning({ id: unit.id })
+        return deleted.length ? 'ok' : 'invalid_state'
+      })
+    },
   }
 }
 
