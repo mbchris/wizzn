@@ -11,6 +11,7 @@ export const ICON_MAP: Record<string, IconDefinition> = {
   check_circle: { android: 'check_circle', ios: 'ion-ios-checkmark-circle' },
   link: { android: 'open_in_new', ios: 'ion-ios-open' },
   source: { android: 'north_east', ios: 'ion-ios-open' },
+  image_credit: { android: 'info', ios: 'ion-ios-information-circle-outline' },
   settings: { android: 'tune', ios: 'ion-ios-options' },
   gear: { android: 'settings', ios: 'ion-ios-settings' },
   headphones: { android: 'headphones', ios: 'ion-ios-headset' },

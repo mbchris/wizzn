@@ -4,6 +4,7 @@ import { WRITTEN_MIN_DWELL_SEC, type FeedUnitDto, type WrittenUnit } from '@wizz
 import { useCompletion, useDwell } from 'src/composables/useCompletion'
 import { usePlatform } from 'src/composables/usePlatform'
 import SourceFooter from 'components/SourceFooter.vue'
+import ImageCredit from 'components/ImageCredit.vue'
 import CompleteButton from 'components/CompleteButton.vue'
 
 const props = defineProps<{ unit: FeedUnitDto & { content: WrittenUnit }; active: boolean }>()
@@ -60,7 +61,8 @@ function complete(): void {
           </ul>
           <p v-else class="wz-slide-body">{{ s.body }}</p>
           <div v-if="s.imageId && unit.media[s.imageId]" class="wz-slide-img">
-            <img :src="unit.media[s.imageId]" alt="" loading="lazy" draggable="false" />
+            <img :src="unit.media[s.imageId]" :alt="unit.credits?.[s.imageId]?.title ?? ''" loading="lazy" draggable="false" />
+            <ImageCredit :credit="unit.credits?.[s.imageId]" />
           </div>
         </section>
       </div>
@@ -105,7 +107,7 @@ function complete(): void {
 .wz-slide-body { margin: 0; font-size: 16px; line-height: 1.5; color: rgba(255, 255, 255, 0.9); }
 ul.wz-slide-body { padding-left: 1.1em; display: flex; flex-direction: column; gap: 8px; }
 ul.wz-slide-body li::marker { color: var(--wz-glow); }
-.wz-slide-img { flex: 1; min-height: 110px; margin-top: 14px; border-radius: 18px; overflow: hidden; }
+.wz-slide-img { position: relative; flex: 1; min-height: 110px; margin-top: 14px; border-radius: 18px; overflow: hidden; }
 .wz-slide-img img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; }
 
 .wz-dots { display: flex; justify-content: center; gap: 10px; padding-top: 10px; }
