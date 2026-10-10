@@ -84,7 +84,24 @@ function toWritten(a: AudioSample): WrittenSample {
 }
 
 /** Written → audio: the short slides are expanded into a 3–5 min script by the configured LLM. */
+const SCRIPT_TARGET_WORDS = Math.round((AUDIO_SCRIPT_WORDS.min + AUDIO_SCRIPT_WORDS.max) / 2) + 20 // ~580: an undershoot still lands in range
+const AUDIO_ATTEMPTS = 3
+
+/** The ~90-word samples must grow ~6×; models undershoot, so retry with a fresh conversation before giving up. */
 async function toAudio(w: WrittenSample): Promise<AudioSample> {
+  let last: unknown
+  for (let i = 0; i < AUDIO_ATTEMPTS; i++) {
+    try {
+      return await expandToAudio(w)
+    } catch (err) {
+      last = err
+      console.warn(`  ↻ [audio] ${w.title}: attempt ${i + 1}/${AUDIO_ATTEMPTS} failed — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`)
+    }
+  }
+  throw last
+}
+
+async function expandToAudio(w: WrittenSample): Promise<AudioSample> {
   const text = w.slides.map((sl) => `${sl.title}: ${sl.body}`).join('\n\n')
   const prompts = w.slides.flatMap((sl) => (sl.imagePrompt ? [sl.imagePrompt] : []))
   const draft = await llm.chatJson(
@@ -96,7 +113,9 @@ async function toAudio(w: WrittenSample): Promise<AudioSample> {
       {
         role: 'user',
         content:
-          `Thema: ${w.topic}\n\nVorlage:\n${text}\n\nMache daraus ein gut vorlesbares Sprechskript für 3–5 Minuten (${AUDIO_SCRIPT_WORDS.min + 30}–${AUDIO_SCRIPT_WORDS.max - 50} Wörter): kurze Sätze, keine Aufzählungszeichen, keine Abkürzungen, Zahlen ausgeschrieben. Bleib bei den Fakten der Vorlage.\n` +
+          `Thema: ${w.topic}\n\nVorlage:\n${text}\n\nMache daraus ein gut vorlesbares Sprechskript für 3–5 Minuten, etwa ${SCRIPT_TARGET_WORDS} Wörter (Pflicht: mindestens ${AUDIO_SCRIPT_WORDS.min + 50}, höchstens ${AUDIO_SCRIPT_WORDS.max - 50}).\n` +
+          'Die Vorlage ist nur eine Kurzfassung und viel zu kurz: Gliedere das Skript in sechs Absätze mit je etwa neunzig Wörtern – Einstieg mit Alltagsbeispiel, dann jeden Punkt der Vorlage ausführlich mit Beispiel und Begründung erklären, am Ende eine Zusammenfassung mit konkretem Tipp. ' +
+          'Kurze Sätze, keine Aufzählungszeichen, keine Abkürzungen, Zahlen ausgeschrieben. Keine neuen Zahlen oder Studien erfinden; erweitere durch Erklärungen und Beispiele.\n' +
           `Dazu 1–3 Bildmotive (prompt) mit Zeitpunkt als Anteil der Laufzeit (atFraction 0–0.9).${prompts.length ? ` Nutze diese Motive: ${prompts.join(' | ')}` : ''}\n\n` +
           'JSON: {"title":string,"script":string,"images":[{"prompt":string,"atFraction":number}]}',
       },
