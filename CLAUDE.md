@@ -1,5 +1,10 @@
 # CLAUDE.md — Developer & Agent Guidelines
 
+## Superpowers
+At the start of every session, before any response, invoke the `using-superpowers` skill
+(`.claude/skills/using-superpowers/SKILL.md`) and follow it. The SessionStart hook does this
+in local Claude Code; this line covers cloud/remote sessions where hooks don't run.
+
 ## Platform Design Guidelines & Icon Mapping (Issue #36)
 
 The wizzn application is deployed cross-platform to Web, iOS (Capacitor), and Android (Capacitor).
