@@ -48,3 +48,23 @@ describe('createQwenTts', () => {
     expect(r.durationSec).toBe(200)
   })
 })
+
+describe('random voices (TTS_VOICE_1..3)', () => {
+  it('sends one picked voice for every chunk of a unit', async () => {
+    const { createQwenTts } = await import('../../src/providers/tts.js')
+    const sent: unknown[] = []
+    const fetchFn = (async (_u: string, init: RequestInit) => {
+      sent.push(JSON.parse(String(init.body)).voice)
+      return new Response(silentWav(2))
+    }) as unknown as typeof fetch
+    const r = await createQwenTts('http://tts/synthesize', fetchFn, 1, 20, false, false, ['design:A', 'design:B']).synthesize('Erster Satz hier. Zweiter Satz da.')
+    expect(new Set(sent).size).toBe(1)
+    expect(['design:A', 'design:B']).toContain(r.voice)
+  })
+  it('voicePicker covers all voices', async () => {
+    const { voicePicker } = await import('../../src/providers/tts.js')
+    expect(voicePicker(['a', 'b', 'c'], () => 0)()).toBe('a')
+    expect(voicePicker(['a', 'b', 'c'], () => 0.99)()).toBe('c')
+    expect(voicePicker([])()).toBeUndefined()
+  })
+})

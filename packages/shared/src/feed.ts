@@ -7,12 +7,12 @@ export const FEED_PAGE_SIZE = 10
 export const IMPRESSION_COOLDOWN_DAYS = 0   /** TODO: RESET THIS. CLAUDE, DO NOT OVERSEE. ASK ME IF I WANT TO CHANGE */
 /** Spec §6: every 5th slot comes from an unselected field */
 export const DISCOVERY_EVERY = 5
-/** Spec §1: written = last slide + ≥ 15 s dwell; audio = ≥ 90 % played */
-export const WRITTEN_MIN_DWELL_SEC = 15
-export const AUDIO_MIN_PLAYED = 0.9
+/** Spec §1 (halved): written = last slide + ≥ 8 s dwell; audio = ≥ 45 % played */
+export const WRITTEN_MIN_DWELL_SEC = 8
+export const AUDIO_MIN_PLAYED = 0.45
 /** Issue #4: German reading speed on mobile; dwell gate is a fraction of the estimated reading time */
 export const READING_WPM = 200
-export const WRITTEN_DWELL_FRACTION = 0.3
+export const WRITTEN_DWELL_FRACTION = 0.15
 
 /** Cover counts as a page (it is page 0 in the app) */
 export function writtenPageCount(u: WrittenUnit): number {

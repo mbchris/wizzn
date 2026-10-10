@@ -89,7 +89,7 @@ function serverLogFile(): string {
 const info = await serverInfo()
 console.log('── TTS settings')
 console.log(`  provider      ${env.TTS_PROVIDER} @ ${env.TTS_URL}`)
-if (env.TTS_PROVIDER === 'piper') console.log(`  voice         ${env.TTS_VOICE}`)
+console.log(`  voice         ${env.TTS_VOICE || [env.TTS_VOICE_1, env.TTS_VOICE_2, env.TTS_VOICE_3].filter(Boolean).join(' | ') || '(server default)'}`)
 console.log(`  length_scale  ${env.TTS_LENGTH_SCALE}${fit ? '  (3–5 min fitting on: may re-render)' : '  (single render)'}`)
 if (env.TTS_PROVIDER === 'chatterbox' || env.TTS_PROVIDER === 'qwen') {
   const max = env.TTS_PROVIDER === 'qwen' ? 500 : 280

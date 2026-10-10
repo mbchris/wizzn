@@ -139,7 +139,7 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
     const audioPath = mp3 ? await deps.media.put(unit.id, mp3, 'mp3') : await deps.media.put(unit.id, speech.audio, extFor(speech.contentType))
     const resolved = await resolveSlots(unit.id, draft.images.map((i) => ({ ...i, field: unit.brief.fieldSlug })), deps)
     const assets = await deps.store.replaceAssets(unit.id, [
-      { kind: 'audio', path: audioPath, durationSec: speech.durationSec, generator: deps.tts.name },
+      { kind: 'audio', path: audioPath, durationSec: speech.durationSec, generator: speech.voice ? `${deps.tts.name} · ${speech.voice}` : deps.tts.name },
       ...resolved.map(toImageAsset),
     ])
     const [audio, ...imgs] = assets

@@ -4,23 +4,17 @@
 # field/theme are matched by slug (ids differ per env because each seeds its own).
 # Usage: [SSH_KEY=~/.ssh/key] pnpm coolify:push-delta -- <ssh-host> <coolify-app-uuid> [--dry-run]
 set -euo pipefail
-HOST="${1:?ssh host}"; UUID="${2:?coolify app uuid}"; DRY="${3:-}"
+[ "${1:-}" = "--" ] && shift
+HOST="${1:?ssh host}"; UUID_ARG="${2:?coolify app uuid or container name}"; DRY="${3:-}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MEDIA_DIR="$ROOT/packages/api/media-data"
+source "$(dirname "$0")/_remote.sh"
 DC="docker compose -f $ROOT/docker-compose.dev.yml"
 TABLES=(field theme content_brief unit source asset check_report)
 TMP="$(mktemp -d -t wizzn-delta)"
 
-SSH_OPTS=(-o ControlMaster=auto -o ControlPath="$HOME/.ssh/cm-wizzn-%r@%h:%p" -o ControlPersist=15m)
-[ -n "${SSH_KEY:-}" ] && SSH_OPTS+=(-i "$SSH_KEY")
-r() { ssh "${SSH_OPTS[@]}" "$HOST" "$@"; }
-echo "→ connecting to $HOST (authenticate once)"
-ssh "${SSH_OPTS[@]}" -fN "$HOST"
-trap 'ssh "${SSH_OPTS[@]}" -O exit "$HOST" 2>/dev/null || true; rm -rf "$TMP"' EXIT
+trap 'cleanup_ssh; rm -rf "$TMP"' EXIT
 
-r "docker ps --format '{{.Names}}' | grep -qx postgres-$UUID" || { echo "✗ postgres-$UUID not running"; exit 1; }
-MEDIA_VOL="${UUID}_media"
-r "docker volume inspect $MEDIA_VOL >/dev/null" || { echo "✗ volume $MEDIA_VOL not found"; exit 1; }
 
 # ---------- DB ----------
 echo "→ dumping local content tables"
@@ -51,7 +45,7 @@ SQL
 } > "$TMP/delta.sql"
 { echo "BEGIN;"; cat "$TMP/delta.sql"; } > "$TMP/run.sql"
 echo "→ merging into prod DB${DRY:+ (dry run, rolled back)}"
-r "docker exec -i postgres-$UUID psql -U wizzn -d wizzn -v ON_ERROR_STOP=1 -q -At -F ': '" < "$TMP/run.sql"
+r "docker exec -i $PG psql -U wizzn -d wizzn -v ON_ERROR_STOP=1 -q -At -F ': '" < "$TMP/run.sql"
 
 # ---------- media ----------
 echo "→ diffing media"

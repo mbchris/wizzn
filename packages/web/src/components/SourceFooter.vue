@@ -31,10 +31,10 @@ function open(e: MouseEvent, url: string): void {
 </template>
 
 <style scoped lang="scss">
-.wz-sources { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.wz-sources { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 10px; }
 .wz-sources a { max-width: 100%; min-height: var(--wz-hit); color: rgba(255, 255, 255, 0.86); }
 .wz-pill { font-size: 13px; font-weight: 500; }
-.wz-link { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; text-decoration: none; }
+.wz-link { display: inline-flex; align-items: center; gap: 4px; min-height: 28px !important; font-size: 12px; text-decoration: none; }
 .u { text-decoration: underline; text-underline-offset: 3px; color: #fff; }
 .wz-disclaimer { width: 100%; text-align: center; font-size: 11px; color: var(--wz-muted); }
 </style>

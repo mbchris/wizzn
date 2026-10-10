@@ -149,17 +149,28 @@ class Engine:
             ref_audio=ref_path, ref_text=ref_text, x_vector_only_mode=ref_text is None
         )
 
-    def generate(self, text: str):
+    def request_design(self, voice):
+        """Per-request voice (API picks one of TTS_VOICE_1..3). Only `design:` voices can switch per request — they share
+        the loaded VoiceDesign model; anything else keeps the server voice."""
+        voice = (voice or "").strip()
+        if not voice or voice == self.args.voice.strip():
+            return None
+        if self.design is not None and voice.startswith("design:"):
+            return voice[len("design:"):].strip()
+        print(f"qwen-tts: per-request voice '{voice[:40]}' needs a design: server voice → using server voice", flush=True)
+        return None
+
+    def generate(self, text: str, design=None):
         torch.manual_seed(SEED)
         if self.design is not None:
-            return self.model.generate_voice_design(text=text, language=LANGUAGE, instruct=self.design)
+            return self.model.generate_voice_design(text=text, language=LANGUAGE, instruct=design or self.design)
         if self.clone_prompt is not None:
             return self.model.generate_voice_clone(text=text, language=LANGUAGE, voice_clone_prompt=self.clone_prompt)
         kwargs = {"instruct": self.instruct} if self.instruct else {}
         return self.model.generate_custom_voice(text=text, language=LANGUAGE, speaker=self.speaker, **kwargs)
 
-    def raw(self, text: str, no_cache: bool = False):
-        key = hashlib.sha256(f"{self.voice_key}|{text}".encode()).hexdigest()
+    def raw(self, text: str, no_cache: bool = False, design=None):
+        key = hashlib.sha256(f"{self.voice_key}|{design or ''}|{text}".encode()).hexdigest() if design else hashlib.sha256(f"{self.voice_key}|{text}".encode()).hexdigest()
         path = self.cache / f"{key}.npz"
         self.stats["requests"] += 1
         if path.exists() and not no_cache:
@@ -168,7 +179,7 @@ class Engine:
             return d["audio"], int(d["sr"])
         t0 = time.monotonic()
         with self.lock:
-            wavs, sr = self.generate(text)
+            wavs, sr = self.generate(text, design)
         audio = np.concatenate([to_mono_f32(wavs[0]), np.zeros(int(PAUSE_SEC * sr), dtype=np.float32)])
         np.savez(path, audio=audio, sr=sr)
         gen = time.monotonic() - t0
@@ -195,8 +206,8 @@ class Engine:
             "params": {"seed": SEED, "pause_sec": PAUSE_SEC},
         }
 
-    def synthesize(self, text: str, length_scale: float, no_cache: bool = False) -> bytes:
-        audio, sr = self.raw(text, no_cache)
+    def synthesize(self, text: str, length_scale: float, no_cache: bool = False, voice=None) -> bytes:
+        audio, sr = self.raw(text, no_cache, self.request_design(voice))
         if abs(length_scale - 1) > 0.01:
             import librosa
 
@@ -231,7 +242,7 @@ def make_handler(engine: Engine):
                 text = str(req.get("text", "")).strip()
                 if not text:
                     return self._send(400, b"text is required", "text/plain")
-                self._send(200, engine.synthesize(text, float(req.get("length_scale") or 1), bool(req.get("no_cache"))), "audio/wav")
+                self._send(200, engine.synthesize(text, float(req.get("length_scale") or 1), bool(req.get("no_cache")), req.get("voice")), "audio/wav")
             except Exception as e:  # noqa: BLE001
                 print(f"qwen-tts: error: {e!r}", flush=True)
                 self._send(500, str(e).encode(), "text/plain")

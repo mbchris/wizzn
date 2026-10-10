@@ -87,7 +87,8 @@ TTS_PROVIDER="$(grep -E '^TTS_PROVIDER=' "$ENV_FILE" | tail -1 | cut -d= -f2- ||
 if [[ "$TTS_PROVIDER" == "piper" ]]; then
   need python3 "Install Python 3 (brew install python)."
   TTS_URL="$(grep -E '^TTS_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"; TTS_URL="${TTS_URL:-http://localhost:5100/synthesize}"
-  VOICE="$(grep -E '^TTS_VOICE=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"; VOICE="${VOICE:-de_DE-thorsten-high}"
+  VOICE="$(grep -E '^TTS_VOICE=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+  [[ -z "$VOICE" ]] && VOICE="$(grep -E '^TTS_VOICE_1=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"; VOICE="${VOICE:-de_DE-thorsten-high}"
   PIPER_PORT="${TTS_URL##*:}"; PIPER_PORT="${PIPER_PORT%%/*}"
   PIPER_DIR="$ROOT/.piper"; VOICES="$PIPER_DIR/voices"
   if [[ ! -x "$PIPER_DIR/venv/bin/python" ]]; then

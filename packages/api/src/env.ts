@@ -24,7 +24,11 @@ export const envSchema = z.object({
   LLM_API_KEY: z.string().default(''),
   SEARCH_URL: z.string().url(),
   TTS_URL: z.string().url().default('http://localhost:5100/synthesize'),
-  TTS_VOICE: z.string().min(1),
+  /** Fixed voice; when empty, each audio unit picks one of TTS_VOICE_1..3 at random */
+  TTS_VOICE: z.string().default(''),
+  TTS_VOICE_1: z.string().default(''),
+  TTS_VOICE_2: z.string().default(''),
+  TTS_VOICE_3: z.string().default(''),
   TTS_LENGTH_SCALE: z.coerce.number().min(0.5).max(2).default(1.2),
   TTS_PROVIDER: z.enum(['silent', 'piper', 'chatterbox', 'qwen']).default('silent'),
   IMAGE_PROVIDER: z.enum(['placeholder', 'api']).default('placeholder'),

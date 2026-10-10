@@ -84,8 +84,11 @@ function complete(): void {
         </section>
       </div>
 
-      <div class="wz-dots" aria-hidden="true">
-        <span v-for="i in pages" :key="i" :class="{ on: i - 1 === index }" />
+      <div class="wz-dots">
+        <span v-for="i in pages" :key="i" aria-hidden="true" :class="{ on: i - 1 === index }" />
+        <button v-if="!onLast" type="button" class="wz-next" :aria-label="`Nächster Tipp (${index + 1}/${pages})`" @click="go(index + 1)">
+          <q-icon :name="pIcon('chevron_right')" size="20px" />
+        </button>
       </div>
     </div>
 
@@ -100,15 +103,11 @@ function complete(): void {
       :pending-label="`Noch ${waitSec}s lesen …`"
       @complete="complete"
     />
-    <button v-else type="button" class="wz-next" @click="go(index + 1)">
-      Wische für den nächsten Tipp ({{ index + 1 }}/{{ pages }})
-      <q-icon :name="pIcon('chevron_right')" size="18px" />
-    </button>
   </div>
 </template>
 
 <style scoped lang="scss">
-.wz-written { height: 100%; display: flex; flex-direction: column; gap: 10px; }
+.wz-written { height: 100%; display: flex; flex-direction: column; gap: 6px; }
 
 /* Charcoal deck with glowing category edge */
 .wz-deck { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 16px 0 12px; border-radius: 24px; background: color-mix(in srgb, var(--wz-surface) 88%, var(--wz-glow)); border: 1.5px solid color-mix(in srgb, var(--wz-glow) 70%, transparent); box-shadow: 0 0 24px color-mix(in srgb, var(--wz-glow) 22%, transparent), inset 0 0 30px color-mix(in srgb, var(--wz-glow) 6%, transparent); }
@@ -132,9 +131,9 @@ ul.wz-slide-body li::marker { color: var(--wz-glow); }
 .wz-cover-img img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; }
 .wz-cover-time { display: inline-flex; align-items: center; gap: 4px; align-self: flex-start; margin-bottom: 8px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, 0.85); background: color-mix(in srgb, var(--wz-glow) 22%, transparent); }
 
-.wz-dots { display: flex; justify-content: center; gap: 10px; padding-top: 10px; }
+.wz-dots { position: relative; display: flex; justify-content: center; align-items: center; gap: 10px; min-height: 32px; padding-top: 6px; }
 .wz-dots span { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid rgba(255, 255, 255, 0.55); transition: all 0.2s; }
 .wz-dots span.on { background: #fff; border-color: #fff; }
 
-.wz-next { align-self: center; display: inline-flex; align-items: center; gap: 2px; min-height: var(--wz-hit); padding: 0 12px; border: 0; background: transparent; color: var(--wz-muted); font: inherit; font-size: 14px; cursor: pointer; }
+.wz-next { position: absolute; right: 12px; bottom: -4px; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.1); color: #fff; cursor: pointer; }
 </style>

@@ -32,6 +32,7 @@ pnpm test
 | `pnpm creds:pull` / `creds:push` / `creds:diff` | Wrappers for `./creds.sh` (see Credentials) |
 | `pnpm tts:server` / `tts:voice` / `tts:entry` | Local TTS server (chatterbox\|qwen), Qwen designed-voice export, render one unit/text for listening — see [docs/tts.md](docs/tts.md) |
 | `pnpm verify:m4` | Walks through M4 close-out: checks, API smoke test, browser/device checklists. Steps: `all\|auto\|db\|smoke\|browser\|device\|commit` |
+| `pnpm coolify:env` / `coolify:push-delta` / `coolify:push-data` | Coolify env file / push local content + media to prod (see Deploy) |
 
 ## Seed data & media
 - `pnpm db:seed` — fields + themes from `packages/shared/src/fields.ts` (`FIELD_SEEDS`). Idempotent; also runs on container start.
@@ -135,6 +136,23 @@ Pull backs up overwritten files to `~/.config/wizzn-creds/backups`. Push never d
 
 ## Deploy
 Coolify → Docker Compose resource → `docker-compose.yml`. Container start runs migrations + seed.
+Details: [docs/deploy-coolify.md](docs/deploy-coolify.md).
+
+### Push local content to prod
+Runs on the Mac over SSH (key passphrase asked once). Needs the local dev Postgres running and the Coolify app UUID (containers are `<service>-<uuid>`).
+
+```bash
+# Delta: insert-only, adds what prod doesn't have yet
+pnpm coolify:push-delta -- root@<vps> <uuid> --dry-run   # show counts, roll back
+pnpm coolify:push-delta -- root@<vps> <uuid>
+
+# Full overwrite: replaces prod DB (incl. users) + media; backs up prod DB to ~ on the VPS first
+pnpm coolify:push-data -- root@<vps> <uuid>
+```
+- SSH user needs Docker access without root (one-time, as root on the VPS: `usermod -aG docker <user>`, then log in again).
+- Optional `SSH_KEY=~/.ssh/<key>` if the key isn't in `~/.ssh/config` / agent.
+- Delta covers content tables only (`field`, `theme`, `content_brief`, `unit`, `source`, `asset`, `check_report`); field/theme matched by slug. Users, auth, progress untouched.
+- Delta never updates or deletes: locally edited existing units and locally deleted media stay as they are on prod.
 
 ## Store / console setup
 Google + Apple resources: see `docs/setup-consoles.md` (`pnpm setup:google`, `pnpm setup:apple`).

@@ -4,6 +4,8 @@ export interface TtsResult {
   audio: Buffer
   contentType: 'audio/wav'
   durationSec: number
+  /** Voice picked for this render (random pick from TTS_VOICE_1..3), when the client has several */
+  voice?: string
 }
 
 export interface TtsClient {
@@ -56,9 +58,11 @@ const inWindow = (sec: number): boolean => sec >= AUDIO_MIN_SEC && sec <= AUDIO_
 /**
  * Piper HTTP server (`python -m piper.http_server`): POST JSON { text, voice, length_scale } to /synthesize → WAV.
  */
-export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof fetch = fetch, lengthScale = 1, fit = true): TtsClient {
-  const render: Render = (text, scale) => postWav(fetchFn, baseUrl, { text, voice, length_scale: scale })
-  return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: `piper · ${voice}` }
+export function createPiperTts(baseUrl: string, voice: string | string[], fetchFn: typeof fetch = fetch, lengthScale = 1, fit = true): TtsClient {
+  const voices = typeof voice === 'string' ? [voice] : voice
+  const render: Render = (text, scale, v) => postWav(fetchFn, baseUrl, { text, voice: v, length_scale: scale })
+  const pick = voicePicker(voices)
+  return { ...(fit ? fitToWindow(render, lengthScale, pick) : renderOnce(render, lengthScale, pick)), name: `piper · ${voices.join(' | ')}` }
 }
 
 /**
@@ -67,34 +71,45 @@ export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof f
  * applies length_scale as a time-stretch, so pace re-renders cost little.
  */
 /** `noCache` makes the server re-generate instead of returning cached renders (tts:entry tests) */
-export function createChatterboxTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = CHUNK_CHARS, fit = true, noCache = false): TtsClient {
-  const render: Render = async (text, scale) => {
+/** `voices`: optional per-request voices (Qwen design mode); one is picked at random per synthesize() call */
+export function createChatterboxTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = CHUNK_CHARS, fit = true, noCache = false, voices: string[] = []): TtsClient {
+  const render: Render = async (text, scale, voice) => {
     const parts: Buffer[] = []
-    for (const chunk of splitIntoChunks(text, maxChunkChars)) parts.push(await postWav(fetchFn, baseUrl, { text: chunk, length_scale: scale, ...(noCache && { no_cache: true }) }))
+    for (const chunk of splitIntoChunks(text, maxChunkChars)) parts.push(await postWav(fetchFn, baseUrl, { text: chunk, length_scale: scale, ...(voice && { voice }), ...(noCache && { no_cache: true }) }))
     return concatWav(parts)
   }
-  return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: 'chatterbox-multilingual' }
+  const pick = voicePicker(voices)
+  return { ...(fit ? fitToWindow(render, lengthScale, pick) : renderOnce(render, lengthScale, pick)), name: 'chatterbox-multilingual' }
 }
 
 /**
  * Qwen3-TTS (`scripts/tts/qwen_server.py`, same /synthesize contract and server-side cache as Chatterbox). Handles
  * longer inputs than Chatterbox, so chunks are larger (fewer joins, more natural phrasing).
  */
-export function createQwenTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = QWEN_CHUNK_CHARS, fit = true, noCache = false): TtsClient {
-  return { ...createChatterboxTts(baseUrl, fetchFn, lengthScale, maxChunkChars, fit, noCache), name: 'qwen3-tts' }
+export function createQwenTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = QWEN_CHUNK_CHARS, fit = true, noCache = false, voices: string[] = []): TtsClient {
+  return { ...createChatterboxTts(baseUrl, fetchFn, lengthScale, maxChunkChars, fit, noCache, voices), name: 'qwen3-tts' }
 }
 
 /** Single render, no 3–5 min duration fitting (debugging / ad-hoc text) */
-function renderOnce(renderWav: Render, lengthScale: number): Omit<TtsClient, 'name'> {
+function renderOnce(renderWav: Render, lengthScale: number, pick: VoicePicker = () => undefined): Omit<TtsClient, 'name'> {
   return {
-    async synthesize(text) {
-      const audio = await renderWav(text, clampScale(lengthScale))
-      return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)) }
+    async synthesize(raw) {
+      const text = speakable(raw)
+      const voice = pick()
+      const audio = await renderWav(text, clampScale(lengthScale), voice)
+      return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)), ...(voice && { voice }) }
     },
   }
 }
 
-type Render = (text: string, scale: number) => Promise<Buffer>
+type Render = (text: string, scale: number, voice?: string) => Promise<Buffer>
+type VoicePicker = () => string | undefined
+
+/** Random voice per unit; one voice → always that one; none → server default */
+export function voicePicker(voices: string[], random: () => number = Math.random): VoicePicker {
+  const list = voices.filter(Boolean)
+  return () => (list.length ? list[Math.floor(random() * list.length)] : undefined)
+}
 
 async function postWav(fetchFn: typeof fetch, url: string, body: Record<string, unknown>): Promise<Buffer> {
   const res = await fetchFn(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
@@ -156,13 +171,16 @@ function dataChunk(wav: Buffer): { start: number; end: number } {
  * Units must run 3–5 min: renders up to MAX_RENDERS times with an adjusted pace, then pads up to MAX_PAD_SEC of
  * trailing silence; otherwise fails with a message that says what to change.
  */
-function fitToWindow(renderWav: Render, lengthScale: number): Omit<TtsClient, 'name'> {
-  async function render(text: string, scale: number): Promise<TtsResult> {
-    const audio = await renderWav(text, scale)
-    return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)) }
-  }
+function fitToWindow(renderWav: Render, lengthScale: number, pick: VoicePicker = () => undefined): Omit<TtsClient, 'name'> {
   return {
-    async synthesize(text) {
+    async synthesize(raw) {
+      const text = speakable(raw)
+      // Same voice for every re-render of this unit
+      const voice = pick()
+      const render = async (t: string, scale: number): Promise<TtsResult> => {
+        const audio = await renderWav(t, scale, voice)
+        return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)), ...(voice && { voice }) }
+      }
       let scale = clampScale(lengthScale)
       let best = await render(text, scale)
       const tries = [{ scale, sec: best.durationSec }]
@@ -239,4 +257,23 @@ export function silentWav(durationSec: number, sampleRate = 8000): Buffer {
   b.write('data', 36, 'ascii')
   b.writeUInt32LE(dataSize, 40)
   return b
+}
+
+/** German letter names, so acronyms are spelled out ("ETFs" → "E-Te-Effs") instead of read as a word ("atfs") */
+const LETTER: Record<string, string> = {
+  A: 'A', B: 'Be', C: 'Ze', D: 'De', E: 'E', F: 'Eff', G: 'Ge', H: 'Ha', I: 'I', J: 'Jott', K: 'Ka', L: 'Ell', M: 'Emm',
+  N: 'Enn', O: 'O', P: 'Pe', Q: 'Ku', R: 'Err', S: 'Ess', T: 'Te', U: 'U', V: 'Fau', W: 'We', X: 'Ix', Y: 'Üpsilon', Z: 'Zett',
+  Ä: 'Ä', Ö: 'Ö', Ü: 'Ü',
+}
+/** Acronyms spoken as words, left untouched */
+const SPOKEN_AS_WORD = new Set(['NATO', 'DAX', 'MDAX', 'TECDAX', 'UNO', 'UNESCO', 'UNICEF', 'NASA', 'FIFA', 'UEFA', 'AIDS', 'LED', 'PIN', 'TÜV', 'BAföG', 'ESA', 'OPEC', 'ASEAN', 'LASER', 'RADAR', 'COVID', 'GAU', 'KITA', 'DIN', 'ISO'])
+
+/** Expands ALL-CAPS acronyms (2–5 letters, optional plural "s") into hyphenated letter names for the TTS engine. */
+export function speakable(text: string): string {
+  return text.replace(/\b([A-ZÄÖÜ]{2,5})(s?)\b/g, (m, caps: string, plural: string) => {
+    if (SPOKEN_AS_WORD.has(caps)) return m
+    const letters = [...caps].map((c) => LETTER[c] ?? c)
+    if (plural) letters[letters.length - 1] += 's'
+    return letters.join('-')
+  })
 }

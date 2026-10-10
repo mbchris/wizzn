@@ -3,7 +3,7 @@
 #
 #   scripts/tts/run-server.sh <chatterbox|qwen> [server args…]   e.g.  … qwen --port 5101 --voice "Serena"
 #
-# Defaults come from .env: port from TTS_URL, voice from TTS_VOICE, Qwen model size from TTS_QWEN_SIZE.
+# Defaults come from .env: port from TTS_URL, voice from TTS_VOICE (else TTS_VOICE_1), Qwen model size from TTS_QWEN_SIZE.
 # Extra args are passed through and win over the defaults. Each engine gets its own venv (.chatterbox/, .qwen-tts/).
 # All output (incl. startup crashes) is also appended to <engine dir>/logs/server.log; /info reports the path.
 set -euo pipefail
@@ -15,6 +15,8 @@ command -v uv >/dev/null || { echo "uv not found — brew install uv" >&2; exit 
 URL="$(envval TTS_URL)"; URL="${URL:-http://localhost:5100/synthesize}"
 PORT="${URL##*:}"; PORT="${PORT%%/*}"
 VOICE="$(envval TTS_VOICE)"
+# No fixed voice → start with TTS_VOICE_1; the API sends TTS_VOICE_1..3 per request (Qwen design: voices switch per unit)
+[[ -z "$VOICE" ]] && VOICE="$(envval TTS_VOICE_1)"
 # Voice files are given relative to the repo root
 [[ -n "$VOICE" && -f "$ROOT/$VOICE" ]] && VOICE="$ROOT/$VOICE"
 
