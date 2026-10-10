@@ -4,6 +4,7 @@ import { AUDIO_MIN_PLAYED, type AudioUnit, type FeedUnitDto } from '@wizzn/share
 import { useCompletion } from 'src/composables/useCompletion'
 import { usePlatform } from 'src/composables/usePlatform'
 import SourceFooter from 'components/SourceFooter.vue'
+import ImageCredit from 'components/ImageCredit.vue'
 import Waveform from 'components/Waveform.vue'
 import CompleteButton from 'components/CompleteButton.vue'
 
@@ -93,7 +94,8 @@ onUnmounted(() => audio.value?.pause())
     <div ref="art" class="wz-art" :class="{ single: images.length < 2 }" @scroll.passive="onArtScroll">
       <figure v-for="(img, i) in images" :key="img.imageId" class="wz-frame">
         <div class="wz-frame-inner">
-          <img :src="img.url" :alt="`Illustration ${i + 1} von ${images.length}`" :loading="i === 0 ? 'eager' : 'lazy'" draggable="false" />
+          <img :src="img.url" :alt="unit.credits?.[img.imageId]?.title ?? `Illustration ${i + 1} von ${images.length}`" :loading="i === 0 ? 'eager' : 'lazy'" draggable="false" />
+          <ImageCredit :credit="unit.credits?.[img.imageId]" />
         </div>
       </figure>
       <figure v-if="!images.length" class="wz-frame"><div class="wz-frame-inner wz-frame-empty">🎧</div></figure>
@@ -152,7 +154,7 @@ onUnmounted(() => audio.value?.pause())
 .wz-art::-webkit-scrollbar { display: none; }
 .wz-frame { flex: 0 0 86%; margin: 0; scroll-snap-align: center; padding: 1.5px; border-radius: 22px; background: linear-gradient(135deg, var(--wz-b), var(--wz-a) 55%, var(--wz-c)); box-shadow: 0 0 16px color-mix(in srgb, var(--wz-glow) 45%, transparent); }
 .wz-art.single .wz-frame { flex-basis: 100%; }
-.wz-frame-inner { width: 100%; height: 100%; border-radius: 20.5px; overflow: hidden; background: #17121d; }
+.wz-frame-inner { position: relative; width: 100%; height: 100%; border-radius: 20.5px; overflow: hidden; background: #17121d; }
 .wz-frame-inner img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; }
 .wz-frame-empty { display: flex; align-items: center; justify-content: center; font-size: 56px; }
 

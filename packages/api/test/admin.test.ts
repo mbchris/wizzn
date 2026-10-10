@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createApp } from '../src/app.js'
+import type { ImageReplacer } from '../src/pipeline/replace-image.js'
 import type { AdminRepo, SessionUser } from '../src/types.js'
 import { fakeAuth, fakeRepos } from './fakes.js'
 
@@ -8,7 +9,7 @@ const headers = { authorization: 'Bearer t', 'content-type': 'application/json' 
 const FIELD = '6f1c2a3e-1b2c-4d5e-8f90-123456789abc'
 const UNIT = '7f1c2a3e-1b2c-4d5e-8f90-123456789abc'
 
-function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}) {
+function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}, images?: ImageReplacer) {
   const enqueued: string[] = []
   const repo: AdminRepo = {
     createBrief: async (input) => ({ briefId: 'b1', unitIds: Array.from({ length: input.count }, (_, i) => `u${i}`) }),
@@ -24,7 +25,7 @@ function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}) {
     auth: fakeAuth(user),
     repos: fakeRepos(),
     corsOrigins: [],
-    admin: { emails: ['chris@wizzn.app'], repo, queue: { enqueueResearch: async (id) => void enqueued.push(id) } },
+    admin: { emails: ['chris@wizzn.app'], repo, queue: { enqueueResearch: async (id) => void enqueued.push(id) }, ...(images ? { images } : {}) },
   })
   return { app, enqueued }
 }
@@ -62,5 +63,34 @@ describe('/api/admin', () => {
     const blocked = setup(admin, { requeue: async () => 'invalid_state' })
     await blocked.app.request(`/api/admin/units/${UNIT}/requeue`, { method: 'POST', headers })
     expect(blocked.enqueued).toEqual([])
+  })
+
+  describe('POST /units/:id/assets/:assetId/replace', () => {
+    const ASSET = '8f1c2a3e-1b2c-4d5e-8f90-123456789abc'
+    const url = `/api/admin/units/${UNIT}/assets/${ASSET}/replace`
+    const asset = { id: ASSET, kind: 'image' as const, url: 'https://m/x.jpg', durationSec: null, origin: 'generated' as const, credit: null, stockQuery: null }
+    it('passes the body through and returns the asset', async () => {
+      const calls: unknown[] = []
+      const { app } = setup(admin, {}, { replace: async (...args) => (calls.push(args), { ok: true, asset }) })
+      const res = await app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'generated' }) })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual(asset)
+      expect(calls).toEqual([[UNIT, ASSET, 'generated']])
+    })
+    it('maps errors to 404 / 409 / 422', async () => {
+      const r = (error: 'not_found' | 'invalid_state' | 'no_stock_candidate') => setup(admin, {}, { replace: async () => ({ ok: false, error }) }).app
+      const body = JSON.stringify({ mode: 'next-stock' })
+      expect((await r('not_found').request(url, { method: 'POST', headers, body })).status).toBe(404)
+      expect((await r('invalid_state').request(url, { method: 'POST', headers, body })).status).toBe(409)
+      const res = await r('no_stock_candidate').request(url, { method: 'POST', headers, body })
+      expect(res.status).toBe(422)
+      expect(await res.json()).toEqual({ error: 'no_stock_candidate' })
+    })
+    it('rejects bad modes, non-admins and returns 501 when not configured', async () => {
+      const images: ImageReplacer = { replace: async () => ({ ok: true, asset }) }
+      expect((await setup(admin, {}, images).app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'x' }) })).status).toBe(400)
+      expect((await setup({ ...admin, email: 'x@y.de' }, {}, images).app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'generated' }) })).status).toBe(403)
+      expect((await setup().app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'generated' }) })).status).toBe(501)
+    })
   })
 })

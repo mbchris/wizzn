@@ -26,6 +26,15 @@ pnpm dev:admin      # admin http://localhost:9100 → "Konto anlegen" with an AD
 ```
 Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length), `IMAGE_PROVIDER=placeholder` (SVG).
 
+### Stock images (CC-licensed)
+Units get Openverse / Wikimedia Commons images first; the AI image provider is the fallback. Set in `.env` (see `.env.api.template`):
+- `STOCK_IMAGE_PROVIDERS=openverse,commons` — order; empty disables stock.
+- `STOCK_USER_AGENT` — required when `commons` is enabled (startup error otherwise), e.g. `wizzn/1.0 (https://wizzn.app; ops@wizzn.app)`.
+- `OPENVERSE_CLIENT_ID` / `OPENVERSE_CLIENT_SECRET` — optional OAuth for higher Openverse quota. Register via `pnpm setup:openverse` (set `OPENVERSE_EMAIL` first, then click the verification email).
+- `STOCK_MIN_EDGE_PX` (800) / `STOCK_MAX_BYTES` (5000000) — minimum shorter edge and max download size.
+
+AI fallback via ImageRouter: `IMAGE_PROVIDER=api`, `IMAGE_BASE_URL=https://api.imagerouter.io/v1/openai`, `IMAGE_MODEL=black-forest-labs/FLUX-2-klein-4b`, `IMAGE_API_KEY`. `IMAGE_EPHEMERAL=true` (default) sends `b64_ephemeral` so ImageRouter keeps no copy for 30 days.
+
 ## Streaks, premium & sign-in (M4)
 Rules live in `packages/shared/src/gamification.ts` (XP, levels, streak freezes, weekly goal, badges, daily cap).
 ```bash

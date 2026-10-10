@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { unitContentSchema } from '@wizzn/shared'
+import { formatLicense, unitContentSchema, type UnitDetailDto } from '@wizzn/shared'
 
-const props = defineProps<{ title: string | null; content: unknown; assetUrls: Record<string, string> }>()
+const props = defineProps<{ title: string | null; content: unknown; assets: UnitDetailDto['assets'] }>()
 const slide = ref(0)
+const assetUrls = computed(() => Object.fromEntries(props.assets.map((a) => [a.id, a.url])))
+const assetById = computed(() => new Map(props.assets.map((a) => [a.id, a])))
+const badgeLabel = (id: string): string => {
+  const credit = assetById.value.get(id)?.credit
+  return credit ? `Stock · ${credit.provider} · ${formatLicense(credit)}` : 'KI'
+}
 const parsed = computed(() => unitContentSchema.safeParse(props.content))
 </script>
 
@@ -13,7 +19,14 @@ const parsed = computed(() => unitContentSchema.safeParse(props.content))
     <template v-if="parsed.success && parsed.data.format === 'written'">
       <q-carousel v-model="slide" swipeable animated arrows navigation class="col" control-color="primary">
         <q-carousel-slide v-for="(s, i) in parsed.data.slides" :key="i" :name="i" class="column no-wrap q-pa-md">
-          <q-img v-if="s.imageId && assetUrls[s.imageId]" :src="assetUrls[s.imageId]" ratio="1" class="rounded-borders q-mb-md" />
+          <q-img v-if="s.imageId && assetUrls[s.imageId]" :src="assetUrls[s.imageId]" ratio="1" class="rounded-borders q-mb-md">
+            <q-badge class="absolute-top-left q-ma-xs" :color="assetById.get(s.imageId)?.credit ? 'primary' : 'grey-8'" :label="badgeLabel(s.imageId)">
+              <q-tooltip v-if="assetById.get(s.imageId)?.credit" class="text-body2">
+                {{ assetById.get(s.imageId)?.credit?.creator ?? 'Unbekannt' }}
+                <a :href="assetById.get(s.imageId)?.credit?.sourceUrl" target="_blank" class="text-white">Quelle ansehen</a>
+              </q-tooltip>
+            </q-badge>
+          </q-img>
           <div class="text-weight-bold q-mb-sm">{{ s.title }}</div>
           <div class="text-body2">{{ s.body }}</div>
         </q-carousel-slide>
@@ -26,6 +39,12 @@ const parsed = computed(() => unitContentSchema.safeParse(props.content))
       <div class="col scroll q-pa-md">
         <div class="row q-gutter-sm q-mb-md">
           <q-img v-for="img in parsed.data.images" :key="img.imageId" :src="assetUrls[img.imageId]" width="80px" ratio="1" class="rounded-borders">
+            <q-badge class="absolute-top-left q-ma-xs" :color="assetById.get(img.imageId)?.credit ? 'primary' : 'grey-8'" :label="badgeLabel(img.imageId)">
+              <q-tooltip v-if="assetById.get(img.imageId)?.credit" class="text-body2">
+                {{ assetById.get(img.imageId)?.credit?.creator ?? 'Unbekannt' }}
+                <a :href="assetById.get(img.imageId)?.credit?.sourceUrl" target="_blank" class="text-white">Quelle ansehen</a>
+              </q-tooltip>
+            </q-badge>
             <div class="absolute-bottom text-caption text-center">{{ img.showAtSec }}s</div>
           </q-img>
         </div>

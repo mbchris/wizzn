@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { unitFormatSchema } from './content.js'
+import { unitFormatSchema, type ImageCredit } from './content.js'
 import { UNIT_STATUSES, type UnitStatus } from './unit-status.js'
 import type { CheckReport } from './pipeline.js'
 
@@ -45,6 +45,17 @@ export interface UnitDetailDto extends UnitSummaryDto {
   promptVersion: string | null
   model: string | null
   sources: { url: string; title: string; publisher: string }[]
-  assets: { id: string; kind: 'image' | 'audio'; url: string; durationSec: number | null }[]
+  assets: {
+    id: string
+    kind: 'image' | 'audio'
+    url: string
+    durationSec: number | null
+    origin: 'generated' | 'stock'
+    credit: ImageCredit | null
+    stockQuery: string | null
+  }[]
   checkReport: CheckReport | null
 }
+
+export const replaceImageSchema = z.object({ mode: z.enum(['next-stock', 'generated']) })
+export type ReplaceImageMode = z.infer<typeof replaceImageSchema>['mode']

@@ -108,7 +108,8 @@ resolveImage(slot: { prompt: string; query?: string }, exclude: Set<string>, dep
 |---|---|---|
 | `asset.origin` | enum `asset_origin` (`generated`, `stock`) | not null, default `generated` |
 | `asset.credit` | jsonb | null for generated; validated by `imageCreditSchema` |
-| `asset.stock_query` | text | query used; reused by admin swap |
+| `asset.stock_query` | text | query actually searched (`slot.query ?? slot.prompt`); reused by admin swap |
+| `asset.prompt` | text | AI prompt of the slot; needed for admin "KI-Bild" (final `contentJson` drops draft prompts) |
 | `asset.rejected_stock_ids` | jsonb `string[]` | not null, default `[]`; ids replaced by admin swaps |
 
 ```ts
@@ -126,7 +127,7 @@ imageCreditSchema = z.object({
 })
 ```
 
-- `NewAsset` (pipeline store) gains `origin`, `credit`, `stockQuery`.
+- `NewAsset` (pipeline store) gains `origin`, `credit`, `stockQuery`, `prompt`.
 - New store method `updateAsset(assetId, patch)` for swaps. Asset id stays stable → `contentJson.imageId` untouched.
 
 ## 7. API
@@ -139,8 +140,8 @@ imageCreditSchema = z.object({
 - `AdminUnitDto.assets[]` gains `origin`, `credit`, `stockQuery`.
 - `POST /api/admin/units/:id/assets/:assetId/replace` body `{ mode: 'next-stock' | 'generated' }`
   - 409 unless unit `in_review`; 404 unless asset is an image of the unit.
-  - `next-stock`: exclude = all stock ids used in the unit + `rejected_stock_ids` + current id; `skipPick: true`. Old id appended to `rejected_stock_ids`. No hit → 422 `no_stock_candidate` (asset unchanged).
-  - `generated`: `forceGenerated`; prompt from the draft slot (`imagePrompt` / `images[i].prompt`, located via `imageId`).
+  - `next-stock`: exclude = all stock ids used in the unit + `rejected_stock_ids` + current id; `skipPick: true`, via stock-only helper `resolveStockImage` (never generates). Old id appended to `rejected_stock_ids`. No hit → 422 `no_stock_candidate` (asset unchanged).
+  - `generated`: `forceGenerated` with `asset.prompt`.
   - Synchronous (few seconds); returns updated asset DTO.
 - Reason for sync over a job: single admin action, immediate feedback, no new queue.
 
@@ -183,7 +184,7 @@ imageCreditSchema = z.object({
 | `STOCK_MAX_BYTES` | `5000000` | Download cap |
 | `IMAGE_EPHEMERAL` | `true` | ImageRouter `b64_ephemeral` |
 
-Env validation: `commons` in providers without `STOCK_USER_AGENT` → startup error. Added to `.env.template`.
+Env validation: `commons` in providers without `STOCK_USER_AGENT` → startup error. Added to `.env.api.template` (the env template in this repo).
 
 ## 12. Error handling
 

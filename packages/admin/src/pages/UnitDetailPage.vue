@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
-import type { UnitDetailDto } from '@wizzn/shared'
-import { api, errorMessage } from 'src/api'
+import { formatLicense, type ReplaceImageMode, type UnitDetailDto } from '@wizzn/shared'
+import { api, ApiError, errorMessage, replaceImage } from 'src/api'
 import UnitPreview from 'components/UnitPreview.vue'
 import { STATUS_COLOR, STATUS_LABEL } from 'src/status'
 
@@ -13,7 +13,8 @@ const title = ref('')
 const json = ref('')
 const busy = ref(false)
 
-const assetUrls = computed(() => Object.fromEntries((unit.value?.assets ?? []).map((a) => [a.id, a.url])))
+const swapping = ref<Record<string, boolean>>({})
+const images = computed(() => (unit.value?.assets ?? []).filter((a) => a.kind === 'image'))
 const editable = computed(() => unit.value?.status === 'in_review')
 const previewContent = computed<unknown>(() => {
   try {
@@ -42,6 +43,19 @@ async function act(label: string, fn: () => Promise<unknown>): Promise<void> {
   }
 }
 
+async function swap(assetId: string, mode: ReplaceImageMode): Promise<void> {
+  swapping.value[assetId] = true
+  try {
+    await replaceImage(props.id, assetId, mode)
+    await load()
+  } catch (e) {
+    const message = e instanceof ApiError && e.status === 422 ? 'Kein weiteres Stockbild gefunden' : errorMessage(e)
+    $q.notify({ type: e instanceof ApiError && e.status === 422 ? 'warning' : 'negative', message })
+  } finally {
+    swapping.value[assetId] = false
+  }
+}
+
 const save = () => act('Gespeichert', () => api(`/api/admin/units/${props.id}`, { method: 'PUT', body: { title: title.value, contentJson: previewContent.value } }))
 const approve = () => act('Veröffentlicht', () => api(`/api/admin/units/${props.id}/approve`, { method: 'POST' }))
 const requeue = () => act('Neu in der Pipeline', () => api(`/api/admin/units/${props.id}/requeue`, { method: 'POST' }))
@@ -58,7 +72,7 @@ onMounted(load)
   <q-page padding>
     <div v-if="unit" class="row q-col-gutter-lg">
       <div class="col-auto">
-        <UnitPreview :title="title" :content="previewContent" :asset-urls="assetUrls" />
+        <UnitPreview :title="title" :content="previewContent" :assets="unit.assets" />
       </div>
       <div class="col column q-gutter-md">
         <div class="row items-center q-gutter-sm">
@@ -89,6 +103,25 @@ onMounted(load)
             <q-item v-for="l in unit.checkReport.links.filter((x) => !x.ok)" :key="l.url">
               <q-item-section avatar><q-icon name="link_off" color="negative" /></q-item-section>
               <q-item-section>Link nicht erreichbar ({{ l.status ?? 'Timeout' }}): {{ l.url }}</q-item-section>
+            </q-item>
+          </q-list>
+        </q-card>
+
+        <q-card v-if="editable && images.length" flat bordered>
+          <q-card-section class="text-subtitle1">Bilder</q-card-section>
+          <q-list separator>
+            <q-item v-for="img in images" :key="img.id">
+              <q-item-section avatar><q-img :src="img.url" width="56px" ratio="1" class="rounded-borders" /></q-item-section>
+              <q-item-section>
+                <q-item-label>{{ img.credit ? `Stock · ${img.credit.provider} · ${formatLicense(img.credit)}` : 'KI' }}</q-item-label>
+                <q-item-label v-if="img.stockQuery" caption>{{ img.stockQuery }}</q-item-label>
+              </q-item-section>
+              <q-item-section side>
+                <div class="row q-gutter-sm">
+                  <q-btn flat dense color="primary" label="Nächstes Stockbild" :loading="swapping[img.id]" :disable="busy || swapping[img.id]" @click="swap(img.id, 'next-stock')" />
+                  <q-btn flat dense color="primary" label="KI-Bild" :loading="swapping[img.id]" :disable="busy || swapping[img.id]" @click="swap(img.id, 'generated')" />
+                </div>
+              </q-item-section>
             </q-item>
           </q-list>
         </q-card>

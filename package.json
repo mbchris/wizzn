@@ -22,6 +22,7 @@
     "setup:google": "node scripts/setup/google.mjs",
     "setup:apple": "node scripts/setup/apple.mjs",
     "setup:apple:secret": "node scripts/setup/apple-client-secret.mjs",
+    "setup:openverse": "node scripts/setup/openverse.mjs",
     "verify:m4": "node scripts/verify-m4.mjs",
     "creds:pull": "./creds.sh pull",
     "creds:push": "./creds.sh push",

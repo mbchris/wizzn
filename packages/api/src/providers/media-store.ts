@@ -8,7 +8,7 @@ export interface MediaStore {
   publicUrl(path: string): string
 }
 
-const EXT: Record<string, string> = { 'audio/wav': 'wav', 'audio/mpeg': 'mp3', 'image/png': 'png', 'image/svg+xml': 'svg' }
+const EXT: Record<string, string> = { 'audio/wav': 'wav', 'audio/mpeg': 'mp3', 'image/png': 'png', 'image/svg+xml': 'svg', 'image/jpeg': 'jpg', 'image/webp': 'webp' }
 export const extFor = (contentType: string): string => EXT[contentType] ?? 'bin'
 
 export function createLocalMediaStore(rootDir: string, publicBaseUrl: string): MediaStore {

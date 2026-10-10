@@ -4,6 +4,9 @@ import { DEFAULT_FREE_DAILY_CAP } from '@wizzn/shared'
 
 const csv = z.string().transform((s) => s.split(',').map((v) => v.trim()).filter(Boolean))
 
+const bool = (def: boolean) =>
+  z.preprocess((v) => (typeof v === 'string' ? ['1', 'true', 'yes', 'on'].includes(v.trim().toLowerCase()) : v), z.boolean().default(def))
+
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -45,6 +48,20 @@ export const envSchema = z.object({
   /** Comma-separated OAuth client ids: web first, then iOS and Android (all accepted as id token audience) */
   GOOGLE_CLIENT_IDS: csv.default(''),
   GOOGLE_CLIENT_SECRET: z.string().default(''),
+  /** CC-licensed stock images: provider order; empty disables stock */
+  STOCK_IMAGE_PROVIDERS: csv.pipe(z.array(z.enum(['openverse', 'commons']))).default('openverse,commons'),
+  /** Required when `commons` is enabled, e.g. "wizzn/1.0 (https://wizzn.app; ops@wizzn.app)" */
+  STOCK_USER_AGENT: z.string().default(''),
+  OPENVERSE_CLIENT_ID: z.string().default(''),
+  OPENVERSE_CLIENT_SECRET: z.string().default(''),
+  STOCK_MIN_EDGE_PX: z.coerce.number().int().positive().default(800),
+  STOCK_MAX_BYTES: z.coerce.number().int().positive().default(5_000_000),
+  /** ImageRouter b64_ephemeral: no 30-day retention at the provider */
+  IMAGE_EPHEMERAL: bool(true),
+}).superRefine((env, ctx) => {
+  if (env.STOCK_IMAGE_PROVIDERS.includes('commons') && !env.STOCK_USER_AGENT.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['STOCK_USER_AGENT'], message: 'required when STOCK_IMAGE_PROVIDERS includes commons' })
+  }
 })
 export type Env = z.infer<typeof envSchema>
 

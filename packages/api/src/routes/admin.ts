@@ -1,8 +1,9 @@
 import { Hono, type Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { briefInputSchema, rejectSchema, unitEditSchema, unitListQuerySchema } from '@wizzn/shared'
+import { briefInputSchema, rejectSchema, replaceImageSchema, unitEditSchema, unitListQuerySchema } from '@wizzn/shared'
 import { z } from 'zod'
 import { requireAdmin } from '../middleware/require-admin.js'
+import type { ImageReplacer } from '../pipeline/replace-image.js'
 import type { AdminActionResult, AdminRepo, AppVariables, AuthPort, JobQueue } from '../types.js'
 
 const idParam = zValidator('param', z.object({ id: z.string().uuid() }))
@@ -14,7 +15,7 @@ function respond(c: Context, result: AdminActionResult) {
   return c.json({ error: 'Action not allowed in the current status' }, 409)
 }
 
-export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRepo, queue: JobQueue) =>
+export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRepo, queue: JobQueue, images?: ImageReplacer) =>
   new Hono<{ Variables: AppVariables }>()
     .use('*', requireAdmin(auth, adminEmails))
     .post('/briefs', zValidator('json', briefInputSchema), async (c) => {
@@ -40,3 +41,17 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
       if (result === 'ok') await queue.enqueueResearch(id)
       return respond(c, result)
     })
+    .post(
+      '/units/:id/assets/:assetId/replace',
+      zValidator('param', z.object({ id: z.string().uuid(), assetId: z.string().uuid() })),
+      zValidator('json', replaceImageSchema),
+      async (c) => {
+        if (!images) return c.json({ error: 'Image replacement not configured' }, 501)
+        const { id, assetId } = c.req.valid('param')
+        const result = await images.replace(id, assetId, c.req.valid('json').mode)
+        if (result.ok) return c.json(result.asset)
+        if (result.error === 'not_found') return c.json({ error: 'Not Found' }, 404)
+        if (result.error === 'invalid_state') return c.json({ error: 'Action not allowed in the current status' }, 409)
+        return c.json({ error: 'no_stock_candidate' }, 422)
+      },
+    )

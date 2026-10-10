@@ -1,10 +1,11 @@
 import { relations } from 'drizzle-orm'
 import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { UNIT_STATUSES } from '@wizzn/shared'
+import { UNIT_STATUSES, type ImageCredit } from '@wizzn/shared'
 
 export const unitFormat = pgEnum('unit_format', ['audio', 'written'])
 export const unitStatus = pgEnum('unit_status', UNIT_STATUSES)
 export const assetKind = pgEnum('asset_kind', ['image', 'audio'])
+export const assetOrigin = pgEnum('asset_origin', ['generated', 'stock'])
 
 export const field = pgTable('field', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -72,6 +73,11 @@ export const asset = pgTable('asset', {
   position: integer('position').notNull().default(0),
   path: text('path').notNull(),
   durationSec: integer('duration_sec'),
+  origin: assetOrigin('origin').notNull().default('generated'),
+  credit: jsonb('credit').$type<ImageCredit>(),
+  stockQuery: text('stock_query'),
+  prompt: text('prompt'),
+  rejectedStockIds: jsonb('rejected_stock_ids').$type<string[]>().notNull().default([]),
 })
 
 export const checkReport = pgTable('check_report', {

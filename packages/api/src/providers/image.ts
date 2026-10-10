@@ -33,14 +33,16 @@ interface ImagesResponse {
 }
 
 /** OpenAI-compatible `/images/generations` endpoint. */
-export function createApiImages(cfg: { baseUrl: string; model: string; apiKey: string; fetchFn?: typeof fetch }): ImageClient {
+export function createApiImages(cfg: { baseUrl: string; model: string; apiKey: string; ephemeral?: boolean; fetchFn?: typeof fetch }): ImageClient {
   const fetchFn = cfg.fetchFn ?? fetch
+  // ImageRouter returns b64_ephemeral (no retention on their side); default mirrors env IMAGE_EPHEMERAL.
+  const responseFormat = (cfg.ephemeral ?? true) ? 'b64_ephemeral' : 'b64_json'
   return {
     async generate(prompt) {
       const res = await fetchFn(`${cfg.baseUrl.replace(/\/$/, '')}/images/generations`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${cfg.apiKey}` },
-        body: JSON.stringify({ model: cfg.model, prompt: `${prompt}. ${IMAGE_STYLE}`, size: '1024x1024', response_format: 'b64_json', n: 1 }),
+        body: JSON.stringify({ model: cfg.model, prompt: `${prompt}. ${IMAGE_STYLE}`, size: '1024x1024', response_format: responseFormat, output_format: 'png', n: 1 }),
       })
       if (!res.ok) throw new Error(`Image HTTP ${res.status}`)
       const b64 = ((await res.json()) as ImagesResponse).data?.[0]?.b64_json

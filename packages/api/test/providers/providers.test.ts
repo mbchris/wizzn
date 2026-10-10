@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { htmlToText, extractTitle } from '../../src/providers/fetch-page.js'
 import { createLlmClient, stripWrappers } from '../../src/providers/llm.js'
+import { createApiImages } from '../../src/providers/image.js'
 import { createSearxngClient } from '../../src/providers/search.js'
 import { silentWav, wavDurationSec } from '../../src/providers/tts.js'
 
@@ -50,5 +51,41 @@ describe('html extraction', () => {
 describe('wav', () => {
   it('reads the duration of a generated WAV', () => {
     expect(wavDurationSec(silentWav(3, 8000))).toBe(3)
+  })
+})
+
+describe('api images (ImageRouter compatible)', () => {
+  const png = Buffer.from('fake-png')
+  const b64 = png.toString('base64')
+  const capture = () => {
+    const calls: { url: string; body: Record<string, unknown> }[] = []
+    const fetchFn = (async (url: string, init: RequestInit) => {
+      calls.push({ url, body: JSON.parse(String(init.body)) })
+      return json({ data: [{ b64_json: b64 }] })
+    }) as unknown as typeof fetch
+    return { calls, fetchFn }
+  }
+  const cfg = { baseUrl: 'http://img/v1/', model: 'm', apiKey: 'k' }
+
+  it('sends output_format png and b64_ephemeral when ephemeral is true', async () => {
+    const { calls, fetchFn } = capture()
+    const out = await createApiImages({ ...cfg, ephemeral: true, fetchFn }).generate('oatmeal')
+    expect(calls[0]!.url).toBe('http://img/v1/images/generations')
+    expect(calls[0]!.body).toMatchObject({ output_format: 'png', response_format: 'b64_ephemeral' })
+    expect(out.data).toEqual(png)
+    expect(out.contentType).toBe('image/png')
+  })
+
+  it('sends b64_json when ephemeral is false', async () => {
+    const { calls, fetchFn } = capture()
+    const out = await createApiImages({ ...cfg, ephemeral: false, fetchFn }).generate('oatmeal')
+    expect(calls[0]!.body).toMatchObject({ output_format: 'png', response_format: 'b64_json' })
+    expect(out.data).toEqual(png)
+  })
+
+  it('defaults to b64_ephemeral when ephemeral is undefined', async () => {
+    const { calls, fetchFn } = capture()
+    await createApiImages({ ...cfg, fetchFn }).generate('oatmeal')
+    expect(calls[0]!.body).toMatchObject({ response_format: 'b64_ephemeral' })
   })
 })

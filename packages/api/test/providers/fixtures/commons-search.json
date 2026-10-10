@@ -1,0 +1,149 @@
+{
+  "batchcomplete": "",
+  "query": {
+    "pages": {
+      "1": {
+        "pageid": 1,
+        "title": "File:Apple tree.jpg",
+        "index": 1,
+        "imageinfo": [
+          {
+            "thumburl": "https://upload.wikimedia.org/thumb/1.jpg/1080px-1.jpg",
+            "url": "https://upload.wikimedia.org/1.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Apple_tree.jpg",
+            "width": 3001,
+            "height": 2001,
+            "mime": "image/jpeg",
+            "extmetadata": {
+              "LicenseShortName": {
+                "value": "CC BY-SA 3.0 de"
+              },
+              "ObjectName": {
+                "value": "Apple tree in bloom"
+              },
+              "Artist": {
+                "value": "<a href=\"//commons.wikimedia.org/wiki/User:Foo\">Foo</a>"
+              },
+              "AttributionRequired": {
+                "value": "true"
+              },
+              "LicenseUrl": {
+                "value": "https://creativecommons.org/licenses/by-sa/3.0/de/deed.en"
+              }
+            }
+          }
+        ]
+      },
+      "2": {
+        "pageid": 2,
+        "title": "File:Zero bread.png",
+        "index": 2,
+        "imageinfo": [
+          {
+            "thumburl": "https://upload.wikimedia.org/thumb/2.jpg/1080px-2.jpg",
+            "url": "https://upload.wikimedia.org/2.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Zero_bread.png",
+            "width": 3002,
+            "height": 2002,
+            "mime": "image/jpeg",
+            "extmetadata": {
+              "LicenseShortName": {
+                "value": "CC0"
+              },
+              "ObjectName": {
+                "value": ""
+              },
+              "AttributionRequired": {
+                "value": "false"
+              }
+            }
+          }
+        ]
+      },
+      "3": {
+        "pageid": 3,
+        "title": "File:Nc photo.jpg",
+        "index": 3,
+        "imageinfo": [
+          {
+            "thumburl": "https://upload.wikimedia.org/thumb/3.jpg/1080px-3.jpg",
+            "url": "https://upload.wikimedia.org/3.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Nc_photo.jpg",
+            "width": 3003,
+            "height": 2003,
+            "mime": "image/jpeg",
+            "extmetadata": {
+              "LicenseShortName": {
+                "value": "CC BY-NC 2.0"
+              },
+              "ObjectName": {
+                "value": "Nc"
+              },
+              "Artist": {
+                "value": "<a href=\"//x.org\">Z</a>"
+              },
+              "AttributionRequired": {
+                "value": "true"
+              }
+            }
+          }
+        ]
+      },
+      "4": {
+        "pageid": 4,
+        "title": "File:Old map.jpg",
+        "index": 4,
+        "imageinfo": [
+          {
+            "thumburl": "https://upload.wikimedia.org/thumb/4.jpg/1080px-4.jpg",
+            "url": "https://upload.wikimedia.org/4.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:Old_map.jpg",
+            "width": 3004,
+            "height": 2004,
+            "mime": "image/jpeg",
+            "extmetadata": {
+              "LicenseShortName": {
+                "value": "Public domain"
+              },
+              "ObjectName": {
+                "value": "Old map"
+              },
+              "Artist": {
+                "value": "<span class=\"fn\">Bar &amp; Baz</span>"
+              },
+              "AttributionRequired": {
+                "value": "false"
+              }
+            }
+          }
+        ]
+      },
+      "5": {
+        "pageid": 5,
+        "title": "File:No artist.jpg",
+        "index": 5,
+        "imageinfo": [
+          {
+            "thumburl": "https://upload.wikimedia.org/thumb/5.jpg/1080px-5.jpg",
+            "url": "https://upload.wikimedia.org/5.jpg",
+            "descriptionurl": "https://commons.wikimedia.org/wiki/File:No_artist.jpg",
+            "width": 3005,
+            "height": 2005,
+            "mime": "image/jpeg",
+            "extmetadata": {
+              "LicenseShortName": {
+                "value": "CC BY-SA 4.0"
+              },
+              "ObjectName": {
+                "value": "No artist"
+              },
+              "AttributionRequired": {
+                "value": "true"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

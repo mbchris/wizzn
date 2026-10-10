@@ -13,6 +13,7 @@ export const draftWrittenSchema = z.object({
         title: z.string().min(1).max(80),
         body: z.string().min(1).refine((b) => words(b) <= 60, { message: 'Slide body exceeds 60 words' }),
         imagePrompt: z.string().min(3).optional(),
+        imageQuery: z.string().min(2).max(40).optional(),
       }),
     )
     .min(3)
@@ -26,7 +27,7 @@ export const draftAudioSchema = z.object({
     message: `Script must have ${AUDIO_SCRIPT_WORDS.min}–${AUDIO_SCRIPT_WORDS.max} words`,
   }),
   images: z
-    .array(z.object({ prompt: z.string().min(3), atFraction: z.number().min(0).max(0.95) }))
+    .array(z.object({ prompt: z.string().min(3), query: z.string().min(2).max(40).optional(), atFraction: z.number().min(0).max(0.95) }))
     .min(1)
     .max(3),
 })
@@ -36,6 +37,9 @@ export const sourcePickSchema = z.object({
   picks: z.array(z.object({ index: z.number().int().min(0), publisher: z.string().min(1) })).min(1).max(3),
 })
 export type SourcePick = z.infer<typeof sourcePickSchema>
+
+export const imagePickSchema = z.object({ index: z.number().int().min(0).nullable() })
+export type ImagePick = z.infer<typeof imagePickSchema>
 
 export const llmCheckSchema = z.object({
   claims: z.array(z.object({ text: z.string(), sourceIndex: z.number().int().min(0).nullable() })),
