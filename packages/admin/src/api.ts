@@ -1,3 +1,5 @@
+import type { ReplaceImageMode, UnitDetailDto } from '@wizzn/shared'
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -38,5 +40,8 @@ export const authApi = {
     api<Session>('/api/auth/sign-up/email', { method: 'POST', body: { email, password, name } }),
   signOut: () => api<unknown>('/api/auth/sign-out', { method: 'POST', body: {} }),
 }
+
+export const replaceImage = (unitId: string, assetId: string, mode: ReplaceImageMode): Promise<UnitDetailDto['assets'][number]> =>
+  api(`/api/admin/units/${unitId}/assets/${assetId}/replace`, { method: 'POST', body: { mode } })
 
 export const errorMessage = (e: unknown): string => (e instanceof Error ? e.message : String(e))
