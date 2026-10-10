@@ -2,6 +2,10 @@
   "appId": "app.fourki.wizzn",
   "appName": "wizzn",
   "webDir": "www",
-  "ios": { "contentInset": "never" },
-  "android": { "allowMixedContent": false }
+  "ios": {
+    "contentInset": "never"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
 }

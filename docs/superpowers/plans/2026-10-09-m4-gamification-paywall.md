@@ -43,6 +43,11 @@
 - [ ] `pnpm dev:web` with `FREE_DAILY_CAP=1`: complete a unit → toast "+15 XP · 🔥 1 Tag" → swipe → paywall card; profile shows 1/5 week, Level 1, 🌱 badge
 
 ### Task 4: Store setup + device test (manual)
+Console resources via scripts — `docs/setup-consoles.md`. Credentials in root `.env` (template `.env.template`; single env file for the repo), keys in `secrets/`.
+- [ ] `pnpm setup:apple` → bundle id + Push/SIWA/IAP capabilities; by hand: App Store Connect app record, APNs key, SIWA key (+ Services ID only if Apple sign-in on Android); re-run until no manual steps left
+- [ ] `pnpm setup:google -- --create-key` → project, Firebase (Android only), FCM sender SA; by hand: OAuth consent screen, Web + iOS OAuth clients; re-run → `google-services.json` has web client
+- [ ] `pnpm setup:apple:secret` → `APPLE_*` written to `.env`
+- [ ] By hand in `.env`: `GOOGLE_CLIENT_SECRET`, `GOOGLE_IOS_CLIENT_ID` (+ append to `GOOGLE_CLIENT_IDS`); scripts fill the rest
 - [ ] `cd packages/web/src-capacitor && pnpm install --ignore-workspace` (verify plugin majors match Capacitor 7: `npm view @revenuecat/purchases-capacitor peerDependencies`)
 - [ ] Xcode: capability "Sign in with Apple" + "In-App Purchase"; Google: iOS URL scheme (reversed iOS client id) in `Info.plist`
 - [ ] RevenueCat: project, entitlement `premium`, offering "default" (monthly + annual), webhook URL + Authorization value = `REVENUECAT_WEBHOOK_AUTH`

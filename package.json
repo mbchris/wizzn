@@ -19,10 +19,14 @@
     "dev:all": "./scripts/dev.sh",
     "dev:web": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/web dev",
     "db:seed:samples": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api db:seed:samples",
-    "setup:google": "node --env-file=.env scripts/setup/google.mjs",
-    "setup:apple": "node --env-file=.env scripts/setup/apple.mjs",
-    "setup:apple:secret": "node --env-file=.env scripts/setup/apple-client-secret.mjs",
-    "verify:m4": "node scripts/verify-m4.mjs"
+    "setup:google": "node scripts/setup/google.mjs",
+    "setup:apple": "node scripts/setup/apple.mjs",
+    "setup:apple:secret": "node scripts/setup/apple-client-secret.mjs",
+    "verify:m4": "node scripts/verify-m4.mjs",
+    "creds:pull": "./creds.sh pull",
+    "creds:push": "./creds.sh push",
+    "creds:diff": "./creds.sh diff",
+    "dev:all:android": "./scripts/dev.sh --android"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

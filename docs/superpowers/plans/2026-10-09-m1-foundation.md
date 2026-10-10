@@ -11,7 +11,7 @@
 - Node >= 20, pnpm 10, no `any`.
 - Unit content: written 3–5 slides, body ≤ 60 words, 1–3 sources; audio 180–300 s, 1–3 images within duration.
 - 5 launch fields: nutrition, partnership, finance, sports, psychology (German names).
-- Secrets only via `.env.api` / Coolify env.
+- Secrets only via root `.env` (dev) / Coolify env (prod).
 
 ## Review Focus
 - Interests with themes from an unselected field → theme ignored (repos.saveInterests).
@@ -32,7 +32,7 @@
 **Files:** `packages/api/src/db/{schema/*,client,seed,migrate}.ts`, `drizzle.config.ts`
 **Produces:** `createDb(url) → { db, pool }`, tables per spec §8 (+ Better Auth tables, `user_profile`).
 - [ ] `docker compose -f docker-compose.dev.yml up -d postgres`
-- [ ] `cp .env.api.template packages/api/.env && pnpm db:generate` → `packages/api/drizzle/0000_*.sql` created
+- [ ] `cp .env.template .env && pnpm db:generate` → `packages/api/drizzle/0000_*.sql` created
 - [ ] `pnpm db:migrate && pnpm db:seed` twice → "Seeded 5 fields", no error on 2nd run
 - [ ] Commit `drizzle/` folder
 
@@ -48,7 +48,7 @@
 **Files:** `packages/api/src/worker.ts`, `src/jobs/queues.ts`, `Dockerfile`, `docker-compose.yml`, `docker-compose.dev.yml`, `deploy/*`
 - [ ] `pnpm dev:worker` → logs 4 queues
 - [ ] `docker compose build && POSTGRES_PASSWORD=x docker compose up` → api healthy, worker started
-- [ ] Coolify: new resource from repo, compose file `docker-compose.yml`, domains for `api` (:3000) and `media` (:80), set env vars from `.env.api.template`
+- [ ] Coolify: new resource from repo, compose file `docker-compose.yml`, domains for `api` (:3000) and `media` (:80), set env vars from `.env.template` (API + worker section)
 
 ## Next plans
 | Plan | Scope |

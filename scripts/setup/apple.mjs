@@ -2,7 +2,7 @@
 // Creates/configures the Apple Developer + App Store Connect resources for wizzn. Idempotent.
 //   Bundle ID · capabilities (Push, Sign in with Apple, IAP) · checks the App Store Connect app record
 // Auth: App Store Connect API key (Admin role). Usage: pnpm setup:apple
-import { info, ok, warn, need, manual, printManual } from './lib.mjs'
+import { info, ok, warn, need, manual, printManual, upsertEnv } from './lib.mjs'
 import { ascClient } from './asc.mjs'
 
 need('APP_ID', 'ASC_KEY_ID', 'ASC_ISSUER_ID', 'ASC_KEY_PATH')
@@ -42,7 +42,7 @@ for (const cap of wanted) {
 // 3. App Store Connect app record (API can read, not create)
 info('App Store Connect app record')
 const app = (await api('GET', `/v1/apps?filter[bundleId]=${encodeURIComponent(APP_ID)}`)).data[0]
-if (app) ok(`app exists: "${app.attributes.name}" (Apple ID ${app.id}) → set APP_STORE_ID=${app.id} in .env`)
+if (app) { ok(`app exists: "${app.attributes.name}" (Apple ID ${app.id})`); upsertEnv({ APP_STORE_ID: app.id }) }
 else {
   warn('no app record yet')
   manual(`Create the app in App Store Connect → Apps → + → New App (platform iOS, bundle ID ${APP_ID}, SKU e.g. wizzn-ios, primary language German): https://appstoreconnect.apple.com/apps`)
@@ -50,7 +50,7 @@ else {
 
 // Steps Apple offers no API for
 const keys = 'https://developer.apple.com/account/resources/authkeys/list'
-if (!process.env.APNS_KEY_ID) manual(`Create a Key with "Apple Push Notifications service (APNs)" → download .p8 (once!) → save as APNS_KEY_PATH, set APNS_KEY_ID (API/worker sends iOS push directly to APNs): ${keys}`)
+if (!process.env.APNS_KEY_ID) manual(`Create a Key with "Apple Push Notifications service (APNs)" → download .p8 (once!) → save as secrets/AuthKey_APNS.p8, set APNS_KEY to that path, set APNS_KEY_ID (API/worker sends iOS push directly to APNs): ${keys}`)
 if (!process.env.APPLE_SIWA_KEY_ID) manual(`Create a Key with "Sign in with Apple" (primary App ID ${APP_ID}) → save .p8 as APPLE_SIWA_KEY_PATH, set APPLE_SIWA_KEY_ID: ${keys}`)
 if (!process.env.APPLE_SERVICES_ID) manual(`Optional (Apple sign-in on Android/web): create a Services ID (e.g. ${APP_ID}.signin), enable Sign in with Apple, domain = API host, return URL <BETTER_AUTH_URL>/api/auth/callback/apple: https://developer.apple.com/account/resources/identifiers/list/serviceId`)
 manual('Then run `pnpm setup:apple:secret` to generate APPLE_CLIENT_SECRET for Better Auth')

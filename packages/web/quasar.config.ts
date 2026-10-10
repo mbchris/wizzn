@@ -1,4 +1,20 @@
+import { existsSync } from 'node:fs'
+import { networkInterfaces } from 'node:os'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from '#q-app/wrappers'
+
+// Central env file: <repo root>/.env (already-set shell vars win)
+const rootEnv = fileURLToPath(new URL('../../.env', import.meta.url))
+if (existsSync(rootEnv)) process.loadEnvFile(rootEnv)
+
+// API_URL=auto (or unset): http://<current LAN IP>:<PORT> → works from browser, emulator and phone on the same Wi-Fi
+function apiUrl(): string {
+  const v = process.env.API_URL
+  if (v && v !== 'auto') return v
+  const ip = Object.values(networkInterfaces()).flat()
+    .find((i) => i && i.family === 'IPv4' && !i.internal && /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(i.address))?.address
+  return `http://${ip ?? 'localhost'}:${process.env.PORT ?? 3000}`
+}
 
 export default defineConfig(() => ({
   css: ['app.scss'],
@@ -9,7 +25,7 @@ export default defineConfig(() => ({
     vueRouterMode: 'hash',
     typescript: { strict: true, vueShim: true },
     env: {
-      API_URL: process.env.API_URL ?? 'http://localhost:3000',
+      API_URL: apiUrl(),
       // M4: public SDK keys / OAuth client ids (not secrets)
       REVENUECAT_IOS_KEY: process.env.REVENUECAT_IOS_KEY ?? '',
       REVENUECAT_ANDROID_KEY: process.env.REVENUECAT_ANDROID_KEY ?? '',

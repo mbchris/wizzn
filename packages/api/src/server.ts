@@ -5,6 +5,7 @@ import { createFeedRepo } from './feed-repo.js'
 import { createAuth } from './auth.js'
 import { createDb } from './db/client.js'
 import { loadEnv } from './env.js'
+import { devLanOrigins } from './devOrigins.js'
 import { sendUnitJob, startBoss } from './jobs/boss.js'
 import { QUEUES } from './jobs/queues.js'
 import { createLocalMediaStore } from './providers/media-store.js'
@@ -14,6 +15,8 @@ import { createRevenueCatClient } from './revenuecat.js'
 import type { AuthPort } from './types.js'
 
 const env = loadEnv()
+// Dev: phones/emulators load the app from http://<LAN IP>:9000 → allow it for CORS + Better Auth, whatever the IP is today
+if (env.NODE_ENV === 'development') env.CORS_ORIGINS.push(...devLanOrigins())
 const { db, pool } = createDb(env.DATABASE_URL)
 const progress = createProgressRepo(db)
 const auth = createAuth(db, env, {

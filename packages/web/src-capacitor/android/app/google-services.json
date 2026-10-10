@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "428339601911",
+    "project_id": "wizzn-app",
+    "storage_bucket": "wizzn-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:428339601911:android:f9faa4511a35c185dd8ef2",
+        "android_client_info": {
+          "package_name": "app.fourki.wizzn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBSuDX0497UXN9k1kAR26Kgl5PBFcdPdnk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,1 @@
+import{Ct as e,x as t}from"./QBtn-C23AruO_.js";var n=e(null),r=e(!1),i=e([]),a=null;async function o(){return i.value.length?i.value:(a??=t.fields().then(e=>i.value=e).finally(()=>a=null),a)}function s(){return{filter:n,stale:r,fields:i,loadFields:o}}var c={nutrition:`🥗`,partnership:`🤝`,finance:`💰`,sports:`🏃`,psychology:`🧠`},l=e=>c[e]??`✨`;export{s as n,l as t};

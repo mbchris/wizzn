@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { lanIPv4s } from './devOrigins.js'
 import { DEFAULT_FREE_DAILY_CAP } from '@wizzn/shared'
 
 const csv = z.string().transform((s) => s.split(',').map((v) => v.trim()).filter(Boolean))
@@ -25,7 +26,11 @@ export const envSchema = z.object({
   ADMIN_EMAILS: csv.default(''),
   MEDIA_DRIVER: z.enum(['local', 's3']).default('local'),
   MEDIA_DIR: z.string().default('./media-data'),
-  MEDIA_PUBLIC_URL: z.string().url(),
+  // 'auto' (dev): http://<current LAN IP>:8081 → media loads in browser, emulator and phone alike
+  MEDIA_PUBLIC_URL: z.preprocess(
+    (v) => (v === 'auto' ? `http://${lanIPv4s()[0] ?? 'localhost'}:8081` : v),
+    z.string().url(),
+  ),
   // M4 — monetisation & sign-in (all optional in dev)
   FREE_DAILY_CAP: z.coerce.number().int().min(1).default(DEFAULT_FREE_DAILY_CAP),
   /** Exact Authorization header value configured for the RevenueCat webhook */

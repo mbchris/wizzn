@@ -1,10 +1,19 @@
 // Shared helpers for console setup scripts. No dependencies (Node >= 20).
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 export const OUT_DIR = resolve(ROOT, 'setup-out')
+
+// Load <repo root>/.env regardless of the cwd the script was started from
+const ENV_FILE = resolve(ROOT, '.env')
+if (!existsSync(ENV_FILE)) {
+  console.error(`\x1b[1;31m✗ ${ENV_FILE} not found.\x1b[0m Create it: cp .env.template .env  (then fill in values)`)
+  process.exit(1)
+}
+process.loadEnvFile(ENV_FILE)
+process.chdir(ROOT)
 
 export const info = (m) => console.log(`\x1b[1;35m▶ ${m}\x1b[0m`)
 export const ok = (m) => console.log(`\x1b[1;32m✓ ${m}\x1b[0m`)
@@ -35,3 +44,16 @@ export function printManual(title) {
 }
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+
+/** Set KEY=value in <repo root>/.env (replace the existing line or append). */
+export function upsertEnv(vars) {
+  let text = readFileSync(ENV_FILE, 'utf8')
+  for (const [k, v] of Object.entries(vars)) {
+    if (v === undefined || v === null || v === '') continue
+    const line = `${k}=${v}`
+    const re = new RegExp(`^${k}=.*$`, 'm')
+    text = re.test(text) ? text.replace(re, line) : `${text.replace(/\n?$/, '\n')}${line}\n`
+    ok(`.env: ${k} set`)
+  }
+  writeFileSync(ENV_FILE, text)
+}

@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const API = 'http://localhost:3000'
-const API_ENV = join(ROOT, 'packages/api/.env')
+const API_ENV = join(ROOT, '.env')
 const CAP_DIR = join(ROOT, 'packages/web/src-capacitor')
 const WEBHOOK_AUTH = 'Bearer verify-m4'
 const COMMIT_MSG = 'feat(m4): streaks, XP, badges, weekly goal, daily cap, paywall + RevenueCat, Apple/Google sign-in'
@@ -55,20 +55,20 @@ async function stepEnv() {
   for (const [cmd, hint] of [['pnpm', 'corepack enable'], ['docker', 'start Docker Desktop'], ['node', 'install Node ≥ 20']]) {
     record(`${cmd} available`, runQuiet('which', [cmd]).status === 0, hint)
   }
-  if (!existsSync(API_ENV)) return record('packages/api/.env exists', false, 'cp .env.api.template packages/api/.env')
+  if (!existsSync(API_ENV)) return record('.env exists', false, 'cp .env.template .env')
   const text = readFileSync(API_ENV, 'utf8')
   const missing = Object.keys(M4_ENV).filter((k) => !new RegExp(`^${k}=`, 'm').test(text))
-  if (!missing.length) return record('M4 env vars in packages/api/.env', true)
-  console.log(`Missing in packages/api/.env: ${missing.join(', ')}`)
+  if (!missing.length) return record('M4 env vars in .env', true)
+  console.log(`Missing in .env: ${missing.join(', ')}`)
   if (await ask('Append them with defaults?')) {
     appendFileSync(API_ENV, `\n# M4 (added by verify-m4)\n${missing.map((k) => `${k}=${M4_ENV[k]}`).join('\n')}\n`)
     record('M4 env vars appended', true)
-  } else record('M4 env vars in packages/api/.env', false)
-  // .env.api.template could not be written by the agent; keep it in sync for fresh clones
-  const tplPath = join(ROOT, '.env.api.template')
-  if (existsSync(tplPath) && !/FREE_DAILY_CAP=/.test(readFileSync(tplPath, 'utf8')) && (await ask('Also add the M4 block to .env.api.template?'))) {
+  } else record('M4 env vars in .env', false)
+  // .env.template could not be written by the agent; keep it in sync for fresh clones
+  const tplPath = join(ROOT, '.env.template')
+  if (existsSync(tplPath) && !/FREE_DAILY_CAP=/.test(readFileSync(tplPath, 'utf8')) && (await ask('Also add the M4 block to .env.template?'))) {
     appendFileSync(tplPath, `\n# M4 — free tier, subscriptions, sign-in (all optional in dev)\n${Object.entries(M4_ENV).map(([k, v]) => `${k}=${v}`).join('\n')}\n`)
-    record('.env.api.template updated', true)
+    record('.env.template updated', true)
   }
 }
 
@@ -216,7 +216,7 @@ async function stepDevice() {
     'App Store Connect: subscriptions created (e.g. wizzn_monthly, wizzn_yearly) + a Sandbox tester',
     'RevenueCat: entitlement "premium", offering "default" with both packages, iOS public key (appl_…) copied',
     'RevenueCat webhook → https://<public api>/api/webhooks/revenuecat with Authorization = REVENUECAT_WEBHOOK_AUTH (optional for device test – the app also calls /subscription/refresh)',
-    'packages/api/.env: REVENUECAT_SECRET_KEY (sk_…) and APPLE_APP_BUNDLE_ID set; for Google also GOOGLE_CLIENT_IDS (web,ios)',
+    '.env: REVENUECAT_SECRET_KEY (sk_…) and APPLE_APP_BUNDLE_ID set; for Google also GOOGLE_CLIENT_IDS (web,ios)',
     'Google only: Info.plist has a URL scheme with the reversed iOS client id',
   ])
 
@@ -227,7 +227,7 @@ async function stepDevice() {
   const gIos = gWeb ? await input('Google iOS client id') : ''
   const cmd = `cd packages/web && API_URL=http://${lan}:3000 REVENUECAT_IOS_KEY=${rcKey} GOOGLE_WEB_CLIENT_ID=${gWeb} GOOGLE_IOS_CLIENT_ID=${gIos} pnpm dev:ios`
   console.log(`
-1. Make sure packages/api/.env has CORS_ORIGINS incl. capacitor://localhost and run ${c.y('pnpm dev')} (API reachable on http://${lan}:3000).
+1. Make sure .env has CORS_ORIGINS incl. capacitor://localhost and run ${c.y('pnpm dev')} (API reachable on http://${lan}:3000).
 2. In another terminal run:
    ${c.y(cmd)}
 3. Pick your iPhone in Xcode and run. Settings → App Store → Sandbox account: sign in with the tester.`)
