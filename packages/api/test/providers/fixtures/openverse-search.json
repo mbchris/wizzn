@@ -1,0 +1,9 @@
+{
+  "result_count": 4,
+  "results": [
+    {"id":"id-1","title":"Breakfast bowl","url":"https://live.staticflickr.com/1/a.jpg","foreign_landing_url":"https://www.flickr.com/photos/jane/1","creator":"Jane Doe","creator_url":"https://www.flickr.com/photos/jane","license":"by-sa","license_version":"4.0","license_url":"https://creativecommons.org/licenses/by-sa/4.0/","source":"flickr","provider":"flickr","filetype":"jpg","width":1600,"height":1200,"tags":[{"name":"breakfast"},{"name":"healthy"}]},
+    {"id":"id-2","title":"Oatmeal","url":"https://example.org/oat.png","foreign_landing_url":"https://example.org/oat","creator":"Sam","creator_url":null,"license":"cc0","license_version":"1.0","license_url":"https://creativecommons.org/publicdomain/zero/1.0/","source":"example","provider":"example","filetype":"png","width":1000,"height":900,"tags":[]},
+    {"id":"id-3","title":"NC pic","url":"https://example.org/nc.jpg","foreign_landing_url":"https://example.org/nc","creator":"Nina","creator_url":null,"license":"by-nc","license_version":"2.0","license_url":"https://creativecommons.org/licenses/by-nc/2.0/","source":"flickr","filetype":"jpg","width":1200,"height":1200,"tags":[]},
+    {"id":"id-4","title":"Anonymous","url":"https://example.org/anon.jpg","foreign_landing_url":"https://example.org/anon","creator":null,"creator_url":null,"license":"by","license_version":"2.0","license_url":"https://creativecommons.org/licenses/by/2.0/","source":"flickr","filetype":"jpg","width":900,"height":900,"tags":[]}
+  ]
+}
