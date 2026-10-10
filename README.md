@@ -10,7 +10,7 @@ pnpm install
 docker compose -f docker-compose.dev.yml up -d
 cp .env.template .env      # single env file for everything
 pnpm db:generate && pnpm db:migrate && pnpm db:seed
-ollama pull qwen3:8b        # dev LLM
+ollama pull qwen3:8b        # dev LLM (or LLM_PROVIDER=gemini-cli, see below)
 pnpm dev                    # api on :3000
 pnpm dev:worker             # job worker
 pnpm test
@@ -62,6 +62,8 @@ pnpm dev            # api :3000
 pnpm dev:worker     # pipeline worker
 pnpm dev:admin      # admin http://localhost:9100 → "Konto anlegen" with an ADMIN_EMAILS address
 ```
+LLM alternative: `npm i -g @google/gemini-cli`, run `gemini` once to log in, then `.env`: `LLM_PROVIDER=gemini-cli`, `LLM_MODEL=gemini-2.5-flash` (empty = CLI default). All LLM steps go through it; no Ollama needed.
+Check the LLM setup: `pnpm llm:check [topic]` prints the active backend and a mini sample unit (no DB writes).
 Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length), `IMAGE_PROVIDER=placeholder` (SVG).
 
 ### Audio (TTS) debugging

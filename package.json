@@ -6,6 +6,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "llm:check": "pnpm --filter @wizzn/api llm:check",
     "dev": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api dev",
     "dev:worker": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api dev:worker",
     "build": "pnpm -r build",

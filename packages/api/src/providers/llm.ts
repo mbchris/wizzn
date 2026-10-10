@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process'
 import type { ZodType } from 'zod'
 
 export interface ChatMessage {
@@ -23,6 +24,9 @@ interface ChatCompletion {
   choices?: { message?: { content?: string } }[]
 }
 
+/** Sends a conversation, returns the raw model text. */
+export type CompleteFn = (messages: ChatMessage[]) => Promise<string>
+
 /** Works with Ollama (`/v1`) and any OpenAI-compatible provider. */
 export function createLlmClient({ baseUrl, model, apiKey, fetchFn = fetch, temperature = 0.4 }: LlmConfig): LlmClient {
   async function complete(messages: ChatMessage[]): Promise<string> {
@@ -37,7 +41,78 @@ export function createLlmClient({ baseUrl, model, apiKey, fetchFn = fetch, tempe
     if (!content) throw new Error('LLM returned no content')
     return content
   }
+  return createJsonClient(model, complete)
+}
 
+export interface GeminiCliConfig {
+  /** Empty = gemini-cli's default model */
+  model: string
+  /** Path/name of the gemini binary */
+  bin?: string
+  timeoutMs?: number
+  /** Injectable for tests: runs the binary with args + stdin, resolves stdout */
+  runFn?: (bin: string, args: string[], stdin: string, timeoutMs: number) => Promise<string>
+}
+
+/**
+ * Uses the locally installed `gemini` CLI in headless mode (auth via its own login / GEMINI_API_KEY).
+ * The CLI is single-turn, so the conversation is flattened into one prompt on stdin.
+ */
+export function createGeminiCliClient({ model, bin = 'gemini', timeoutMs = 300_000, runFn = runProcess }: GeminiCliConfig): LlmClient {
+  async function complete(messages: ChatMessage[]): Promise<string> {
+    const args = ['--output-format', 'json']
+    if (model) args.push('-m', model)
+    const stdout = await runFn(bin, args, flattenMessages(messages), timeoutMs)
+    let content: string | undefined
+    try {
+      const body = JSON.parse(stdout) as { response?: string; error?: { message?: string } }
+      if (body.error) throw new Error(`gemini-cli: ${body.error.message ?? 'unknown error'}`)
+      // No `response` wrapper → CLI printed the model text itself
+      content = typeof body.response === 'string' ? body.response : stdout
+    } catch (e) {
+      if (e instanceof Error && e.message.startsWith('gemini-cli:')) throw e
+      content = stdout // older CLI versions without --output-format json
+    }
+    if (!content?.trim()) throw new Error('LLM returned no content')
+    return content
+  }
+  return createJsonClient(model || 'gemini-cli', complete)
+}
+
+export function flattenMessages(messages: ChatMessage[]): string {
+  const label = { system: 'SYSTEM', user: 'USER', assistant: 'ASSISTANT' } as const
+  return [
+    ...messages.map((m) => `### ${label[m.role]}\n${m.content}`),
+    '### ASSISTANT\nAntworte ausschließlich mit gültigem JSON, ohne Erklärungen oder Code-Fences.',
+  ].join('\n\n')
+}
+
+function runProcess(bin: string, args: string[], stdin: string, timeoutMs: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(bin, args, { stdio: ['pipe', 'pipe', 'pipe'] })
+    let out = ''
+    let err = ''
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL')
+      reject(new Error(`gemini-cli timed out after ${timeoutMs} ms`))
+    }, timeoutMs)
+    child.stdout.on('data', (d) => (out += d))
+    child.stderr.on('data', (d) => (err += d))
+    child.on('error', (e) => {
+      clearTimeout(timer)
+      reject(new Error(`gemini-cli failed to start (${bin}): ${e.message}`))
+    })
+    child.on('close', (code) => {
+      clearTimeout(timer)
+      if (code === 0) resolve(out)
+      else reject(new Error(`gemini-cli exited ${code}: ${(err || out).slice(0, 300)}`))
+    })
+    child.stdin.end(stdin)
+  })
+}
+
+/** Shared JSON contract: validate against the schema, one repair round-trip. */
+export function createJsonClient(model: string, complete: CompleteFn): LlmClient {
   return {
     model,
     async chatJson<T>(messages: ChatMessage[], schema: ZodType<T>): Promise<T> {

@@ -15,6 +15,7 @@
     "db:migrate": "tsx --env-file=../../.env src/db/migrate.ts",
     "db:seed": "tsx --env-file=../../.env src/db/seed.ts",
     "db:seed:samples": "tsx --env-file=../../.env src/db/seed-samples.ts",
+    "llm:check": "tsx --env-file=../../.env src/scripts/llm-check.ts",
     "tts:entry": "tsx --env-file=../../.env src/scripts/tts-entry.ts",
     "audio:rerender": "tsx --env-file=../../.env src/scripts/rerender-audio.ts"
   },

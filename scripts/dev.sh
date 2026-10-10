@@ -174,9 +174,18 @@ else
   pnpm db:seed:samples
 fi
 
-# 5. Ollama
+# 5. LLM: Ollama (default) or gemini-cli
+LLM_PROVIDER="$(grep -E '^LLM_PROVIDER=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+LLM_PROVIDER="${LLM_PROVIDER:-openai}"
 OLLAMA_PID=""
-if command -v ollama >/dev/null 2>&1; then
+if [[ "$LLM_PROVIDER" == "gemini-cli" ]]; then
+  GEMINI_BIN="$(grep -E '^GEMINI_CLI_BIN=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
+  if command -v "${GEMINI_BIN:-gemini}" >/dev/null 2>&1; then
+    c_info "LLM via gemini-cli (${MODEL:-default model})"
+  else
+    c_warn "gemini-cli not installed — the worker's AI steps will fail (npm i -g @google/gemini-cli, then run 'gemini' once to log in)."
+  fi
+elif command -v ollama >/dev/null 2>&1; then
   if ! curl -sf http://localhost:11434/api/tags >/dev/null; then
     c_info "Starting Ollama"
     ollama serve >/tmp/wizzn-ollama.log 2>&1 &

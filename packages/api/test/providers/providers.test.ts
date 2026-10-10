@@ -1,13 +1,43 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { htmlToText, extractTitle } from '../../src/providers/fetch-page.js'
-import { createLlmClient, stripWrappers } from '../../src/providers/llm.js'
+import { createGeminiCliClient, createLlmClient, flattenMessages, stripWrappers } from '../../src/providers/llm.js'
 import { createApiImages } from '../../src/providers/image.js'
 import { createSearxngClient } from '../../src/providers/search.js'
 import { silentWav, wavDurationSec } from '../../src/providers/tts.js'
 
 const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } })
 const completion = (content: string) => json({ choices: [{ message: { content } }] })
+
+describe('gemini-cli llm client', () => {
+  it('runs gemini headless with model + json output, parses response, retries on invalid', async () => {
+    const calls: { bin: string; args: string[]; stdin: string }[] = []
+    const answers = ['{"n":"x"}', '```json\n{"n":2}\n```']
+    const llm = createGeminiCliClient({
+      model: 'gemini-2.5-flash',
+      bin: '/opt/gemini',
+      runFn: async (bin, args, stdin) => (calls.push({ bin, args, stdin }), JSON.stringify({ response: answers.shift() })),
+    })
+    expect(await llm.chatJson([{ role: 'system', content: 'sys' }, { role: 'user', content: 'q' }], z.object({ n: z.number() }))).toEqual({ n: 2 })
+    expect(calls[0]).toMatchObject({ bin: '/opt/gemini', args: ['--output-format', 'json', '-m', 'gemini-2.5-flash'] })
+    expect(calls[0]!.stdin).toContain('### SYSTEM\nsys')
+    expect(calls[1]!.stdin).toContain('ungültig')
+  })
+  it('omits -m when no model is set and accepts plain-text stdout', async () => {
+    let seen: string[] = []
+    const llm = createGeminiCliClient({ model: '', runFn: async (_b, args) => ((seen = args), '{"ok":true}') })
+    expect(await llm.chatJson([], z.object({ ok: z.boolean() }))).toEqual({ ok: true })
+    expect(seen).toEqual(['--output-format', 'json'])
+    expect(llm.model).toBe('gemini-cli')
+  })
+  it('surfaces CLI errors', async () => {
+    const llm = createGeminiCliClient({ model: '', runFn: async () => JSON.stringify({ error: { message: 'quota' } }) })
+    await expect(llm.chatJson([], z.object({}))).rejects.toThrow(/gemini-cli: quota/)
+  })
+  it('flattens roles in order', () => {
+    expect(flattenMessages([{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }])).toMatch(/USER\na[\s\S]*ASSISTANT\nb/)
+  })
+})
 
 describe('llm client', () => {
   it('strips <think> and code fences', () => {

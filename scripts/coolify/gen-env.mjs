@@ -57,7 +57,8 @@ env.STOCK_USER_AGENT ||= `wizzn/1.0 (https://${args.domain}; ops@${args.domain})
 // Sanity checks: dev-only values that won't work on the VPS
 const warn = []
 const local = /localhost|127\.0\.0\.1|192\.168\.|10\.\d+\.|host\.docker\.internal/
-if (!env.LLM_BASE_URL || local.test(env.LLM_BASE_URL)) warn.push('LLM_BASE_URL points at a local Ollama — set a hosted OpenAI-compatible endpoint (+ LLM_MODEL, LLM_API_KEY)')
+if (env.LLM_PROVIDER === 'gemini-cli') warn.push('LLM_PROVIDER=gemini-cli needs the gemini binary + its auth (GEMINI_API_KEY) inside the api/worker image')
+else if (!env.LLM_BASE_URL || local.test(env.LLM_BASE_URL)) warn.push('LLM_BASE_URL points at a local Ollama — set a hosted OpenAI-compatible endpoint (+ LLM_MODEL, LLM_API_KEY)')
 if (env.TTS_PROVIDER && env.TTS_PROVIDER !== 'silent' && local.test(env.TTS_URL ?? '')) warn.push(`TTS_PROVIDER=${env.TTS_PROVIDER} but TTS_URL is local — set TTS_PROVIDER=silent or host a TTS service`)
 if (!env.ADMIN_EMAILS) warn.push('ADMIN_EMAILS is empty — nobody can use the admin app')
 if (!env.REVENUECAT_WEBHOOK_AUTH) warn.push('REVENUECAT_WEBHOOK_AUTH is empty — purchases webhook disabled')

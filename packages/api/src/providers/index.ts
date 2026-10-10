@@ -1,7 +1,7 @@
 import type { Env } from '../env.js'
 import { createPageFetcher } from './fetch-page.js'
 import { createApiImages, createPlaceholderImages, type ImageClient } from './image.js'
-import { createLlmClient } from './llm.js'
+import { createGeminiCliClient, createLlmClient, type LlmClient } from './llm.js'
 import { createLocalMediaStore } from './media-store.js'
 import { createCuratedProvider } from './research/curated.js'
 import { createEuropePmcProvider } from './research/europepmc.js'
@@ -18,7 +18,7 @@ import { createChatterboxTts, createPiperTts, createSilentTts, type TtsClient } 
 export function createProviders(env: Env) {
   const search = createSearxngClient(env.SEARCH_URL)
   return {
-    llm: createLlmClient({ baseUrl: env.LLM_BASE_URL, model: env.LLM_MODEL, apiKey: env.LLM_API_KEY }),
+    llm: createLlm(env),
     search,
     research: createResearchProviders(env, search),
     fetchPage: createPageFetcher(),
@@ -27,6 +27,13 @@ export function createProviders(env: Env) {
     stock: createStockClient(env),
     media: createLocalMediaStore(env.MEDIA_DIR, env.MEDIA_PUBLIC_URL),
   }
+}
+
+export function createLlm(env: Env): LlmClient {
+  if (env.LLM_PROVIDER === 'gemini-cli')
+    return createGeminiCliClient({ model: env.LLM_MODEL, bin: env.GEMINI_CLI_BIN, timeoutMs: env.GEMINI_CLI_TIMEOUT_MS })
+  if (!env.LLM_MODEL) throw new Error('LLM_PROVIDER=openai requires LLM_MODEL')
+  return createLlmClient({ baseUrl: env.LLM_BASE_URL, model: env.LLM_MODEL, apiKey: env.LLM_API_KEY })
 }
 
 /** `fit: false` skips the 3–5 min duration fitting (single render) — for debugging */

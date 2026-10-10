@@ -14,8 +14,13 @@ export const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
   CORS_ORIGINS: csv.default(''),
-  LLM_BASE_URL: z.string().url(),
-  LLM_MODEL: z.string().min(1),
+  // openai = Ollama or any OpenAI-compatible endpoint; gemini-cli = local `gemini` binary (headless)
+  LLM_PROVIDER: z.enum(['openai', 'gemini-cli']).default('openai'),
+  LLM_BASE_URL: z.string().url().default('http://localhost:11434/v1'),
+  // gemini-cli: empty = the CLI's default model
+  LLM_MODEL: z.string().default(''),
+  GEMINI_CLI_BIN: z.string().default('gemini'),
+  GEMINI_CLI_TIMEOUT_MS: z.coerce.number().int().positive().default(300_000),
   LLM_API_KEY: z.string().default(''),
   SEARCH_URL: z.string().url(),
   TTS_URL: z.string().url(),

@@ -36,7 +36,7 @@ for (const [queue, step] of Object.entries(STEP_BY_QUEUE)) {
     await runStep(step, job.data.unitId, deps)
   })
 }
-console.log(`wizzn worker started (llm: ${env.LLM_MODEL}, tts: ${env.TTS_PROVIDER}, images: ${env.IMAGE_PROVIDER})`)
+console.log(`wizzn worker started (llm: ${env.LLM_PROVIDER}/${env.LLM_MODEL || 'default'}, tts: ${env.TTS_PROVIDER}, images: ${env.IMAGE_PROVIDER})`)
 
 // A restart (tsx watch, crash, deploy) kills in-flight steps; their jobs expire without moving the unit on.
 // Resume such units from the interrupted step instead of leaving them stuck.
