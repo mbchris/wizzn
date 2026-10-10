@@ -34,6 +34,7 @@ const providers = createProviders(env)
 const images = createImageReplacer({
   store: createDbPipelineStore(db),
   image: { stock: providers.stock, images: providers.images, media: providers.media, llm: providers.llm, minEdgePx: env.STOCK_MIN_EDGE_PX, maxBytes: env.STOCK_MAX_BYTES, log: console.log },
+  audio: { tts: providers.tts, put: (unitId, data, ext) => providers.media.put(unitId, data, ext) },
   mediaUrl: media.publicUrl,
 })
 

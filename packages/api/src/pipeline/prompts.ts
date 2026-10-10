@@ -3,7 +3,7 @@ import type { ResearchCandidate } from '../providers/research/types.js'
 import { AUDIO_SCRIPT_WORDS, WRITTEN_HOOK_MAX_WORDS, WRITTEN_SLIDE_WORDS, WRITTEN_WORDS, type Editorial, type EditorialStyle, type SourceTier, type StoryArc } from '@wizzn/shared'
 
 /** Stored on every unit; bump when prompts change so units can be regenerated selectively. */
-export const PROMPT_VERSION = '2026-10-12.1'
+export const PROMPT_VERSION = '2026-10-12.2'
 
 export interface BriefContext {
   /** Key into the curated source registry */
@@ -70,6 +70,10 @@ Aufbau (immer in dieser Reihenfolge):
 5. Fazit: kurze Zusammenfassung des Ergebnisses, löst die These auf.
 ${parts}`
 
+/** AI images are always illustrations (style comes from the image provider); the motif must suit a drawing. */
+const IMAGE_MOTIF_RULE =
+  'imagePrompt/prompt beschreibt auf Englisch ein Illustrationsmotiv (Symbol, Szene oder Schaubild, das die Kernidee zeigt), niemals ein Foto: keine Begriffe wie photo, realistic, camera; keine echten oder berühmten Personen.'
+
 const topicLine = (b: BriefContext): string =>
   `Bereich: ${b.fieldName}${b.themeName ? ` / Thema: ${b.themeName}` : ''}\nAufhänger: ${b.topic}${b.context ? `\nKontext vom Redakteur: ${b.context}` : ''}`
 
@@ -106,7 +110,7 @@ export function draftWrittenPrompt(b: BriefContext, sources: ResearchedSource[],
     { role: 'system', content: SYSTEM },
     {
       role: 'user',
-      content: `${topicLine(b)}\n\nQuellen:\n${sourceBlock(sources)}\n\nErstelle einen ausführlichen Wissensbeitrag wie ein detaillierter Instagram-Post, ${WRITTEN_WORDS.min}–${WRITTEN_WORDS.max} Wörter insgesamt (2–3 Minuten Lesezeit):\n- cover: Titelbild als Bildmotiv (imagePrompt, ohne Text im Bild) und imageQuery: ein String mit 2–4 englischen Suchbegriffen für ein passendes Stockfoto, höchstens 40 Zeichen (konkretes Motiv, keine Abstrakta).\n- hook: Aufhänger unter dem Titelbild, höchstens ${WRITTEN_HOOK_MAX_WORDS} Wörter, macht neugierig.\n- slides: 4–6 Slides, je ein kurzer Titel und ${WRITTEN_SLIDE_WORDS.min}–${WRITTEN_SLIDE_WORDS.max} Wörter Text. Höchstens 2 Slides mit Bild (imagePrompt + imageQuery wie oben); Slides ohne Bild lassen beide Felder weg (nicht null).\n${editorialBlock(e, parts)}\nFormuliere eigenständig, übernimm keine Sätze wörtlich aus den Quellen.\n\nJSON: {"title":string,"hook":string,"cover":{"imagePrompt":string,"imageQuery":string},"slides":[{"title":string,"body":string,"imagePrompt"?:string,"imageQuery"?:string}]}`,
+      content: `${topicLine(b)}\n\nQuellen:\n${sourceBlock(sources)}\n\nErstelle einen ausführlichen Wissensbeitrag wie ein detaillierter Instagram-Post, ${WRITTEN_WORDS.min}–${WRITTEN_WORDS.max} Wörter insgesamt (2–3 Minuten Lesezeit):\n- cover: Titelbild als Bildmotiv (imagePrompt, ohne Text im Bild; ${IMAGE_MOTIF_RULE}) und imageQuery: ein String mit 2–4 englischen Suchbegriffen für ein passendes Stockfoto, höchstens 40 Zeichen (konkretes Motiv, keine Abstrakta).\n- hook: Aufhänger unter dem Titelbild, höchstens ${WRITTEN_HOOK_MAX_WORDS} Wörter, macht neugierig.\n- slides: 4–6 Slides, je ein kurzer Titel und ${WRITTEN_SLIDE_WORDS.min}–${WRITTEN_SLIDE_WORDS.max} Wörter Text. Höchstens 2 Slides mit Bild (imagePrompt + imageQuery wie oben); Slides ohne Bild lassen beide Felder weg (nicht null).\n${editorialBlock(e, parts)}\nFormuliere eigenständig, übernimm keine Sätze wörtlich aus den Quellen.\n\nJSON: {"title":string,"hook":string,"cover":{"imagePrompt":string,"imageQuery":string},"slides":[{"title":string,"body":string,"imagePrompt"?:string,"imageQuery"?:string}]}`,
     },
   ]
 }
@@ -117,7 +121,7 @@ export function draftAudioPrompt(b: BriefContext, sources: ResearchedSource[], e
     { role: 'system', content: SYSTEM },
     {
       role: 'user',
-      content: `${topicLine(b)}\n\nQuellen:\n${sourceBlock(sources)}\n\nSchreibe ein Sprechskript für 3–5 Minuten Audio (${AUDIO_SCRIPT_WORDS.min + 30}–${AUDIO_SCRIPT_WORDS.max - 50} Wörter), gut vorlesbar: kurze Sätze, keine Aufzählungszeichen, keine Abkürzungen, Zahlen ausgeschrieben.\n\n${editorialBlock(e, parts)}\n\nDazu 1–3 Bildmotive mit Zeitpunkt als Anteil der Laufzeit (atFraction 0–0.9). query: ein String mit 2–4 englischen Suchbegriffen für ein passendes Stockfoto, höchstens 40 Zeichen (konkretes Motiv, keine Abstrakta).\n\nJSON: {"title":string,"script":string,"images":[{"prompt":string,"query":string,"atFraction":number}]}`,
+      content: `${topicLine(b)}\n\nQuellen:\n${sourceBlock(sources)}\n\nSchreibe ein Sprechskript für 3–5 Minuten Audio (${AUDIO_SCRIPT_WORDS.min + 30}–${AUDIO_SCRIPT_WORDS.max - 50} Wörter), gut vorlesbar: kurze Sätze, keine Aufzählungszeichen, keine Abkürzungen, Zahlen ausgeschrieben.\n\n${editorialBlock(e, parts)}\n\nDazu 1–3 Bildmotive mit Zeitpunkt als Anteil der Laufzeit (atFraction 0–0.9); ${IMAGE_MOTIF_RULE} query: ein String mit 2–4 englischen Suchbegriffen für ein passendes Stockfoto, höchstens 40 Zeichen (konkretes Motiv, keine Abstrakta).\n\nJSON: {"title":string,"script":string,"images":[{"prompt":string,"query":string,"atFraction":number}]}`,
     },
   ]
 }

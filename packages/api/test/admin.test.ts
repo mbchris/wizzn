@@ -20,6 +20,7 @@ function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}, im
     approve: async () => 'ok',
     reject: async () => 'ok',
     requeue: async () => 'ok',
+    redraft: async () => 'ok',
     deleteUnit: async () => 'ok',
     resume: async () => ({ result: 'ok', queue: 'unit.check' }),
     ...overrides,
@@ -83,6 +84,15 @@ describe('/api/admin', () => {
     expect(blocked.enqueued).toEqual([])
   })
 
+  it('redraft enqueues the draft step only on success', async () => {
+    const ok = setup()
+    expect((await ok.app.request(`/api/admin/units/${UNIT}/redraft`, { method: 'POST', headers })).status).toBe(200)
+    expect(ok.jobs).toEqual([['unit.draft', UNIT]])
+    const blocked = setup(admin, { redraft: async () => 'invalid_state' })
+    expect((await blocked.app.request(`/api/admin/units/${UNIT}/redraft`, { method: 'POST', headers })).status).toBe(409)
+    expect(blocked.jobs).toEqual([])
+  })
+
   describe('POST /units/:id/resume', () => {
     it('enqueues the step the repo resumes at', async () => {
       const { app, jobs } = setup(admin, { resume: async () => ({ result: 'ok', queue: 'unit.media' }) })
@@ -134,14 +144,20 @@ describe('/api/admin', () => {
   describe('POST /units/:id/assets/:assetId/replace', () => {
     const ASSET = '8f1c2a3e-1b2c-4d5e-8f90-123456789abc'
     const url = `/api/admin/units/${UNIT}/assets/${ASSET}/replace`
-    const asset = { id: ASSET, kind: 'image' as const, url: 'https://m/x.jpg', durationSec: null, origin: 'generated' as const, credit: null, stockQuery: null }
+    const asset = { id: ASSET, kind: 'image' as const, url: 'https://m/x.jpg', durationSec: null, origin: 'generated' as const, credit: null, stockQuery: null, prompt: null }
+    it('passes a custom prompt through', async () => {
+      const calls: unknown[] = []
+      const { app } = setup(admin, {}, { replace: async (...args) => (calls.push(args), { ok: true, asset }), revoice: async () => ({ ok: false, error: 'not_found' }) })
+      await app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'generated', prompt: 'flat diagram' }) })
+      expect(calls).toEqual([[UNIT, ASSET, 'generated', 'flat diagram']])
+    })
     it('passes the body through and returns the asset', async () => {
       const calls: unknown[] = []
       const { app } = setup(admin, {}, { replace: async (...args) => (calls.push(args), { ok: true, asset }) })
       const res = await app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'generated' }) })
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual(asset)
-      expect(calls).toEqual([[UNIT, ASSET, 'generated']])
+      expect(calls).toEqual([[UNIT, ASSET, 'generated', undefined]])
     })
     it('maps errors to 404 / 409 / 422', async () => {
       const r = (error: 'not_found' | 'invalid_state' | 'no_stock_candidate') => setup(admin, {}, { replace: async () => ({ ok: false, error }) }).app
@@ -153,7 +169,7 @@ describe('/api/admin', () => {
       expect(await res.json()).toEqual({ error: 'no_stock_candidate' })
     })
     it('rejects bad modes, non-admins and returns 501 when not configured', async () => {
-      const images: ImageReplacer = { replace: async () => ({ ok: true, asset }) }
+      const images: ImageReplacer = { replace: async () => ({ ok: true, asset }), revoice: async () => ({ ok: false, error: 'not_found' }) }
       expect((await setup(admin, {}, images).app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'x' }) })).status).toBe(400)
       expect((await setup({ ...admin, email: 'x@y.de' }, {}, images).app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'generated' }) })).status).toBe(403)
       expect((await setup().app.request(url, { method: 'POST', headers, body: JSON.stringify({ mode: 'generated' }) })).status).toBe(501)

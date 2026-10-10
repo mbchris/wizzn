@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ImageCredit } from '@wizzn/shared'
 import type { ImageDeps } from '../../src/pipeline/images.js'
 import { createStockChain } from '../../src/providers/stock-images/chain.js'
-import { createImageReplacer } from '../../src/pipeline/replace-image.js'
+import { createImageReplacer, type AudioDeps } from '../../src/pipeline/replace-image.js'
 import type { StockCandidate } from '../../src/providers/stock-images/types.js'
 import { FakeStore } from './fake-store.js'
 
@@ -64,7 +64,7 @@ describe('createImageReplacer', () => {
     expect(chatJson).not.toHaveBeenCalled()
     expect(res).toEqual({
       ok: true,
-      asset: { id: 'u1-asset-0', kind: 'image', url: 'https://media/u1/new1.jpg', durationSec: null, origin: 'stock', credit: credit('n'), stockQuery: 'Sparschwein' },
+      asset: { id: 'u1-asset-0', kind: 'image', url: 'https://media/u1/new1.jpg', durationSec: null, origin: 'stock', credit: credit('n'), stockQuery: 'Sparschwein', prompt: 'ein Sparschwein' },
     })
     const a = store.assets.get('u1')![0]!
     expect(a).toMatchObject({ id: 'u1-asset-0', path: 'u1/new1.jpg', origin: 'stock', credit: credit('n') })
@@ -86,7 +86,7 @@ describe('createImageReplacer', () => {
   it('generated uses the asset prompt and clears the credit', async () => {
     const { replacer, store, generate } = setup()
     const res = await replacer.replace('u1', 'u1-asset-1', 'generated')
-    expect(generate).toHaveBeenCalledWith('Geldscheine')
+    expect(generate).toHaveBeenCalledWith('Geldscheine', { field: expect.anything() })
     expect(res).toMatchObject({ ok: true, asset: { id: 'u1-asset-1', origin: 'generated', credit: null, stockQuery: null } })
     expect(store.assets.get('u1')![1]).toMatchObject({ origin: 'generated', credit: null, path: 'u1/new1.svg' })
   })
@@ -94,12 +94,12 @@ describe('createImageReplacer', () => {
     const { replacer, store, generate } = setup()
     store.assets.get('u1')![1]!.prompt = undefined
     await replacer.replace('u1', 'u1-asset-1', 'generated')
-    expect(generate).toHaveBeenLastCalledWith('Bild b')
+    expect(generate).toHaveBeenLastCalledWith('Bild b', expect.anything())
     const a = store.assets.get('u1')![0]!
     a.prompt = null
     a.credit = null
     await replacer.replace('u1', 'u1-asset-0', 'generated')
-    expect(generate).toHaveBeenLastCalledWith('Sparschwein')
+    expect(generate).toHaveBeenLastCalledWith('Sparschwein', expect.anything())
     expect(await replacer.replace('u1', 'u1-asset-3', 'generated')).toEqual({ ok: false, error: 'not_found' })
   })
   it('next-stock matches openverse/<source> credits against openverse candidates', async () => {
@@ -123,5 +123,52 @@ describe('createImageReplacer', () => {
     const { replacer, store } = setup()
     await replacer.replace('u1', 'u1-asset-0', 'generated')
     expect(store.assets.get('u1')![0]!.rejectedStockIds).toEqual(['openverse:old', 'openverse:a'])
+  })
+  it('generated with a custom prompt uses and stores it', async () => {
+    const { replacer, store, generate } = setup()
+    const res = await replacer.replace('u1', 'u1-asset-1', 'generated', 'isometric diagram of a savings jar')
+    expect(generate).toHaveBeenCalledWith('isometric diagram of a savings jar', { field: 'finance' })
+    expect(res).toMatchObject({ ok: true, asset: { prompt: 'isometric diagram of a savings jar' } })
+    expect(store.assets.get('u1')![1]!.prompt).toBe('isometric diagram of a savings jar')
+  })
+  it('next-stock ignores a custom prompt and keeps the stored one', async () => {
+    const { replacer, store } = setup([cand('n')])
+    await replacer.replace('u1', 'u1-asset-0', 'next-stock', 'something else')
+    expect(store.assets.get('u1')![0]!.prompt).toBe('ein Sparschwein')
+  })
+})
+
+describe('revoice', () => {
+  const content = (durationSec: number) => ({
+    format: 'audio', script: 'Neues Skript', durationSec, audioId: 'a1-asset-0',
+    images: [{ imageId: 'a1-asset-1', showAtSec: 100 }],
+    sources: [{ url: 'https://q.test', title: 'Q', publisher: 'P' }],
+  })
+  function audioSetup(newDuration: number, status: 'in_review' | 'published' = 'in_review') {
+    const t = setup()
+    t.store.add('a1', 'audio', status)
+    void t.store.replaceAssets('a1', [{ kind: 'audio', path: 'a1/old.mp3', durationSec: 200 }, { kind: 'image', path: 'a1/i.png', origin: 'generated', prompt: 'p' }])
+    t.store.units.get('a1')!.contentJson = content(200)
+    const synthesize = vi.fn(async () => ({ audio: Buffer.from('wav'), contentType: 'audio/wav' as const, durationSec: newDuration }))
+    const audio: AudioDeps = { tts: { synthesize }, put: async (u, _d, ext) => `${u}/voice.${ext}`, transcode: async () => Buffer.from('mp3') }
+    const replacer = createImageReplacer({ store: t.store, image: {} as ImageDeps, audio, mediaUrl: (p) => `https://media/${p}` })
+    return { ...t, replacer, synthesize }
+  }
+  it('re-synthesizes from the current script and rescales image times', async () => {
+    const { replacer, store, synthesize } = audioSetup(240)
+    const res = await replacer.revoice('a1', 'a1-asset-0')
+    expect(synthesize).toHaveBeenCalledWith('Neues Skript')
+    expect(res).toMatchObject({ ok: true, asset: { url: 'https://media/a1/voice.mp3', durationSec: 240 } })
+    expect(store.units.get('a1')!.contentJson).toMatchObject({ durationSec: 240, images: [{ imageId: 'a1-asset-1', showAtSec: 120 }] })
+    expect(store.assets.get('a1')![0]).toMatchObject({ path: 'a1/voice.mp3', durationSec: 240 })
+  })
+  it('rejects a recording outside the allowed length without touching the unit', async () => {
+    const { replacer, store } = audioSetup(30)
+    expect(await replacer.revoice('a1', 'a1-asset-0')).toEqual({ ok: false, error: 'invalid_content' })
+    expect(store.units.get('a1')!.contentJson).toEqual(content(200))
+  })
+  it('requires in_review and an audio asset of the unit', async () => {
+    expect(await audioSetup(240, 'published').replacer.revoice('a1', 'a1-asset-0')).toEqual({ ok: false, error: 'invalid_state' })
+    expect(await audioSetup(240).replacer.revoice('a1', 'a1-asset-1')).toEqual({ ok: false, error: 'not_found' })
   })
 })

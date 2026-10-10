@@ -26,7 +26,7 @@ export const envSchema = z.object({
   TTS_URL: z.string().url(),
   TTS_VOICE: z.string().min(1),
   TTS_LENGTH_SCALE: z.coerce.number().min(0.5).max(2).default(1.2),
-  TTS_PROVIDER: z.enum(['silent', 'piper', 'chatterbox']).default('silent'),
+  TTS_PROVIDER: z.enum(['silent', 'piper', 'chatterbox', 'qwen']).default('silent'),
   IMAGE_PROVIDER: z.enum(['placeholder', 'api']).default('placeholder'),
   IMAGE_BASE_URL: z.string().url().optional(),
   IMAGE_MODEL: z.string().optional(),

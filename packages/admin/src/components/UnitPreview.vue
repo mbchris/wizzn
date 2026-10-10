@@ -8,7 +8,7 @@ const assetUrls = computed(() => Object.fromEntries(props.assets.map((a) => [a.i
 const assetById = computed(() => new Map(props.assets.map((a) => [a.id, a])))
 const badgeLabel = (id: string): string => {
   const credit = assetById.value.get(id)?.credit
-  return credit ? `Stock · ${credit.provider} · ${formatLicense(credit)}` : 'KI'
+  return credit ? `Stock · ${credit.provider} · ${formatLicense(credit)}` : 'KI-Illustration'
 }
 const parsed = computed(() => unitContentSchema.safeParse(props.content))
 // Start on the cover when there is one (name -1), else on the first slide

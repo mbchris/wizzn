@@ -38,6 +38,8 @@ export interface AdminRepo {
   reject(id: string, reason: string): Promise<AdminActionResult>
   /** Moves failed/rejected/in_review/published/stuck units back to queued; caller enqueues research */
   requeue(id: string): Promise<AdminActionResult>
+  /** Keeps sources, re-runs draft → check → media; caller enqueues the draft queue */
+  redraft(id: string): Promise<AdminActionResult>
   /** Hard delete; refused while a worker processes the unit or once users have seen/completed it */
   deleteUnit(id: string): Promise<AdminActionResult>
   /** Puts a stuck unit back before its interrupted step; caller enqueues the returned queue */

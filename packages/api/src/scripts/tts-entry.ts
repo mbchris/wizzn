@@ -4,6 +4,8 @@
  *   pnpm --filter @wizzn/api tts:entry <unitId> [outDir]
  *   pnpm --filter @wizzn/api tts:entry --text "Some script…" [outDir]
  *   add --fit to apply the pipeline's 3–5 min duration fitting (default: one render at TTS_LENGTH_SCALE)
+ *   add --provider <silent|piper|chatterbox|qwen> and/or --url <http://…/synthesize> to override TTS_PROVIDER / TTS_URL,
+ *   e.g. to A/B two engines running on different ports (see `pnpm tts:server`)
  *
  * Writes <outDir>/<id>.raw.wav (straight from the TTS provider) and <id>.mp3 (what the pipeline stores),
  * and prints loudness for both. Default outDir: ./tts-debug
@@ -22,6 +24,12 @@ const args = process.argv.slice(2)
 const fitIdx = args.indexOf('--fit')
 const fit = fitIdx >= 0
 if (fit) args.splice(fitIdx, 1)
+function takeOpt(flag: string): string | undefined {
+  const i = args.indexOf(flag)
+  return i >= 0 ? args.splice(i, 2)[1] : undefined
+}
+const providerOpt = takeOpt('--provider')
+const urlOpt = takeOpt('--url')
 const textIdx = args.indexOf('--text')
 const inlineText = textIdx >= 0 ? args.splice(textIdx, 2)[1] : undefined
 const [unitId, outArg] = inlineText ? [undefined, args[0]] : args
@@ -31,6 +39,13 @@ if (!inlineText && !unitId) {
 }
 
 const env = loadEnv()
+const PROVIDERS = ['silent', 'piper', 'chatterbox', 'qwen'] as const
+if (providerOpt && !(PROVIDERS as readonly string[]).includes(providerOpt)) {
+  console.error(`--provider must be one of ${PROVIDERS.join(', ')}`)
+  process.exit(1)
+}
+if (providerOpt) env.TTS_PROVIDER = providerOpt as (typeof PROVIDERS)[number]
+if (urlOpt) env.TTS_URL = urlOpt
 let script = inlineText
 let name = 'text'
 if (!script) {
@@ -51,6 +66,7 @@ const speech = await tts.synthesize(script)
 console.log(`Synthesized ${speech.durationSec}s in ${((Date.now() - t0) / 1000).toFixed(1)}s`)
 
 const outDir = resolve(outArg ?? 'tts-debug')
+if (providerOpt) name = `${name}.${providerOpt}`
 await mkdir(outDir, { recursive: true })
 const rawPath = join(outDir, `${name}.raw.wav`)
 await writeFile(rawPath, speech.audio)

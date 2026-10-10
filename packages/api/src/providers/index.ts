@@ -13,7 +13,7 @@ import { createStockChain } from './stock-images/chain.js'
 import { createCommonsClient } from './stock-images/commons.js'
 import { createOpenverseClient } from './stock-images/openverse.js'
 import type { StockImageClient } from './stock-images/types.js'
-import { createChatterboxTts, createPiperTts, createSilentTts, type TtsClient } from './tts.js'
+import { createChatterboxTts, createQwenTts, createPiperTts, createSilentTts, type TtsClient } from './tts.js'
 
 export function createProviders(env: Env) {
   const search = createSearxngClient(env.SEARCH_URL)
@@ -40,6 +40,7 @@ export function createLlm(env: Env): LlmClient {
 export function createTts(env: Env, { fit = true }: { fit?: boolean } = {}): TtsClient {
   if (env.TTS_PROVIDER === 'piper') return createPiperTts(env.TTS_URL, env.TTS_VOICE, fetch, env.TTS_LENGTH_SCALE, fit)
   if (env.TTS_PROVIDER === 'chatterbox') return createChatterboxTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit)
+  if (env.TTS_PROVIDER === 'qwen') return createQwenTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit)
   return createSilentTts()
 }
 

@@ -122,6 +122,8 @@ export function createDbPipelineStore(db: Db): PipelineStore {
           credit: patch.credit,
           stockQuery: patch.stockQuery,
           ...(patch.rejectedStockIds ? { rejectedStockIds: patch.rejectedStockIds } : {}),
+          ...(patch.prompt !== undefined ? { prompt: patch.prompt } : {}),
+          ...(patch.durationSec !== undefined ? { durationSec: patch.durationSec } : {}),
         })
         .where(eq(asset.id, assetId))
     },

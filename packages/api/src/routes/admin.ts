@@ -3,6 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { briefBatchSchema, briefInputSchema, bulkActionSchema, type BriefBatchResultDto, rejectSchema, type BulkResultDto, replaceImageSchema, unitEditSchema, unitListQuerySchema } from '@wizzn/shared'
 import { z } from 'zod'
 import { requireAdmin } from '../middleware/require-admin.js'
+import { QUEUES } from '../jobs/queues.js'
 import type { ImageReplacer } from '../pipeline/replace-image.js'
 import type { AdminActionResult, AdminRepo, AppVariables, AuthPort, JobQueue } from '../types.js'
 
@@ -53,6 +54,13 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
       if (result === 'ok') await queue.enqueueResearch(id)
       return respond(c, result)
     })
+    // Partial regeneration: new text from the existing sources, then check and media run again
+    .post('/units/:id/redraft', idParam, async (c) => {
+      const id = c.req.valid('param').id
+      const result = await repo.redraft(id)
+      if (result === 'ok') await queue.enqueue(QUEUES.draft, id)
+      return respond(c, result)
+    })
     .post('/units/:id/resume', idParam, async (c) => {
       const id = c.req.valid('param').id
       const claim = await repo.resume(id)
@@ -90,10 +98,24 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
       async (c) => {
         if (!images) return c.json({ error: 'Image replacement not configured' }, 501)
         const { id, assetId } = c.req.valid('param')
-        const result = await images.replace(id, assetId, c.req.valid('json').mode)
+        const { mode, prompt } = c.req.valid('json')
+        const result = await images.replace(id, assetId, mode, prompt)
         if (result.ok) return c.json(result.asset)
         if (result.error === 'not_found') return c.json({ error: 'Not Found' }, 404)
         if (result.error === 'invalid_state') return c.json({ error: 'Action not allowed in the current status' }, 409)
         return c.json({ error: 'no_stock_candidate' }, 422)
+      },
+    )
+    .post(
+      '/units/:id/assets/:assetId/revoice',
+      zValidator('param', z.object({ id: z.string().uuid(), assetId: z.string().uuid() })),
+      async (c) => {
+        if (!images) return c.json({ error: 'Media regeneration not configured' }, 501)
+        const { id, assetId } = c.req.valid('param')
+        const result = await images.revoice(id, assetId)
+        if (result.ok) return c.json(result.asset)
+        if (result.error === 'not_found') return c.json({ error: 'Not Found' }, 404)
+        if (result.error === 'invalid_state') return c.json({ error: 'Action not allowed in the current status' }, 409)
+        return c.json({ error: 'Neue Audiolänge passt nicht (3–5 Min.) oder Inhalt ungültig' }, 422)
       },
     )

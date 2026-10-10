@@ -70,9 +70,12 @@ export interface UnitDetailDto extends UnitSummaryDto {
     origin: 'generated' | 'stock'
     credit: ImageCredit | null
     stockQuery: string | null
+    /** AI prompt of the slot; editable before re-generating the image */
+    prompt: string | null
   }[]
   checkReport: CheckReport | null
 }
 
-export const replaceImageSchema = z.object({ mode: z.enum(['next-stock', 'generated']) })
+/** `prompt` (generated mode only) overrides the stored AI prompt and is saved on the asset */
+export const replaceImageSchema = z.object({ mode: z.enum(['next-stock', 'generated']), prompt: z.string().trim().min(3).max(1000).optional() })
 export type ReplaceImageMode = z.infer<typeof replaceImageSchema>['mode']

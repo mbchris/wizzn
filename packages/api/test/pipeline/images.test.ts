@@ -113,7 +113,7 @@ describe('resolveImage', () => {
   it('falls back to generation when the LLM picks null', async () => {
     const t = setup({ candidates: [cand('a')], pick: { index: null } })
     const r = await resolveImage('u1', slot, new Set(), t.deps)
-    expect(t.generate).toHaveBeenCalledWith(slot.prompt)
+    expect(t.generate).toHaveBeenCalledWith(slot.prompt, expect.anything())
     expect(r).toEqual({ path: 'u1/f1.svg', origin: 'generated', credit: null, stockQuery: null, key: null })
     expect(t.fetchFn).not.toHaveBeenCalled()
   })

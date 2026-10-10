@@ -32,3 +32,19 @@ describe('createChatterboxTts', () => {
     expect(r.durationSec).toBe(200)
   })
 })
+
+describe('createQwenTts', () => {
+  it('uses the same chunked /synthesize contract with larger chunks', async () => {
+    const { createQwenTts } = await import('../../src/providers/tts.js')
+    const bodies: { text: string }[] = []
+    const fetchFn = (async (_url: string, init?: RequestInit) => {
+      bodies.push(JSON.parse(String(init?.body)))
+      return new Response(silentWav(100, 800))
+    }) as typeof fetch
+    const sentence = 'Das ist ein Satz mit ungefähr fünfzig Zeichen Länge. '
+    const r = await createQwenTts('http://tts/synthesize', fetchFn, 1).synthesize(sentence.repeat(12))
+    expect(bodies.length).toBe(2) // 12 × ~52 chars at ≤500 per chunk
+    expect(bodies.every((b) => b.text.length <= 500)).toBe(true)
+    expect(r.durationSec).toBe(200)
+  })
+})

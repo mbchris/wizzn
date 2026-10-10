@@ -1,7 +1,7 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm'
 import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, unitContentSchema, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import type { Db } from './db/client.js'
-import { completionEvent, contentBrief, feedImpression, unit } from './db/schema/index.js'
+import { completionEvent, contentBrief, feedImpression, source, unit } from './db/schema/index.js'
 import { claimResume, isUnitStuck, stillStuck, stuckIds } from './pipeline/recover.js'
 import type { AdminActionResult, AdminRepo } from './types.js'
 
@@ -34,6 +34,9 @@ function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'fail
     stuck,
   }
 }
+
+/** Units whose text may be re-drafted from their existing sources (issue: partial regeneration) */
+const REDRAFTABLE: readonly UnitStatus[] = ['in_review', 'published', 'failed', 'rejected']
 
 export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): AdminRepo {
   async function move(id: string, to: UnitStatus, extra: Partial<typeof unit.$inferInsert> = {}): Promise<AdminActionResult> {
@@ -93,7 +96,7 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
         promptVersion: row.promptVersion,
         model: row.model,
         sources: row.sources.map(({ url, title, publisher, tier, provider }) => ({ url, title, publisher, tier, provider })),
-        assets: row.assets.map((a) => ({ id: a.id, kind: a.kind, url: mediaUrl(a.path), durationSec: a.durationSec, origin: a.origin, credit: a.credit ?? null, stockQuery: a.stockQuery })),
+        assets: row.assets.map((a) => ({ id: a.id, kind: a.kind, url: mediaUrl(a.path), durationSec: a.durationSec, origin: a.origin, credit: a.credit ?? null, stockQuery: a.stockQuery, prompt: a.prompt ?? null })),
         checkReport: (row.checkReport?.reportJson as CheckReport | undefined) ?? null,
       }
     },
@@ -127,6 +130,22 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
 
     // Clearing publishedAt keeps a regenerated unit consistent until it is approved again
     requeue: (id) => move(id, 'queued', { failureReason: null, publishedAt: null }),
+
+    async redraft(id) {
+      const row = await db.query.unit.findFirst({ where: eq(unit.id, id), columns: { id: true, status: true, updatedAt: true } })
+      if (!row) return 'not_found'
+      const stuck = await isUnitStuck(db, row)
+      if (!REDRAFTABLE.includes(row.status) && !stuck) return 'invalid_state'
+      // Keeping the sources is the point; without them the draft step has nothing to write from
+      if (!(await db.query.source.findFirst({ where: eq(source.unitId, id), columns: { id: true } }))) return 'invalid_state'
+      // Parks the unit where the research step leaves it, so the draft job's compare-and-set picks it up
+      const updated = await db
+        .update(unit)
+        .set({ status: 'researching', updatedAt: new Date(), failureReason: null, publishedAt: null })
+        .where(stuck ? stillStuck(id, row.status) : and(eq(unit.id, id), eq(unit.status, row.status)))
+        .returning({ id: unit.id })
+      return updated.length ? 'ok' : 'invalid_state'
+    },
 
     async deleteUnit(id) {
       return db.transaction(async (tx): Promise<AdminActionResult> => {

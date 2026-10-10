@@ -41,7 +41,14 @@ export const authApi = {
   signOut: () => api<unknown>('/api/auth/sign-out', { method: 'POST', body: {} }),
 }
 
-export const replaceImage = (unitId: string, assetId: string, mode: ReplaceImageMode): Promise<UnitDetailDto['assets'][number]> =>
-  api(`/api/admin/units/${unitId}/assets/${assetId}/replace`, { method: 'POST', body: { mode } })
+type AssetDto = UnitDetailDto['assets'][number]
+
+/** `prompt` only matters for mode "generated": it overrides (and replaces) the stored AI prompt */
+export const replaceImage = (unitId: string, assetId: string, mode: ReplaceImageMode, prompt?: string): Promise<AssetDto> =>
+  api(`/api/admin/units/${unitId}/assets/${assetId}/replace`, { method: 'POST', body: prompt ? { mode, prompt } : { mode } })
+
+/** New speech from the unit's current script */
+export const revoiceAudio = (unitId: string, assetId: string): Promise<AssetDto> =>
+  api(`/api/admin/units/${unitId}/assets/${assetId}/revoice`, { method: 'POST' })
 
 export const errorMessage = (e: unknown): string => (e instanceof Error ? e.message : String(e))

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { formatLicense, type ReplaceImageMode, type UnitDetailDto } from '@wizzn/shared'
-import { api, ApiError, errorMessage, replaceImage } from 'src/api'
+import { api, ApiError, errorMessage, replaceImage, revoiceAudio } from 'src/api'
 import UnitPreview from 'components/UnitPreview.vue'
 import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
 
@@ -15,6 +15,16 @@ const busy = ref(false)
 
 const swapping = ref<Record<string, boolean>>({})
 const images = computed(() => (unit.value?.assets ?? []).filter((a) => a.kind === 'image'))
+const audio = computed(() => (unit.value?.assets ?? []).find((a) => a.kind === 'audio') ?? null)
+/** Editable AI prompt per image asset; seeded from the stored prompt */
+const prompts = ref<Record<string, string>>({})
+/** Asset shown large in the preview dialog */
+const zoomId = ref<string | null>(null)
+const zoomed = computed(() => images.value.find((a) => a.id === zoomId.value) ?? null)
+const mediaBusy = computed(() => busy.value || Object.values(swapping.value).some(Boolean))
+/** Unsaved edits would be overwritten by load(), and re-voicing reads the saved script */
+const dirty = computed(() => !!unit.value && (title.value !== (unit.value.title ?? '') || json.value !== JSON.stringify(unit.value.contentJson, null, 2)))
+const fmtSec = (s: number | null): string => (s === null ? '–' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`)
 const reviewable = computed(() => unit.value?.status === 'in_review')
 const stuck = computed(() => !!unit.value?.stuck)
 /** A stuck draft can be fixed by hand and then resumed (check → media → review) */
@@ -40,6 +50,7 @@ async function load(): Promise<void> {
   unit.value = await api<UnitDetailDto>(`/api/admin/units/${props.id}`)
   title.value = unit.value.title ?? ''
   json.value = JSON.stringify(unit.value.contentJson, null, 2)
+  prompts.value = Object.fromEntries(unit.value.assets.filter((a) => a.kind === 'image').map((a) => [a.id, a.prompt ?? a.stockQuery ?? '']))
 }
 
 async function act(label: string, fn: () => Promise<unknown>): Promise<void> {
@@ -55,17 +66,75 @@ async function act(label: string, fn: () => Promise<unknown>): Promise<void> {
   }
 }
 
-async function swap(assetId: string, mode: ReplaceImageMode): Promise<void> {
+/** Media actions reload the unit, so unsaved JSON/title edits would be lost: ask first */
+function confirmDiscard(): Promise<boolean> {
+  if (!dirty.value) return Promise.resolve(true)
+  return new Promise((resolve) => {
+    $q.dialog({ title: 'Ungespeicherte Änderungen', message: 'Titel/Inhalt wurden geändert, aber nicht gespeichert. Verwerfen und fortfahren?', ok: { label: 'Verwerfen', color: 'negative' }, cancel: { label: 'Abbrechen', flat: true } })
+      .onOk(() => resolve(true))
+      .onCancel(() => resolve(false))
+      .onDismiss(() => resolve(false))
+  })
+}
+
+async function swapOne(assetId: string, mode: ReplaceImageMode): Promise<boolean> {
   swapping.value[assetId] = true
   try {
-    await replaceImage(props.id, assetId, mode)
-    await load()
+    const prompt = mode === 'generated' ? prompts.value[assetId]?.trim() : undefined
+    await replaceImage(props.id, assetId, mode, prompt && prompt.length >= 3 ? prompt : undefined)
+    return true
   } catch (e) {
     const message = e instanceof ApiError && e.status === 422 ? 'Kein weiteres Stockbild gefunden' : errorMessage(e)
     $q.notify({ type: e instanceof ApiError && e.status === 422 ? 'warning' : 'negative', message })
+    return false
   } finally {
     swapping.value[assetId] = false
   }
+}
+
+async function swap(assetId: string, mode: ReplaceImageMode): Promise<void> {
+  if (!(await confirmDiscard())) return
+  await swapOne(assetId, mode)
+  await load()
+}
+
+/** Sequential so the provider is not hammered and every failure is reported */
+async function regenerateAllImages(): Promise<void> {
+  if (!(await confirmDiscard())) return
+  let ok = 0
+  for (const img of images.value) if (await swapOne(img.id, 'generated')) ok++
+  await load()
+  $q.notify({ type: ok === images.value.length ? 'positive' : 'warning', message: `${ok}/${images.value.length} Bilder neu generiert` })
+}
+
+async function revoiceOne(): Promise<boolean> {
+  const a = audio.value
+  if (!a) return false
+  swapping.value[a.id] = true
+  try {
+    await revoiceAudio(props.id, a.id)
+    return true
+  } catch (e) {
+    $q.notify({ type: 'negative', message: errorMessage(e) })
+    return false
+  } finally {
+    swapping.value[a.id] = false
+  }
+}
+
+async function revoice(): Promise<void> {
+  if (!(await confirmDiscard())) return
+  if (await revoiceOne()) $q.notify({ type: 'positive', message: 'Audio neu vertont' })
+  await load()
+}
+
+async function regenerateAllMedia(): Promise<void> {
+  if (!(await confirmDiscard())) return
+  const voiced = audio.value ? await revoiceOne() : false
+  let ok = 0
+  for (const img of images.value) if (await swapOne(img.id, 'generated')) ok++
+  await load()
+  $q.notify({ type: 'info', message: `Medien neu: ${audio.value ? `Audio ${voiced ? 'ok' : 'fehlgeschlagen'}, ` : ''}${ok}/${images.value.length} Bilder` })
 }
 
 const save = () => act('Gespeichert', () => api(`/api/admin/units/${props.id}`, { method: 'PUT', body: { title: title.value, contentJson: previewContent.value } }))
@@ -74,15 +143,25 @@ const REGENERATABLE = ['in_review', 'failed', 'rejected', 'published'] as const
 const canRegenerate = computed(() => !!unit.value && (stuck.value || (REGENERATABLE as readonly string[]).includes(unit.value.status)))
 const resume = () => act('Wird fortgesetzt', () => api(`/api/admin/units/${props.id}/resume`, { method: 'POST' }))
 const doRequeue = () => act('Neu in der Pipeline', () => api(`/api/admin/units/${props.id}/requeue`, { method: 'POST' }))
+const doRedraft = () => act('Text wird neu geschrieben', () => api(`/api/admin/units/${props.id}/redraft`, { method: 'POST' }))
+const unpublishNote = computed(() => (unit.value?.status === 'published' ? ' Der Wissenshappen wird dabei aus dem Feed genommen und muss danach erneut freigegeben werden.' : ''))
 function requeue(): void {
-  if (unit.value?.status !== 'published') return void doRequeue()
   $q.dialog({
-    title: 'Neu generieren',
-    message: 'Der Wissenshappen wird aus dem Feed genommen und mit dem aktuellen Auftrag und den aktuellen Prompts neu erstellt. Danach muss er erneut freigegeben werden.',
-    ok: { label: 'Neu generieren', color: 'primary' },
+    title: 'Alles neu generieren',
+    message: `Recherche, Text, Prüfung und alle Medien werden mit dem aktuellen Auftrag und den aktuellen Prompts neu erstellt.${unpublishNote.value}`,
+    ok: { label: 'Alles neu', color: 'primary' },
     cancel: { label: 'Abbrechen', flat: true },
   }).onOk(() => void doRequeue())
 }
+function redraft(): void {
+  $q.dialog({
+    title: 'Nur Text neu schreiben',
+    message: `Die Quellen bleiben, Text wird neu geschrieben, danach laufen Prüfung, Bilder und Audio erneut.${unpublishNote.value}`,
+    ok: { label: 'Text neu', color: 'primary' },
+    cancel: { label: 'Abbrechen', flat: true },
+  }).onOk(() => void doRedraft())
+}
+const canRedraft = computed(() => canRegenerate.value && unit.value?.sources.length !== 0)
 function reject(): void {
   $q.dialog({ title: 'Ablehnen', message: 'Begründung', prompt: { model: '', type: 'text' }, cancel: true }).onOk((reason: string) => {
     void act('Abgelehnt', () => api(`/api/admin/units/${props.id}/reject`, { method: 'POST', body: { reason } }))
@@ -109,7 +188,24 @@ onMounted(load)
           </q-btn>
           <q-btn color="positive" icon="done" label="Freigeben" :disable="!reviewable || busy" @click="approve" />
           <q-btn color="negative" flat icon="block" label="Ablehnen" :disable="!(reviewable || stuck) || busy" @click="reject" />
-          <q-btn flat icon="replay" label="Neu generieren" :disable="busy || !canRegenerate" @click="requeue" />
+          <q-btn-dropdown flat icon="replay" label="Neu generieren" :disable="busy || !canRegenerate">
+            <q-list>
+              <q-item v-close-popup clickable :disable="!canRedraft" @click="redraft">
+                <q-item-section avatar><q-icon name="edit_note" /></q-item-section>
+                <q-item-section>
+                  <q-item-label>Nur Text</q-item-label>
+                  <q-item-label caption>Quellen behalten, Text + Medien neu</q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item v-close-popup clickable @click="requeue">
+                <q-item-section avatar><q-icon name="restart_alt" /></q-item-section>
+                <q-item-section>
+                  <q-item-label>Alles</q-item-label>
+                  <q-item-label caption>Recherche, Text und Medien neu</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
         </div>
         <q-banner v-if="unit.failureReason" class="bg-red-1 text-negative">{{ unit.failureReason }}</q-banner>
         <q-banner v-if="stuck" class="bg-orange-1">
@@ -142,24 +238,65 @@ onMounted(load)
           </q-list>
         </q-card>
 
-        <q-card v-if="reviewable && images.length" flat bordered>
-          <q-card-section class="text-subtitle1">Bilder</q-card-section>
+        <q-card v-if="reviewable && (images.length || audio)" flat bordered>
+          <q-card-section class="row items-center q-gutter-sm">
+            <div class="text-subtitle1">Medien</div>
+            <q-space />
+            <q-btn v-if="images.length" flat dense color="primary" icon="image" label="Alle Bilder neu (KI)" :disable="mediaBusy" @click="regenerateAllImages" />
+            <q-btn v-if="audio && images.length" flat dense color="primary" icon="auto_awesome" label="Alle Medien neu" :disable="mediaBusy" @click="regenerateAllMedia" />
+          </q-card-section>
           <q-list separator>
-            <q-item v-for="img in images" :key="img.id">
-              <q-item-section avatar><q-img :src="img.url" width="56px" ratio="1" class="rounded-borders" /></q-item-section>
+            <q-item v-if="audio">
+              <q-item-section avatar><q-icon name="graphic_eq" size="md" color="primary" /></q-item-section>
               <q-item-section>
-                <q-item-label>{{ img.credit ? `Stock · ${img.credit.provider} · ${formatLicense(img.credit)}` : 'KI' }}</q-item-label>
-                <q-item-label v-if="img.stockQuery" caption>{{ img.stockQuery }}</q-item-label>
+                <q-item-label>Audio · {{ fmtSec(audio.durationSec) }}</q-item-label>
+                <audio :key="audio.url" :src="audio.url" controls preload="none" class="full-width q-mt-xs" />
+                <q-item-label caption>Neu vertonen nutzt das gespeicherte Skript – Änderungen vorher speichern.</q-item-label>
               </q-item-section>
               <q-item-section side>
-                <div class="row q-gutter-sm">
-                  <q-btn flat dense color="primary" label="Nächstes Stockbild" :loading="swapping[img.id]" :disable="busy || swapping[img.id]" @click="swap(img.id, 'next-stock')" />
-                  <q-btn flat dense color="primary" label="KI-Bild" :loading="swapping[img.id]" :disable="busy || swapping[img.id]" @click="swap(img.id, 'generated')" />
+                <q-btn flat dense color="primary" icon="record_voice_over" label="Neu vertonen" :loading="swapping[audio.id]" :disable="mediaBusy" @click="revoice" />
+              </q-item-section>
+            </q-item>
+            <q-item v-for="(img, i) in images" :key="img.id" class="items-start">
+              <q-item-section avatar>
+                <q-img :src="img.url" width="96px" ratio="1" class="rounded-borders cursor-pointer" @click="zoomId = img.id">
+                  <q-tooltip>Vorschau</q-tooltip>
+                </q-img>
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>
+                  {{ unit.format === 'written' && i === 0 ? 'Titelbild' : `Bild ${unit.format === 'written' ? i : i + 1}` }} ·
+                  {{ img.credit ? `Stock · ${img.credit.provider} · ${formatLicense(img.credit)}` : 'KI-Illustration' }}
+                </q-item-label>
+                <q-item-label v-if="img.stockQuery" caption>Stock-Suche: {{ img.stockQuery }}</q-item-label>
+                <q-input v-model="prompts[img.id]" dense outlined autogrow class="q-mt-xs" label="KI-Prompt (Motiv)" hint="Stil kommt automatisch aus der Kategorie" />
+              </q-item-section>
+              <q-item-section side top>
+                <div class="column q-gutter-xs">
+                  <q-btn flat dense color="primary" icon="auto_fix_high" label="KI-Bild" :loading="swapping[img.id]" :disable="mediaBusy" @click="swap(img.id, 'generated')" />
+                  <q-btn flat dense color="primary" icon="photo_library" label="Nächstes Stockbild" :loading="swapping[img.id]" :disable="mediaBusy" @click="swap(img.id, 'next-stock')" />
                 </div>
               </q-item-section>
             </q-item>
           </q-list>
         </q-card>
+
+        <q-dialog :model-value="!!zoomed" @update:model-value="(v) => !v && (zoomId = null)">
+          <q-card v-if="zoomed" style="width: 640px; max-width: 92vw">
+            <q-img :src="zoomed.url" ratio="1" fit="contain" />
+            <q-card-section class="q-gutter-sm">
+              <div class="text-caption text-grey-7">
+                {{ zoomed.credit ? `Stock · ${zoomed.credit.provider} · ${formatLicense(zoomed.credit)} · ${zoomed.credit.creator ?? 'Unbekannt'}` : 'KI-Illustration' }}
+              </div>
+              <q-input v-model="prompts[zoomed.id]" dense outlined autogrow label="KI-Prompt (Motiv)" />
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-btn flat color="primary" icon="photo_library" label="Nächstes Stockbild" :loading="swapping[zoomed.id]" :disable="mediaBusy" @click="swap(zoomed.id, 'next-stock')" />
+              <q-btn color="primary" icon="auto_fix_high" label="KI-Bild generieren" :loading="swapping[zoomed.id]" :disable="mediaBusy" @click="swap(zoomed.id, 'generated')" />
+              <q-btn v-close-popup flat label="Schließen" />
+            </q-card-actions>
+          </q-card>
+        </q-dialog>
 
         <q-card flat bordered>
           <q-card-section class="text-subtitle1">Quellen</q-card-section>

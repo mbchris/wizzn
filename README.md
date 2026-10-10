@@ -19,7 +19,7 @@ pnpm test
 ### Root scripts
 | Command | What it does |
 |---|---|
-| `pnpm dev:all` | Full stack via `scripts/dev.sh`: Docker infra, Piper TTS (if `TTS_PROVIDER=piper`), migrate + seed + samples, Ollama, api, worker, admin, web. Ctrl+C stops processes; Docker keeps running. |
+| `pnpm dev:all` | Full stack via `scripts/dev.sh`: Docker infra, TTS server (if `TTS_PROVIDER=piper\|chatterbox\|qwen`), migrate + seed + samples, Ollama, api, worker, admin, web. Ctrl+C stops processes; Docker keeps running. |
 | `pnpm dev:all:android --no-seed` | Same, but the app runs on Android emulator/device (Android Studio) instead of the browser. --no-seed will not seed. Is faster if you don't need it. |
 | `./scripts/dev.sh --fresh` | Force `pnpm install` + `db:generate` (combinable with `--android`). |
 | `pnpm dev` / `dev:worker` | API on :3000 / job worker |
@@ -30,6 +30,7 @@ pnpm test
 | `pnpm db:generate` / `db:migrate` / `db:seed` / `db:seed:samples` | Drizzle migrations + seeds (see below) |
 | `pnpm setup:google` / `setup:apple` / `setup:apple:secret` / `setup:openverse` | Console/OAuth setup; `setup:apple:secret` generates `APPLE_CLIENT_SECRET` (ES256 JWT, valid 6 months — re-run before expiry) |
 | `pnpm creds:pull` / `creds:push` / `creds:diff` | Wrappers for `./creds.sh` (see Credentials) |
+| `pnpm tts:server` / `tts:voice` / `tts:entry` | Local TTS server (chatterbox\|qwen), Qwen designed-voice export, render one unit/text for listening — see [docs/tts.md](docs/tts.md) |
 | `pnpm verify:m4` | Walks through M4 close-out: checks, API smoke test, browser/device checklists. Steps: `all\|auto\|db\|smoke\|browser\|device\|commit` |
 
 ## Seed data & media
@@ -64,7 +65,7 @@ pnpm dev:admin      # admin http://localhost:9100 → "Konto anlegen" with an AD
 ```
 LLM alternative: `npm i -g @google/gemini-cli`, run `gemini` once to log in, then `.env`: `LLM_PROVIDER=gemini-cli`, `LLM_MODEL=gemini-2.5-flash` (empty = CLI default). All LLM steps go through it; no Ollama needed.
 Check the LLM setup: `pnpm llm:check [topic]` prints the active backend and a mini sample unit (no DB writes).
-Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length), `IMAGE_PROVIDER=placeholder` (SVG).
+Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length; natural German: `chatterbox` or `qwen`, see [docs/tts.md](docs/tts.md)), `IMAGE_PROVIDER=placeholder` (SVG).
 
 ### Audio (TTS) debugging
 
@@ -73,9 +74,10 @@ Every render is loudness-normalized to −16 LUFS / −1.5 dBTP (ffmpeg two-pass
 To re-run only the audio step for one unit and inspect the files locally (DB untouched):
 
 ```bash
-pnpm --filter @wizzn/api tts:entry <unitId> [outDir]      # script from the unit's content_json
-pnpm --filter @wizzn/api tts:entry --text "Some script…"  # ad-hoc text
+pnpm tts:entry <unitId> [outDir]                         # script from the unit's content_json
+pnpm tts:entry --text "Some script…"                     # ad-hoc text
 # add --fit to apply the pipeline's 3–5 min duration fitting (default: single render)
+# add --provider <name> --url <…/synthesize> to A/B engines (docs/tts.md)
 ```
 
 Writes `<outDir>/<id>.raw.wav` (straight from the TTS provider) and `<id>.mp3` (what the pipeline stores) to `./tts-debug/` by default and prints the loudness (LUFS / peak) of both. Uses the `TTS_*` settings from `.env`.

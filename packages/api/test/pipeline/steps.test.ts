@@ -137,7 +137,7 @@ describe('draft prompts', () => {
     expect(text).toContain('imageQuery')
     expect(text).toContain('420–600 Wörter')
     expect(text).toContain('keine Sätze wörtlich')
-    expect(PROMPT_VERSION).toBe('2026-10-12.1')
+    expect(PROMPT_VERSION).toBe('2026-10-12.2')
   })
 
   it('always demands the five-part structure in the chosen style and arc', () => {

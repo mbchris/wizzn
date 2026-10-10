@@ -27,6 +27,8 @@ export interface AssetPatch {
   credit: ImageCredit | null
   stockQuery: string | null
   rejectedStockIds?: string[]
+  prompt?: string | null
+  durationSec?: number
 }
 
 /** Persistence used by pipeline steps; Drizzle implementation in store-db.ts, in-memory fake in tests. */

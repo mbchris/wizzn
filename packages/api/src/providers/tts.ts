@@ -72,6 +72,14 @@ export function createChatterboxTts(baseUrl: string, fetchFn: typeof fetch = fet
   return fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)
 }
 
+/**
+ * Qwen3-TTS (`scripts/tts/qwen_server.py`, same /synthesize contract and server-side cache as Chatterbox). Handles
+ * longer inputs than Chatterbox, so chunks are larger (fewer joins, more natural phrasing).
+ */
+export function createQwenTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = QWEN_CHUNK_CHARS, fit = true): TtsClient {
+  return createChatterboxTts(baseUrl, fetchFn, lengthScale, maxChunkChars, fit)
+}
+
 /** Single render, no 3–5 min duration fitting (debugging / ad-hoc text) */
 function renderOnce(renderWav: Render, lengthScale: number): TtsClient {
   return {
@@ -92,6 +100,7 @@ async function postWav(fetchFn: typeof fetch, url: string, body: Record<string, 
 
 /** Chatterbox stays reliable up to a few sentences per generation */
 const CHUNK_CHARS = 280
+const QWEN_CHUNK_CHARS = 500
 
 /** Packs whole sentences into chunks of ≤ maxChars; overlong sentences are split at commas, then at spaces */
 export function splitIntoChunks(text: string, maxChars = CHUNK_CHARS): string[] {
