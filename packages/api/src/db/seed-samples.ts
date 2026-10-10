@@ -6,7 +6,7 @@
  * Run: pnpm db:seed:samples   (never runs in the production container)
  */
 import { readFile, readdir } from 'node:fs/promises'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNotNull } from 'drizzle-orm'
 import { AUDIO_SCRIPT_WORDS, draftAudioSchema, scheduleImages, slideSchema, sourceSchema, unitContentSchema } from '@wizzn/shared'
 import { z } from 'zod'
 import { loadEnv } from '../env.js'
@@ -133,7 +133,7 @@ async function expandToAudio(w: WrittenSample): Promise<AudioSample> {
   }
 }
 
-async function insertSample(fieldSlug: string, s: Sample): Promise<'created' | 'skipped'> {
+async function insertSample(fieldSlug: string, s: Sample, pairId: string): Promise<'created' | 'skipped'> {
   const f = await db.query.field.findFirst({
     where: eq(field.slug, fieldSlug),
   })
@@ -165,6 +165,7 @@ async function insertSample(fieldSlug: string, s: Sample): Promise<'created' | '
         fieldId: f.id,
         themeId: t?.id ?? null,
         format: s.format,
+        pairId,
         status: 'queued',
         title: s.title,
         promptVersion: 'sample-v1',
@@ -263,6 +264,17 @@ async function insertSample(fieldSlug: string, s: Sample): Promise<'created' | '
   return 'created'
 }
 
+/** Reuses the pairId of an already seeded variant so a re-run that adds the missing one links it */
+async function existingPairId(topic: string): Promise<string> {
+  const [row] = await db
+    .select({ pairId: unit.pairId })
+    .from(unit)
+    .innerJoin(contentBrief, eq(contentBrief.id, unit.briefId))
+    .where(and(eq(contentBrief.topic, topic), eq(contentBrief.createdBy, CREATED_BY), isNotNull(unit.pairId)))
+    .limit(1)
+  return row?.pairId ?? crypto.randomUUID()
+}
+
 async function main(): Promise<void> {
   const files = (await readdir(samplesDir)).filter((f) => f.endsWith('.json')).sort()
   let created = 0
@@ -272,6 +284,8 @@ async function main(): Promise<void> {
     const fieldSlug = file.replace(/\.json$/, '')
     const samples = z.array(sampleSchema).parse(JSON.parse(await readFile(new URL(file, samplesDir), 'utf8')))
     for (const original of samples) {
+      // Both variants share a pairId: the feed shows one of them, completing either counts for the topic
+      const pairId = await existingPairId(original.topic)
       for (const format of ['written', 'audio'] as const) {
         const s = original
         // One unit failing (e.g. TTS) must not stop the others; it rolls back and is retried on the next run
@@ -283,7 +297,7 @@ async function main(): Promise<void> {
             continue
           }
           const variant: Sample = format === original.format ? original : format === 'written' ? toWritten(original as AudioSample) : await toAudio(original as WrittenSample)
-          const r = await insertSample(fieldSlug, variant)
+          const r = await insertSample(fieldSlug, variant, pairId)
           if (r === 'created') created++
           else skipped++
           console.log(`${r === 'created' ? '+' : '='} [${fieldSlug}/${format}] ${s.title}`)

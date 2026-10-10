@@ -1,11 +1,13 @@
 import { aliasedTable, and, desc, eq, gt, inArray, notExists, or, sql } from 'drizzle-orm'
-import { IMPRESSION_COOLDOWN_DAYS, unitContentSchema, type FeedCandidate, type ImageCredit, type FeedUnitDto, type UnitContent } from '@wizzn/shared'
+import { IMPRESSION_COOLDOWN_DAYS, unitContentSchema, type FeedCandidate, type ImageCredit, type FeedUnitDto, type UnitContent, type UnitFormat } from '@wizzn/shared'
 import type { Db } from './db/client.js'
 import { asset, completionEvent, feedImpression, field, unit, userInterest, userProfile } from './db/schema/index.js'
 
 export interface FeedPrefs {
   fieldIds: string[]
   themeIds: string[]
+  /** Opted-in formats; with both, one variant per pair is picked at random */
+  formats: UnitFormat[]
   timezone: string
 }
 
@@ -13,9 +15,9 @@ export interface FeedRepo {
   getPrefs(userId: string): Promise<FeedPrefs>
   /**
    * Published, not completed (incl. the paired slides/audio sibling), not served within the cooldown; newest first.
-   * Formats are mixed implicitly: of each slides/audio pair only one variant is returned.
+   * Only the user's opted-in formats; of each written/audio pair only one variant is returned (random if both are opted in).
    */
-  getCandidates(userId: string, themeIds: string[]): Promise<FeedCandidate[]>
+  getCandidates(userId: string, themeIds: string[], formats: UnitFormat[]): Promise<FeedCandidate[]>
   loadUnits(ids: string[]): Promise<Map<string, Omit<FeedUnitDto, 'discovery'>>>
   recordImpressions(userId: string, unitIds: string[]): Promise<void>
   getPublishedContent(unitId: string): Promise<UnitContent | null>
@@ -52,11 +54,12 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
       return {
         fieldIds: [...new Set(interests.map((i) => i.fieldId))],
         themeIds: interests.flatMap((i) => (i.themeId ? [i.themeId] : [])),
+        formats: profile?.formats?.length ? profile.formats : ['audio', 'written'],
         timezone: profile?.timezone ?? 'Europe/Berlin',
       }
     },
 
-    async getCandidates(userId, themeIds) {
+    async getCandidates(userId, themeIds, formats) {
       const cutoff = new Date(Date.now() - IMPRESSION_COOLDOWN_DAYS * 86_400_000)
       // The unit itself or its slides/audio sibling: consuming or seeing one counts for both
       const sibling = aliasedTable(unit, 'sibling')
@@ -67,6 +70,7 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
         .where(
           and(
             eq(unit.status, 'published'),
+            inArray(unit.format, formats),
             notExists(
               db
                 .select({ one: sql`1` })

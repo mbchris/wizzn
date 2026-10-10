@@ -20,7 +20,7 @@ export const feedRoutes = (auth: AuthPort, repo: FeedRepo, progress: ProgressRep
       const cap = dailyCap(await progress.countDoneOn(userId, localDate(at, prefs.timezone)), premium.active, freeDailyCap)
       // Spec §6.4: free users get the paywall after the cap; no units are served (or marked as seen) until tomorrow
       if (cap.reached) return c.json({ units: [], cap } satisfies FeedResponse)
-      const candidates = await repo.getCandidates(userId, prefs.themeIds)
+      const candidates = await repo.getCandidates(userId, prefs.themeIds, prefs.formats)
       const picked = orderFeed(candidates, prefs.fieldIds, c.req.valid('query').limit)
       const units = await repo.loadUnits(picked.map((p) => p.id))
       const body: FeedResponse = {

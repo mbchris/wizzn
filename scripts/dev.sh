@@ -3,6 +3,7 @@
 # Usage: ./scripts/dev.sh             (Ctrl+C stops api/worker/admin/web/piper; Docker keeps running)
 #        ./scripts/dev.sh --android   (app on Android emulator/device via Android Studio instead of the browser)
 #        ./scripts/dev.sh --fresh     (force pnpm install + db:generate)
+#        ./scripts/dev.sh --no-seed   (skip db:seed + db:seed:samples; migrations still run)
 # Self-updating: reinstalls deps when lockfiles/package.json changed, warns about .env keys missing vs .env.template.
 set -euo pipefail
 
@@ -11,11 +12,13 @@ cd "$ROOT"
 MODEL="${LLM_MODEL_OVERRIDE:-}"
 FRESH=0
 ANDROID=0
+NO_SEED=0
 for arg in "$@"; do
   case "$arg" in
     --fresh) FRESH=1 ;;
     --android) ANDROID=1 ;;
-    *) echo "Unknown option: $arg (use --fresh, --android)" >&2; exit 1 ;;
+    --no-seed) NO_SEED=1 ;;
+    *) echo "Unknown option: $arg (use --fresh, --android, --no-seed)" >&2; exit 1 ;;
   esac
 done
 
@@ -160,11 +163,16 @@ if [[ $FRESH -eq 1 ]]; then
   c_info "Generating migrations"
   pnpm db:generate
 fi
-c_info "Migrating + seeding database"
+c_info "Migrating database"
 pnpm db:migrate
-pnpm db:seed
-c_info "Seeding sample units (skips existing)"
-pnpm db:seed:samples
+if [[ $NO_SEED -eq 1 ]]; then
+  c_warn "--no-seed: skipping db:seed + db:seed:samples"
+else
+  c_info "Seeding database"
+  pnpm db:seed
+  c_info "Seeding sample units (skips existing)"
+  pnpm db:seed:samples
+fi
 
 # 5. Ollama
 OLLAMA_PID=""

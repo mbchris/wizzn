@@ -19,7 +19,7 @@ pnpm test
 ### Root scripts
 | Command | What it does |
 |---|---|
-| `pnpm dev:all` | Full stack via `scripts/dev.sh`: Docker infra, Piper TTS (if `TTS_PROVIDER=piper`), migrate + seed + samples, Ollama, api, worker, admin, web. Ctrl+C stops processes; Docker keeps running. |
+| `pnpm dev:all` | Full stack via `scripts/dev.sh`: Docker infra, Piper TTS (if `TTS_PROVIDER=piper`), migrate + seed + samples, Ollama, api, worker, admin, web. Ctrl+C stops processes; Docker keeps running. Flags: `--fresh` (reinstall + `db:generate`), `--android`, `--no-seed` (migrate only, skip both seeds). |
 | `pnpm dev:all:android` | Same, but the app runs on Android emulator/device (Android Studio) instead of the browser. |
 | `./scripts/dev.sh --fresh` | Force `pnpm install` + `db:generate` (combinable with `--android`). |
 | `pnpm dev` / `dev:worker` | API on :3000 / job worker |

@@ -6,7 +6,7 @@ const T = '8f1c2a3e-1b2c-4d5e-8f90-123456789abc'
 const fields: FieldDto[] = [{ id: F, slug: 'finanzen', nameDe: 'Finanzen', adviceDisclaimer: true, themes: [{ id: T, slug: 'sparen', nameDe: 'Sparen' }] }]
 
 describe('parseBatchFile', () => {
-  it('resolves field/theme by slug or name and splits format "both"', () => {
+  it('resolves field/theme by slug or name and maps format "both" to one paired brief', () => {
     const { rows, fileError } = parseBatchFile(
       JSON.stringify({ version: 1, jobs: [{ field: 'FINANZEN', theme: 'Sparen', topic: 'Notgroschen', storyArc: 'quest', count: 2 }] }),
       fields,
@@ -14,8 +14,7 @@ describe('parseBatchFile', () => {
     expect(fileError).toBeNull()
     expect(rows[0]?.errors).toEqual([])
     expect(rows[0]?.briefs.map((b) => [b.format, b.fieldId, b.themeId, b.count, b.storyArc])).toEqual([
-      ['written', F, T, 2, 'quest'],
-      ['audio', F, T, 2, 'quest'],
+      [null, F, T, 2, 'quest'],
     ])
   })
   it('accepts a bare array and a ```json fence', () => {

@@ -29,7 +29,8 @@
     "creds:diff": "./creds.sh diff",
     "dev:all:android": "./scripts/dev.sh --android",
     "coolify:env": "node scripts/coolify/gen-env.mjs",
-    "coolify:push-data": "bash scripts/coolify/push-data.sh"
+    "coolify:push-data": "bash scripts/coolify/push-data.sh",
+    "coolify:push-delta": "bash scripts/coolify/push-delta.sh"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

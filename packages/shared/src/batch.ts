@@ -67,17 +67,20 @@ export function parseBatchFile(text: string, fields: FieldDto[]): { rows: BatchR
     const theme = job.theme && field ? field.themes.find((t) => matches(t, job.theme as string)) : undefined
     if (job.theme && field && !theme) errors.push(`Unbekanntes Thema „${job.theme}“ in ${field.nameDe}`)
     if (errors.length || !field) return { index, job, briefs: [], errors }
-    const formats = job.format === 'both' ? (['written', 'audio'] as const) : ([job.format] as const)
-    const briefs = formats.map((format) => ({
-      fieldId: field.id,
-      themeId: theme?.id ?? null,
-      topic: job.topic,
-      context: job.context,
-      style: job.style ?? null,
-      storyArc: job.storyArc ?? null,
-      format,
-      count: job.count,
-    }))
+    // "both" is ONE brief with format null: the API then creates linked written/audio pairs (pairId),
+    // so the feed shows only one variant per topic and completing either counts for both
+    const briefs = [
+      {
+        fieldId: field.id,
+        themeId: theme?.id ?? null,
+        topic: job.topic,
+        context: job.context,
+        style: job.style ?? null,
+        storyArc: job.storyArc ?? null,
+        format: job.format === 'both' ? null : job.format,
+        count: job.count,
+      },
+    ]
     return { index, job, briefs, errors }
   })
   return { rows, fileError: null }

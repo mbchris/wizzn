@@ -20,7 +20,7 @@ const parsed = computed(() => (text.value.trim() ? parseBatchFile(text.value, fi
 const rows = computed(() => parsed.value?.rows ?? [])
 const invalid = computed(() => rows.value.filter((r) => r.errors.length).length)
 const briefs = computed(() => rows.value.flatMap((r) => r.briefs))
-const unitCount = computed(() => briefs.value.reduce((n, b) => n + b.count, 0))
+const unitCount = computed(() => briefs.value.reduce((n, b) => n + b.count * (b.format ? 1 : 2), 0))
 const canImport = computed(() => !!parsed.value && !parsed.value.fileError && rows.value.length > 0 && invalid.value === 0)
 
 const columns = [
