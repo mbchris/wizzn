@@ -16,10 +16,12 @@ import { spawnSync } from 'node:child_process'
 import { eq } from 'drizzle-orm'
 import { loadEnv } from '../env.js'
 import { createTts } from '../providers/index.js'
+import { splitIntoChunks, wavDurationSec } from '../providers/tts.js'
 import { wavToMp3 } from '../providers/transcode.js'
 import { createDb } from '../db/client.js'
 import { unit } from '../db/schema/index.js'
 
+const tStart = Date.now()
 const args = process.argv.slice(2)
 const fitIdx = args.indexOf('--fit')
 const fit = fitIdx >= 0
@@ -60,17 +62,47 @@ if (!script) {
 }
 
 const tts = createTts(env, { fit })
-console.log(`TTS provider: ${env.TTS_PROVIDER} @ ${env.TTS_URL}`)
+const sec = (ms: number): string => `${(ms / 1000).toFixed(1)}s`
+
+type ServerInfo = Record<string, unknown> & { stats?: Record<string, number> }
+async function serverInfo(): Promise<ServerInfo | null> {
+  if (env.TTS_PROVIDER !== 'chatterbox' && env.TTS_PROVIDER !== 'qwen') return null
+  try {
+    const res = await fetch(new URL('/info', env.TTS_URL), { signal: AbortSignal.timeout(3000) })
+    return res.ok ? ((await res.json()) as ServerInfo) : null
+  } catch {
+    return null
+  }
+}
+
+const info = await serverInfo()
+console.log('── TTS settings')
+console.log(`  provider      ${env.TTS_PROVIDER} @ ${env.TTS_URL}`)
+if (env.TTS_PROVIDER === 'piper') console.log(`  voice         ${env.TTS_VOICE}`)
+console.log(`  length_scale  ${env.TTS_LENGTH_SCALE}${fit ? '  (3–5 min fitting on: may re-render)' : '  (single render)'}`)
+if (env.TTS_PROVIDER === 'chatterbox' || env.TTS_PROVIDER === 'qwen') {
+  const max = env.TTS_PROVIDER === 'qwen' ? 500 : 280
+  console.log(`  chunks        ${splitIntoChunks(script, max).length} × ≤${max} chars (${script.length} chars, ${script.split(/\s+/).length} words)`)
+}
+if (info) {
+  const { stats: _stats, params, ...rest } = info
+  for (const [k, v] of Object.entries(rest)) if (v !== null && v !== undefined && v !== '') console.log(`  ${k.padEnd(13)} ${typeof v === 'object' ? JSON.stringify(v) : String(v)}`)
+  if (params) console.log(`  params        ${Object.entries(params as Record<string, unknown>).map(([k, v]) => `${k}=${v}`).join(' ')}`)
+} else if (env.TTS_PROVIDER === 'chatterbox' || env.TTS_PROVIDER === 'qwen') {
+  console.warn(`  (server info unavailable — is \`pnpm tts:server ${env.TTS_PROVIDER}\` running?)`)
+}
+
 const t0 = Date.now()
 const speech = await tts.synthesize(script)
-console.log(`Synthesized ${speech.durationSec}s in ${((Date.now() - t0) / 1000).toFixed(1)}s`)
-
+const synthMs = Date.now() - t0
 const outDir = resolve(outArg ?? 'tts-debug')
 if (providerOpt) name = `${name}.${providerOpt}`
 await mkdir(outDir, { recursive: true })
 const rawPath = join(outDir, `${name}.raw.wav`)
 await writeFile(rawPath, speech.audio)
+const t1 = Date.now()
 const mp3 = await wavToMp3(speech.audio)
+const mp3Ms = Date.now() - t1
 const mp3Path = join(outDir, `${name}.mp3`)
 if (mp3) await writeFile(mp3Path, mp3)
 else console.warn('ffmpeg unavailable — no MP3 written')
@@ -84,3 +116,19 @@ function loudness(path: string): string {
 }
 console.log(`raw  ${rawPath}\n     ${loudness(rawPath)}`)
 if (mp3) console.log(`mp3  ${mp3Path}\n     ${loudness(mp3Path)}`)
+
+const after = await serverInfo()
+const d = (k: string): number => (after?.stats?.[k] ?? 0) - (info?.stats?.[k] ?? 0)
+console.log('── Runtime')
+console.log(`  audio         ${sec(wavDurationMs(speech))}`)
+console.log(`  synthesis     ${sec(synthMs)}  (RTF ${(synthMs / 1000 / Math.max(speech.durationSec, 1)).toFixed(2)} — <1 = faster than real time)`)
+if (after?.stats) {
+  console.log(`  server        ${d('requests')} requests, ${d('cache_hits')} from cache, ${d('generated')} generated in ${d('gen_sec').toFixed(1)}s`)
+  if (d('cache_hits') > 0) console.log('  note          cached chunks make this run faster than a fresh render (cache: .<engine>/cache)')
+}
+console.log(`  mp3 + loudnorm ${sec(mp3Ms)}`)
+console.log(`  total         ${sec(Date.now() - tStart)}`)
+
+function wavDurationMs(s: { audio: Buffer }): number {
+  return wavDurationSec(s.audio) * 1000
+}

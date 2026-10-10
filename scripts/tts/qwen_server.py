@@ -4,6 +4,7 @@ Qwen3-TTS server for wizzn (German, batch). Same contract as chatterbox_server.p
 
   POST /synthesize  JSON {"text": str, "length_scale"?: float}  → audio/wav (16-bit mono)
   GET  /health      200 once the model is loaded
+  GET  /info        engine, model, voice, parameters + cumulative stats (requests, cache hits, generation time)
 
 Voice (--voice, from TTS_VOICE):
   path/to/ref.wav               clone with the Base model; transcript from path/to/ref.txt if present (better),
@@ -25,6 +26,7 @@ import io
 import json
 import os
 import threading
+import time
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -59,6 +61,7 @@ def load(kind: str, size: str, device: str):
     if kind == "VoiceDesign":
         size = "1.7B"  # only size that exists
     repo = REPO.format(size=size, kind=kind)
+    load.last = repo
     dtype = torch.bfloat16 if device.startswith("cuda") else torch.float32
     print(f"qwen-tts: loading {repo} on {device} (first run downloads the weights)", flush=True)
     return Qwen3TTSModel.from_pretrained(repo, device_map=device, dtype=dtype, attn_implementation="sdpa")
@@ -85,9 +88,13 @@ class Engine:
         self.cache = Path(args.cache_dir)
         self.cache.mkdir(parents=True, exist_ok=True)
         self.lock = threading.Lock()
+        self.stats = {"requests": 0, "cache_hits": 0, "generated": 0, "gen_sec": 0.0, "audio_sec": 0.0}
+        self.mode = "custom"
+        self.model_id = ""
         self.speaker = self.instruct = self.clone_prompt = None
         voice = args.voice.strip()
 
+        self.designed = voice.startswith("design:")
         if voice.startswith("design:"):
             ref_path, ref_text = self.designed_reference(voice[len("design:"):].strip())
             self.use_clone(ref_path, ref_text)
@@ -96,6 +103,7 @@ class Engine:
             self.use_clone(voice, txt.read_text(encoding="utf-8").strip() if txt.is_file() else None)
         else:
             self.model = load("CustomVoice", args.size, self.device)
+            self.model_id = load.last
             name, _, instruct = voice.partition("|")
             speakers = {s.lower(): s for s in (self.model.get_supported_speakers() or [])}
             self.speaker = speakers.get(name.strip().lower())
@@ -129,6 +137,8 @@ class Engine:
         if self.args.export_ref:
             return
         self.model = load("Base", self.args.size, self.device)
+        self.mode = "clone"
+        self.model_id = load.last
         self.clone_prompt = self.model.create_voice_clone_prompt(
             ref_audio=ref_path, ref_text=ref_text, x_vector_only_mode=ref_text is None
         )
@@ -143,14 +153,39 @@ class Engine:
     def raw(self, text: str):
         key = hashlib.sha256(f"{self.voice_key}|{text}".encode()).hexdigest()
         path = self.cache / f"{key}.npz"
+        self.stats["requests"] += 1
         if path.exists():
+            self.stats["cache_hits"] += 1
             d = np.load(path)
             return d["audio"], int(d["sr"])
+        t0 = time.monotonic()
         with self.lock:
             wavs, sr = self.generate(text)
         audio = np.concatenate([to_mono_f32(wavs[0]), np.zeros(int(PAUSE_SEC * sr), dtype=np.float32)])
         np.savez(path, audio=audio, sr=sr)
+        gen = time.monotonic() - t0
+        audio_sec = len(audio) / sr
+        self.stats["generated"] += 1
+        self.stats["gen_sec"] += gen
+        self.stats["audio_sec"] += audio_sec
+        print(f"qwen-tts: generated {len(text)} chars → {audio_sec:.1f}s audio in {gen:.1f}s (RTF {gen / max(audio_sec, 0.01):.2f})", flush=True)
         return audio, sr
+
+    def info(self) -> dict:
+        return {
+            "engine": "qwen3-tts",
+            "model": self.model_id,
+            "mode": ("design→clone" if self.designed else self.mode),
+            "device": self.device,
+            "dtype": "bfloat16" if self.device.startswith("cuda") else "float32",
+            "language": LANGUAGE,
+            "voice": self.args.voice,
+            "speaker": self.speaker,
+            "instruct": self.instruct,
+            "reference": getattr(self, "ref_path", None),
+            "ref_transcript": bool(getattr(self, "ref_text", None)),
+            "params": {"seed": SEED, "pause_sec": PAUSE_SEC},
+        }
 
     def synthesize(self, text: str, length_scale: float) -> bytes:
         audio, sr = self.raw(text)
@@ -175,6 +210,8 @@ def make_handler(engine: Engine):
         def do_GET(self):
             if self.path == "/health":
                 self._send(200, b"ok", "text/plain")
+            elif self.path == "/info":
+                self._send(200, json.dumps({**engine.info(), "stats": engine.stats}).encode(), "application/json")
             else:
                 self._send(404, b"not found", "text/plain")
 

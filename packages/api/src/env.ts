@@ -23,7 +23,7 @@ export const envSchema = z.object({
   GEMINI_CLI_TIMEOUT_MS: z.coerce.number().int().positive().default(300_000),
   LLM_API_KEY: z.string().default(''),
   SEARCH_URL: z.string().url(),
-  TTS_URL: z.string().url(),
+  TTS_URL: z.string().url().default('http://localhost:5100/synthesize'),
   TTS_VOICE: z.string().min(1),
   TTS_LENGTH_SCALE: z.coerce.number().min(0.5).max(2).default(1.2),
   TTS_PROVIDER: z.enum(['silent', 'piper', 'chatterbox', 'qwen']).default('silent'),

@@ -70,6 +70,12 @@ pnpm tts:entry <unitId> --fit                               # with 3–5 min dur
 
 Output: `packages/api/tts-debug/<id>[.<provider>].raw.wav` / `.mp3`.
 
+It prints the settings (provider, URL, length_scale, chunking; for chatterbox/qwen also engine, model, mode, device,
+voice and generation parameters from the server's `GET /info`) and a runtime summary: audio length, synthesis time,
+real-time factor (RTF < 1 = faster than real time), server requests / cache hits / generation time, MP3 + loudnorm time.
+Cache hits make a run look faster — delete `.qwen-tts/cache` or `.chatterbox/cache` for a fresh benchmark.
+The servers also log each generation (`chars → audio sec in gen sec, RTF`).
+
 A/B two engines on different ports:
 
 ```bash

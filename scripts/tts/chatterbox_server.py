@@ -4,6 +4,7 @@ Chatterbox Multilingual TTS server for wizzn (German, batch).
 
   POST /synthesize  JSON {"text": str, "length_scale"?: float}  → audio/wav (16-bit mono)
   GET  /health      200 once the model is loaded
+  GET  /info        engine, model, voice, parameters + cumulative stats (requests, cache hits, generation time)
 
 The API sends one short chunk (a few sentences) per request, so no request runs into HTTP timeouts.
 Raw renders are cached on disk by text hash; a different length_scale only time-stretches the cached audio,
@@ -17,6 +18,7 @@ import io
 import json
 import os
 import threading
+import time
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -65,6 +67,7 @@ class Engine:
         self.cache = Path(args.cache_dir)
         self.cache.mkdir(parents=True, exist_ok=True)
         self.lock = threading.Lock()
+        self.stats = {"requests": 0, "cache_hits": 0, "generated": 0, "gen_sec": 0.0, "audio_sec": 0.0}
         tag = f"{args.ref}|{args.exaggeration}|{args.cfg_weight}|{args.temperature}|{SEED}"
         self.voice_key = hashlib.sha256(tag.encode()).hexdigest()[:12]
         print(f"chatterbox: ready (sr={self.sr}, ref={args.ref or 'built-in voice'})", flush=True)
@@ -72,8 +75,11 @@ class Engine:
     def raw(self, text: str) -> np.ndarray:
         key = hashlib.sha256(f"{self.voice_key}|{text}".encode()).hexdigest()
         path = self.cache / f"{key}.npy"
+        self.stats["requests"] += 1
         if path.exists():
+            self.stats["cache_hits"] += 1
             return np.load(path)
+        t0 = time.monotonic()
         with self.lock:
             torch.manual_seed(SEED)
             wav = self.model.generate(
@@ -86,7 +92,26 @@ class Engine:
         audio = wav.squeeze().detach().cpu().numpy().astype(np.float32)
         audio = np.concatenate([audio, np.zeros(int(PAUSE_SEC * self.sr), dtype=np.float32)])
         np.save(path, audio)
+        self._count(t0, len(audio) / self.sr, len(text))
         return audio
+
+    def _count(self, t0: float, audio_sec: float, chars: int):
+        gen = time.monotonic() - t0
+        self.stats["generated"] += 1
+        self.stats["gen_sec"] += gen
+        self.stats["audio_sec"] += audio_sec
+        print(f"chatterbox: generated {chars} chars → {audio_sec:.1f}s audio in {gen:.1f}s (RTF {gen / max(audio_sec, 0.01):.2f})", flush=True)
+
+    def info(self) -> dict:
+        a = self.args
+        return {
+            "engine": "chatterbox-multilingual",
+            "model": "ResembleAI/chatterbox (multilingual)",
+            "device": self.device,
+            "language": "de",
+            "voice": a.ref or "built-in",
+            "params": {"exaggeration": a.exaggeration, "cfg_weight": a.cfg_weight, "temperature": a.temperature, "seed": SEED, "pause_sec": PAUSE_SEC, "sample_rate": self.sr},
+        }
 
     def synthesize(self, text: str, length_scale: float) -> bytes:
         audio = self.raw(text)
@@ -116,6 +141,8 @@ def make_handler(engine: Engine):
         def do_GET(self):
             if self.path == "/health":
                 self._send(200, b"ok", "text/plain")
+            elif self.path == "/info":
+                self._send(200, json.dumps({**engine.info(), "stats": engine.stats}).encode(), "application/json")
             else:
                 self._send(404, b"not found", "text/plain")
 
