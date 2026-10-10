@@ -29,9 +29,10 @@ export function createProviders(env: Env) {
   }
 }
 
-function createTts(env: Env): TtsClient {
-  if (env.TTS_PROVIDER === 'piper') return createPiperTts(env.TTS_URL, env.TTS_VOICE, fetch, env.TTS_LENGTH_SCALE)
-  if (env.TTS_PROVIDER === 'chatterbox') return createChatterboxTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE)
+/** `fit: false` skips the 3–5 min duration fitting (single render) — for debugging */
+export function createTts(env: Env, { fit = true }: { fit?: boolean } = {}): TtsClient {
+  if (env.TTS_PROVIDER === 'piper') return createPiperTts(env.TTS_URL, env.TTS_VOICE, fetch, env.TTS_LENGTH_SCALE, fit)
+  if (env.TTS_PROVIDER === 'chatterbox') return createChatterboxTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit)
   return createSilentTts()
 }
 

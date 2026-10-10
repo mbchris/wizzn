@@ -3,6 +3,7 @@
  *
  *   pnpm --filter @wizzn/api tts:entry <unitId> [outDir]
  *   pnpm --filter @wizzn/api tts:entry --text "Some script…" [outDir]
+ *   add --fit to apply the pipeline's 3–5 min duration fitting (default: one render at TTS_LENGTH_SCALE)
  *
  * Writes <outDir>/<id>.raw.wav (straight from the TTS provider) and <id>.mp3 (what the pipeline stores),
  * and prints loudness for both. Default outDir: ./tts-debug
@@ -12,12 +13,15 @@ import { join, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { eq } from 'drizzle-orm'
 import { loadEnv } from '../env.js'
-import { createProviders } from '../providers/index.js'
+import { createTts } from '../providers/index.js'
 import { wavToMp3 } from '../providers/transcode.js'
 import { createDb } from '../db/client.js'
 import { unit } from '../db/schema/index.js'
 
 const args = process.argv.slice(2)
+const fitIdx = args.indexOf('--fit')
+const fit = fitIdx >= 0
+if (fit) args.splice(fitIdx, 1)
 const textIdx = args.indexOf('--text')
 const inlineText = textIdx >= 0 ? args.splice(textIdx, 2)[1] : undefined
 const [unitId, outArg] = inlineText ? [undefined, args[0]] : args
@@ -40,7 +44,7 @@ if (!script) {
   console.log(`Unit "${row.title}" — ${script.split(/\s+/).length} words`)
 }
 
-const { tts } = createProviders(env)
+const tts = createTts(env, { fit })
 console.log(`TTS provider: ${env.TTS_PROVIDER} @ ${env.TTS_URL}`)
 const t0 = Date.now()
 const speech = await tts.synthesize(script)

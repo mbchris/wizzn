@@ -53,9 +53,9 @@ const inWindow = (sec: number): boolean => sec >= AUDIO_MIN_SEC && sec <= AUDIO_
 /**
  * Piper HTTP server (`python -m piper.http_server`): POST JSON { text, voice, length_scale } to /synthesize → WAV.
  */
-export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof fetch = fetch, lengthScale = 1): TtsClient {
+export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof fetch = fetch, lengthScale = 1, fit = true): TtsClient {
   const render: Render = (text, scale) => postWav(fetchFn, baseUrl, { text, voice, length_scale: scale })
-  return fitToWindow(render, lengthScale)
+  return fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)
 }
 
 /**
@@ -63,13 +63,23 @@ export function createPiperTts(baseUrl: string, voice: string, fetchFn: typeof f
  * limited, so the script is sent in sentence-group chunks and the WAVs are joined. The server caches raw renders and
  * applies length_scale as a time-stretch, so pace re-renders cost little.
  */
-export function createChatterboxTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = CHUNK_CHARS): TtsClient {
+export function createChatterboxTts(baseUrl: string, fetchFn: typeof fetch = fetch, lengthScale = 1, maxChunkChars = CHUNK_CHARS, fit = true): TtsClient {
   const render: Render = async (text, scale) => {
     const parts: Buffer[] = []
     for (const chunk of splitIntoChunks(text, maxChunkChars)) parts.push(await postWav(fetchFn, baseUrl, { text: chunk, length_scale: scale }))
     return concatWav(parts)
   }
-  return fitToWindow(render, lengthScale)
+  return fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)
+}
+
+/** Single render, no 3–5 min duration fitting (debugging / ad-hoc text) */
+function renderOnce(renderWav: Render, lengthScale: number): TtsClient {
+  return {
+    async synthesize(text) {
+      const audio = await renderWav(text, clampScale(lengthScale))
+      return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)) }
+    },
+  }
 }
 
 type Render = (text: string, scale: number) => Promise<Buffer>

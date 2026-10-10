@@ -19,8 +19,8 @@ pnpm test
 ### Root scripts
 | Command | What it does |
 |---|---|
-| `pnpm dev:all` | Full stack via `scripts/dev.sh`: Docker infra, Piper TTS (if `TTS_PROVIDER=piper`), migrate + seed + samples, Ollama, api, worker, admin, web. Ctrl+C stops processes; Docker keeps running. Flags: `--fresh` (reinstall + `db:generate`), `--android`, `--no-seed` (migrate only, skip both seeds). |
-| `pnpm dev:all:android` | Same, but the app runs on Android emulator/device (Android Studio) instead of the browser. |
+| `pnpm dev:all` | Full stack via `scripts/dev.sh`: Docker infra, Piper TTS (if `TTS_PROVIDER=piper`), migrate + seed + samples, Ollama, api, worker, admin, web. Ctrl+C stops processes; Docker keeps running. |
+| `pnpm dev:all:android --no-seed` | Same, but the app runs on Android emulator/device (Android Studio) instead of the browser. --no-seed will not seed. Is faster if you don't need it. |
 | `./scripts/dev.sh --fresh` | Force `pnpm install` + `db:generate` (combinable with `--android`). |
 | `pnpm dev` / `dev:worker` | API on :3000 / job worker |
 | `pnpm dev:web` | Web app (browser) |
@@ -64,6 +64,28 @@ pnpm dev:admin      # admin http://localhost:9100 → "Konto anlegen" with an AD
 ```
 Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length), `IMAGE_PROVIDER=placeholder` (SVG).
 
+### Audio (TTS) debugging
+
+Every render is loudness-normalized to −16 LUFS / −1.5 dBTP (ffmpeg two-pass `loudnorm` in `packages/api/src/providers/transcode.ts`) before it's stored as MP3, since TTS engines output very quiet audio (~−40 LUFS).
+
+To re-run only the audio step for one unit and inspect the files locally (DB untouched):
+
+```bash
+pnpm --filter @wizzn/api tts:entry <unitId> [outDir]      # script from the unit's content_json
+pnpm --filter @wizzn/api tts:entry --text "Some script…"  # ad-hoc text
+# add --fit to apply the pipeline's 3–5 min duration fitting (default: single render)
+```
+
+Writes `<outDir>/<id>.raw.wav` (straight from the TTS provider) and `<id>.mp3` (what the pipeline stores) to `./tts-debug/` by default and prints the loudness (LUFS / peak) of both. Uses the `TTS_*` settings from `.env`.
+
+Re-render the audio of existing units (current TTS settings + normalization; updates asset, duration and image timings, deletes the old file):
+
+```bash
+pnpm audio:rerender                     # all audio units
+pnpm audio:rerender -- <unitId> …       # only these
+pnpm audio:rerender -- --dry-run        # list only
+```
+
 ### Where the prompts live
 - Content creation (written + audio drafts, editorial styles, story arcs, fact check, stock pick): `packages/api/src/pipeline/prompts.ts` — `draftWrittenPrompt`, `draftAudioPrompt`, `STYLE_GUIDE`, `ARC_GUIDE`, `checkPrompt`, `imagePickPrompt`. Bump `PROMPT_VERSION` when changing them.
 - AI image style per category: `packages/api/src/providers/image.ts` — `IMAGE_STYLES` (keyed by field slug, e.g. `finance`, `sports`) + shared `IMAGE_BASE`; unknown fields use `DEFAULT_STYLE`.
@@ -79,7 +101,7 @@ Units get Openverse / Wikimedia Commons images first; the AI image provider is t
 ### Knowledge sources (issue #4)
 
 Research queries reputable tiers first: 1 curated authorities per field (`packages/api/src/pipeline/source-registry.ts`), 2 German Wikipedia, 3 Europe PMC reviews (nutrition, sports, psychology), 4 open web (fallback only).
-
+ 
 - `RESEARCH_PROVIDERS=curated,wikipedia,europepmc,web` — enabled providers; tier decides the order. Drop `web` to disable the open-web fallback.
 - `RESEARCH_MIN_SOURCES` (2) — fewer usable tier 1–3 sources trigger the web fallback.
 - `STOCK_USER_AGENT` — also required when `wikipedia` is enabled (Wikimedia API policy).

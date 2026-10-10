@@ -15,7 +15,8 @@
     "db:migrate": "tsx --env-file=../../.env src/db/migrate.ts",
     "db:seed": "tsx --env-file=../../.env src/db/seed.ts",
     "db:seed:samples": "tsx --env-file=../../.env src/db/seed-samples.ts",
-    "tts:entry": "tsx --env-file=../../.env src/scripts/tts-entry.ts"
+    "tts:entry": "tsx --env-file=../../.env src/scripts/tts-entry.ts",
+    "audio:rerender": "tsx --env-file=../../.env src/scripts/rerender-audio.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.14.0",

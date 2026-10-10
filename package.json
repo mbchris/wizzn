@@ -30,7 +30,8 @@
     "dev:all:android": "./scripts/dev.sh --android",
     "coolify:env": "node scripts/coolify/gen-env.mjs",
     "coolify:push-data": "bash scripts/coolify/push-data.sh",
-    "coolify:push-delta": "bash scripts/coolify/push-delta.sh"
+    "coolify:push-delta": "bash scripts/coolify/push-delta.sh",
+    "audio:rerender": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api audio:rerender"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
