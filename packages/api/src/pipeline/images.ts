@@ -19,6 +19,8 @@ export interface ImageDeps {
 export interface ImageSlot {
   prompt: string
   query?: string
+  /** Category slug for the AI image style */
+  field?: string | null
 }
 
 export interface ResolvedImage {
@@ -45,7 +47,7 @@ export async function resolveImage(
     const hit = await tryStock(unitId, slot, exclude, deps, deps.stock, opts.skipPick ?? false)
     if (hit) return hit
   }
-  const img = await deps.images.generate(slot.prompt)
+  const img = await deps.images.generate(slot.prompt, { field: slot.field })
   const path = await deps.media.put(unitId, img.data, extFor(img.contentType))
   return { path, origin: 'generated', credit: null, stockQuery: null, key: null }
 }

@@ -127,7 +127,12 @@ elif [[ "$TTS_PROVIDER" == "chatterbox" ]]; then
   if [[ ! -x "$CB_DIR/venv/bin/python" ]]; then
     c_info "Installing Chatterbox TTS into .chatterbox/venv (first time only)"
     uv venv -q --python 3.11 "$CB_DIR/venv"
-    VIRTUAL_ENV="$CB_DIR/venv" uv pip install -q chatterbox-tts
+    VIRTUAL_ENV="$CB_DIR/venv" uv pip install -q chatterbox-tts "setuptools<81"  # perth needs pkg_resources (removed in setuptools 81)
+  fi
+  # Self-heal existing venvs: perth silently disables its watermarker (→ "'NoneType' object is not callable") without pkg_resources
+  if ! "$CB_DIR/venv/bin/python" -c 'import perth, sys; sys.exit(perth.PerthImplicitWatermarker is None)' 2>/dev/null; then
+    c_info "Repairing Chatterbox venv (setuptools<81 for perth)"
+    VIRTUAL_ENV="$CB_DIR/venv" uv pip install -q "setuptools<81"
   fi
   CB_ARGS=(--port "$CB_PORT" --cache-dir "$CB_DIR/cache")
   # TTS_VOICE = path to a ~10 s clean German reference WAV (relative to repo root) to clone; else built-in voice

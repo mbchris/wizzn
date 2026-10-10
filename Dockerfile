@@ -7,8 +7,7 @@ FROM base AS build
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* tsconfig.base.json ./
 COPY packages/shared/package.json packages/shared/
 COPY packages/api/package.json packages/api/
-# Use --frozen-lockfile once pnpm-lock.yaml is committed
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 COPY packages/shared packages/shared
 COPY packages/api packages/api
 RUN pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api build

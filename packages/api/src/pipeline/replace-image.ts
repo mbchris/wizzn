@@ -36,7 +36,7 @@ export function createImageReplacer(deps: { store: PipelineStore; image: ImageDe
       } else {
         const prompt = asset.prompt ?? asset.credit?.title ?? asset.stockQuery
         if (!prompt) return { ok: false, error: 'not_found' }
-        resolved = await resolveImage(unitId, { prompt }, new Set(), image, { forceGenerated: true })
+        resolved = await resolveImage(unitId, { prompt, field: unit.brief.fieldSlug }, new Set(), image, { forceGenerated: true })
       }
 
       if (currentKey) rejectedStockIds = [...asset.rejectedStockIds, currentKey]

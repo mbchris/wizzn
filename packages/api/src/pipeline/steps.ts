@@ -119,7 +119,7 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
         { prompt: draft.cover.imagePrompt, query: draft.cover.imageQuery },
         ...draft.slides.flatMap((s) => (s.imagePrompt ? [{ prompt: s.imagePrompt, query: s.imageQuery }] : [])),
       ]
-      const resolved = await resolveSlots(unit.id, slots, deps)
+      const resolved = await resolveSlots(unit.id, slots.map((sl) => ({ ...sl, field: unit.brief.fieldSlug })), deps)
       const [coverAsset, ...slideAssets] = await deps.store.replaceAssets(unit.id, resolved.map(toImageAsset))
       if (!coverAsset) throw new Error('Cover image asset missing')
       let next = 0
@@ -136,7 +136,7 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
     const speech = await deps.tts.synthesize(draft.script)
     const mp3 = await (deps.transcode ?? wavToMp3)(speech.audio)
     const audioPath = mp3 ? await deps.media.put(unit.id, mp3, 'mp3') : await deps.media.put(unit.id, speech.audio, extFor(speech.contentType))
-    const resolved = await resolveSlots(unit.id, draft.images, deps)
+    const resolved = await resolveSlots(unit.id, draft.images.map((i) => ({ ...i, field: unit.brief.fieldSlug })), deps)
     const assets = await deps.store.replaceAssets(unit.id, [
       { kind: 'audio', path: audioPath, durationSec: speech.durationSec },
       ...resolved.map(toImageAsset),

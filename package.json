@@ -27,7 +27,8 @@
     "creds:pull": "./creds.sh pull",
     "creds:push": "./creds.sh push",
     "creds:diff": "./creds.sh diff",
-    "dev:all:android": "./scripts/dev.sh --android"
+    "dev:all:android": "./scripts/dev.sh --android",
+    "coolify:env": "node scripts/coolify/gen-env.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

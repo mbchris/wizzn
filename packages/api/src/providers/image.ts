@@ -6,17 +6,41 @@ export interface ImageResult {
 }
 
 export interface ImageClient {
-  generate(prompt: string): Promise<ImageResult>
+  /** `field` is the category slug (e.g. finance) and picks the visual style */
+  generate(prompt: string, opts?: { field?: string | null }): Promise<ImageResult>
 }
 
-/** One house style for every unit (spec §4: fixed style prompt). */
-/** Matches the app's dark neon UI (web/src/css/app.scss: --wz-bg, --wz-mint, --wz-cyan, --wz-brand). */
-export const IMAGE_STYLE =
-  'Modern flat vector illustration with subtle depth, clean geometric shapes, minimal and uncluttered, one clear central subject. ' +
-  'Dark near-black background (#0b0c10, deep charcoal-navy), subject lit with vibrant neon accents: mint green (#00e599), ' +
-  'electric cyan (#60efff) and a touch of soft violet (#c86dd7), smooth gradients between them and a soft glow around highlights. ' +
-  'High contrast, moody, premium, sleek tech aesthetic like a dark-mode mobile app. ' +
-  'No pastel colors, no white or light background, no photorealism, no text, no letters, no logos, no watermark. Square composition.'
+/** Shared rules for every category: polished editorial look, never childish or cartoonish. */
+const IMAGE_BASE =
+  'High-end editorial image, like a premium magazine or brand campaign. Refined, grown-up and believable, one clear subject, ' +
+  'shallow depth of field, thoughtful composition, natural color grading. ' +
+  'Not cartoonish, not childish, no clip art, no flat vector, no pastel kids-book style. ' +
+  'No text, no letters, no numbers, no logos, no watermark. Square composition.'
+
+/** Per category (field slug) mood, so a finance post doesn't look like a nutrition post. */
+export const IMAGE_STYLES: Record<string, string> = {
+  partnership:
+    'Intimate, personal lifestyle photography: warm golden-hour or soft window light, real people in candid, tender moments, ' +
+    'close framing, genuine emotion, cozy homes and everyday places, warm earthy tones.',
+  finance:
+    'Sophisticated private-banking aesthetic: clean modern architecture, glass, marble and brushed metal, calm order, ' +
+    'deep navy, slate and subtle gold accents, crisp even light, trustworthy and composed corporate photography.',
+  sports:
+    'Dynamic sports photography: athletes in motion, peak action, sweat and determination, dramatic directional light, ' +
+    'high contrast and saturated punchy colors, low angles, freeze-frame energy like a sportswear campaign.',
+  nutrition:
+    'Bright, joyful food and lifestyle photography: fresh colorful whole foods, sunlight, happy people enjoying meals together, ' +
+    'appetizing close-ups, natural textures, vibrant greens and warm tones, feel-good and wholesome.',
+  psychology:
+    'Calm, reflective fine-art photography: thoughtful people in quiet moments, soft diffused light, gentle negative space, ' +
+    'muted natural palette with one warm accent, contemplative and empathetic mood.',
+}
+
+const DEFAULT_STYLE = 'Clean, modern editorial photography with natural light and a calm, confident mood.'
+
+export function imageStyleFor(field?: string | null): string {
+  return `${(field && IMAGE_STYLES[field]) || DEFAULT_STYLE} ${IMAGE_BASE}`
+}
 
 /** Placeholder colors from the app theme: dark backgrounds, neon foregrounds. */
 const BG_PALETTE = ['#0b0c10', '#12161a', '#1a1e25', '#0e1318']
@@ -45,11 +69,11 @@ export function createApiImages(cfg: { baseUrl: string; model: string; apiKey: s
   // ImageRouter returns b64_ephemeral (no retention on their side); default mirrors env IMAGE_EPHEMERAL.
   const responseFormat = (cfg.ephemeral ?? true) ? 'b64_ephemeral' : 'b64_json'
   return {
-    async generate(prompt) {
+    async generate(prompt, opts) {
       const res = await fetchFn(`${cfg.baseUrl.replace(/\/$/, '')}/images/generations`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${cfg.apiKey}` },
-        body: JSON.stringify({ model: cfg.model, prompt: `${prompt}. ${IMAGE_STYLE}`, size: '1024x1024', response_format: responseFormat, output_format: 'png', n: 1 }),
+        body: JSON.stringify({ model: cfg.model, prompt: `${prompt}. ${imageStyleFor(opts?.field)}`, size: '1024x1024', response_format: responseFormat, output_format: 'png', n: 1 }),
       })
       if (!res.ok) throw new Error(`Image HTTP ${res.status}`)
       const b64 = ((await res.json()) as ImagesResponse).data?.[0]?.b64_json

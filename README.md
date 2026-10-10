@@ -16,11 +16,43 @@ pnpm dev:worker             # job worker
 pnpm test
 ```
 
+### Root scripts
+| Command | What it does |
+|---|---|
+| `pnpm dev:all` | Full stack via `scripts/dev.sh`: Docker infra, Piper TTS (if `TTS_PROVIDER=piper`), migrate + seed + samples, Ollama, api, worker, admin, web. Ctrl+C stops processes; Docker keeps running. |
+| `pnpm dev:all:android` | Same, but the app runs on Android emulator/device (Android Studio) instead of the browser. |
+| `./scripts/dev.sh --fresh` | Force `pnpm install` + `db:generate` (combinable with `--android`). |
+| `pnpm dev` / `dev:worker` | API on :3000 / job worker |
+| `pnpm dev:web` | Web app (browser) |
+| `pnpm dev:admin` | Admin on :9100 |
+| `pnpm build` / `build:shared` | Build all packages / only `@wizzn/shared` |
+| `pnpm test` / `typecheck` | Tests / typecheck across workspace |
+| `pnpm db:generate` / `db:migrate` / `db:seed` / `db:seed:samples` | Drizzle migrations + seeds (see below) |
+| `pnpm setup:google` / `setup:apple` / `setup:apple:secret` / `setup:openverse` | Console/OAuth setup; `setup:apple:secret` generates `APPLE_CLIENT_SECRET` (ES256 JWT, valid 6 months — re-run before expiry) |
+| `pnpm creds:pull` / `creds:push` / `creds:diff` | Wrappers for `./creds.sh` (see Credentials) |
+| `pnpm verify:m4` | Walks through M4 close-out: checks, API smoke test, browser/device checklists. Steps: `all\|auto\|db\|smoke\|browser\|device\|commit` |
+
 ## Seed data & media
 - `pnpm db:seed` — fields + themes from `packages/shared/src/fields.ts` (`FIELD_SEEDS`). Idempotent; also runs on container start.
-- `pnpm db:seed:samples` — dev-only sample units from `packages/api/src/db/samples/<field>.json` (5 written + 5 audio per field). Needs `db:seed` first; skips existing samples. `scripts/dev.sh` runs both.
+- `pnpm db:seed:samples` — dev-only sample units from `packages/api/src/db/samples/<field>.json` — every topic as **both** a written and an audio unit (missing format derived: audio script split into slides, written slides expanded to a script via the configured LLM). Needs `db:seed` first; skips existing samples (topic + format). `scripts/dev.sh` runs both.
 - Generated images/audio → `packages/api/media-data/<unitId>/<hash>.<ext>` (`MEDIA_DIR`, relative to `packages/api`; `MEDIA_DRIVER=s3` for S3). Served in dev by nginx at http://localhost:8081 (`docker-compose.dev.yml`).
 - Full reset: empty the DB **and** `packages/api/media-data/`.
+
+### Reset the dev DB
+No script yet; run from repo root. Media files in `packages/api/media-data` are not touched — delete them too for a fully clean state.
+```bash
+# Option A: empty the DB, keep the container
+docker compose -f docker-compose.dev.yml exec postgres \
+  psql -U wizzn -d wizzn -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public; DROP SCHEMA IF EXISTS drizzle CASCADE;'
+
+# Option B: recreate the volume (check name: docker volume ls | grep pgdata)
+docker compose -f docker-compose.dev.yml rm -sf postgres
+docker volume rm "$(basename "$PWD")_pgdata-dev"
+docker compose -f docker-compose.dev.yml up -d postgres
+
+# then
+pnpm db:migrate && pnpm db:seed && pnpm db:seed:samples
+```
 
 ## Content pipeline (local)
 ```bash
@@ -31,6 +63,11 @@ pnpm dev:worker     # pipeline worker
 pnpm dev:admin      # admin http://localhost:9100 → "Konto anlegen" with an ADMIN_EMAILS address
 ```
 Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length), `IMAGE_PROVIDER=placeholder` (SVG).
+
+### Where the prompts live
+- Content creation (written + audio drafts, editorial styles, story arcs, fact check, stock pick): `packages/api/src/pipeline/prompts.ts` — `draftWrittenPrompt`, `draftAudioPrompt`, `STYLE_GUIDE`, `ARC_GUIDE`, `checkPrompt`, `imagePickPrompt`. Bump `PROMPT_VERSION` when changing them.
+- AI image style per category: `packages/api/src/providers/image.ts` — `IMAGE_STYLES` (keyed by field slug, e.g. `finance`, `sports`) + shared `IMAGE_BASE`; unknown fields use `DEFAULT_STYLE`.
+- Output schemas / word limits: `packages/shared/src/pipeline.ts`.
 
 ### Stock images (CC-licensed)
 Units get Openverse / Wikimedia Commons images first; the AI image provider is the fallback. Set in `.env` (see `.env.api.template`):

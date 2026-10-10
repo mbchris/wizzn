@@ -1,27 +1,68 @@
-# Production stack for Coolify on the netcup VPS. Secrets come from Coolify env vars.
+# Production stack for Coolify (build pack: Docker Compose) on the netcup VPS.
+# All config comes from Coolify env vars — generate them with `pnpm coolify:env -- --domain <base-domain>`
+# and paste setup-out/coolify.env into Coolify → Environment Variables → Developer view.
+# Domains are assigned per service in the Coolify UI (api :3000, admin :80, media :80). No host ports.
+
+x-api-env: &api-env
+  NODE_ENV: production
+  PORT: 3000
+  DATABASE_URL: postgres://wizzn:${POSTGRES_PASSWORD:?}@postgres:5432/wizzn
+  SEARCH_URL: http://searxng:8080
+  MEDIA_DRIVER: local
+  MEDIA_DIR: /media
+  MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:?}
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
+  BETTER_AUTH_URL: ${API_PUBLIC_URL:?}
+  CORS_ORIGINS: ${CORS_ORIGINS:?}
+  ADMIN_EMAILS: ${ADMIN_EMAILS:?}
+  LLM_BASE_URL: ${LLM_BASE_URL:?}
+  LLM_MODEL: ${LLM_MODEL:?}
+  LLM_API_KEY: ${LLM_API_KEY:-}
+  TTS_PROVIDER: ${TTS_PROVIDER:-silent}
+  TTS_URL: ${TTS_URL:-http://localhost:5100/synthesize}
+  TTS_VOICE: ${TTS_VOICE:-de_DE-thorsten-high}
+  TTS_LENGTH_SCALE: ${TTS_LENGTH_SCALE:-1.2}
+  IMAGE_PROVIDER: ${IMAGE_PROVIDER:-placeholder}
+  IMAGE_BASE_URL: ${IMAGE_BASE_URL:-}
+  IMAGE_MODEL: ${IMAGE_MODEL:-}
+  IMAGE_API_KEY: ${IMAGE_API_KEY:-}
+  IMAGE_EPHEMERAL: ${IMAGE_EPHEMERAL:-true}
+  STOCK_IMAGE_PROVIDERS: ${STOCK_IMAGE_PROVIDERS:-openverse,commons}
+  STOCK_USER_AGENT: ${STOCK_USER_AGENT:?}
+  OPENVERSE_CLIENT_ID: ${OPENVERSE_CLIENT_ID:-}
+  OPENVERSE_CLIENT_SECRET: ${OPENVERSE_CLIENT_SECRET:-}
+  STOCK_MIN_EDGE_PX: ${STOCK_MIN_EDGE_PX:-800}
+  STOCK_MAX_BYTES: ${STOCK_MAX_BYTES:-5000000}
+  RESEARCH_PROVIDERS: ${RESEARCH_PROVIDERS:-curated,wikipedia,europepmc,web}
+  RESEARCH_MIN_SOURCES: ${RESEARCH_MIN_SOURCES:-2}
+  FREE_DAILY_CAP: ${FREE_DAILY_CAP:-3}
+  REVENUECAT_WEBHOOK_AUTH: ${REVENUECAT_WEBHOOK_AUTH:-}
+  REVENUECAT_SECRET_KEY: ${REVENUECAT_SECRET_KEY:-}
+  APPLE_APP_BUNDLE_ID: ${APPLE_APP_BUNDLE_ID:-app.fourki.wizzn}
+  APPLE_CLIENT_ID: ${APPLE_CLIENT_ID:-}
+  APPLE_CLIENT_SECRET: ${APPLE_CLIENT_SECRET:-}
+  GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+
 services:
   api:
     build: .
     restart: unless-stopped
-    env_file: .env.api
-    environment:
-      DATABASE_URL: postgres://wizzn:${POSTGRES_PASSWORD}@postgres:5432/wizzn
-      SEARCH_URL: http://searxng:8080
-      MEDIA_DIR: /media
+    environment: *api-env
     volumes:
       - media:/media
     depends_on:
       postgres: { condition: service_healthy }
+      searxng: { condition: service_started }
 
   worker:
     build: .
     restart: unless-stopped
     command: ["node", "dist/worker.js"]
-    env_file: .env.api
-    environment:
-      DATABASE_URL: postgres://wizzn:${POSTGRES_PASSWORD}@postgres:5432/wizzn
-      SEARCH_URL: http://searxng:8080
-      MEDIA_DIR: /media
+    environment: *api-env
+    # The image HEALTHCHECK probes :3000, which only the api serves
+    healthcheck:
+      disable: true
     volumes:
       - media:/media
     depends_on:
@@ -32,7 +73,7 @@ services:
       context: .
       dockerfile: Dockerfile.admin
       args:
-        API_URL: ${API_PUBLIC_URL}
+        API_URL: ${API_PUBLIC_URL:?}
     restart: unless-stopped
 
   media:
@@ -47,7 +88,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: wizzn
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
       POSTGRES_DB: wizzn
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -59,6 +100,9 @@ services:
   searxng:
     image: searxng/searxng:latest
     restart: unless-stopped
+    environment:
+      # Overrides server.secret_key from settings.yml
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?}
     volumes:
       - ./deploy/searxng:/etc/searxng
 
