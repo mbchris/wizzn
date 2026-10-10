@@ -1,7 +1,7 @@
 # Production stack for Coolify (build pack: Docker Compose) on the netcup VPS.
 # All config comes from Coolify env vars — generate them with `pnpm coolify:env -- --domain <base-domain>`
 # and paste setup-out/coolify.env into Coolify → Environment Variables → Developer view.
-# Domains are assigned per service in the Coolify UI (api :3000, admin :80, media :80). No host ports.
+# Domains are assigned per service in the Coolify UI (api :3000, web :80, admin :80, media :80). No host ports.
 
 x-api-env: &api-env
   NODE_ENV: production
@@ -74,6 +74,15 @@ services:
       dockerfile: Dockerfile.admin
       args:
         API_URL: ${API_PUBLIC_URL:?}
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        API_URL: ${API_PUBLIC_URL:?}
+        GOOGLE_WEB_CLIENT_ID: ${GOOGLE_WEB_CLIENT_ID:-}
     restart: unless-stopped
 
   media:

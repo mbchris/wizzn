@@ -19,6 +19,16 @@ export const FIELD_SEEDS: readonly FieldSeed[] = [
     ],
   },
   {
+    slug: 'funfacts',
+    nameDe: 'Kleine Lebensfreuden',
+    adviceDisclaimer: true,
+    themes: [
+      { slug: 'vip', nameDe: 'Fun Facts aus aller Welt' },
+      { slug: 'nature', nameDe: 'Die Launen der Natur' },
+      { slug: 'pun', nameDe: 'Wortwitze' },
+    ],
+  },  
+  {
     slug: 'partnership',
     nameDe: 'Partnerschaft',
     adviceDisclaimer: false,
