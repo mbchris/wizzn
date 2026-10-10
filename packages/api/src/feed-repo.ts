@@ -1,5 +1,5 @@
 import { and, desc, eq, gt, inArray, notExists, sql } from 'drizzle-orm'
-import { IMPRESSION_COOLDOWN_DAYS, unitContentSchema, type FeedCandidate, type FeedUnitDto, type UnitContent, type UnitFormat } from '@wizzn/shared'
+import { IMPRESSION_COOLDOWN_DAYS, unitContentSchema, type FeedCandidate, type ImageCredit, type FeedUnitDto, type UnitContent, type UnitFormat } from '@wizzn/shared'
 import type { Db } from './db/client.js'
 import { asset, completionEvent, feedImpression, field, unit, userInterest, userProfile } from './db/schema/index.js'
 
@@ -17,6 +17,11 @@ export interface FeedRepo {
   loadUnits(ids: string[]): Promise<Map<string, Omit<FeedUnitDto, 'discovery'>>>
   recordImpressions(userId: string, unitIds: string[]): Promise<void>
   getPublishedContent(unitId: string): Promise<UnitContent | null>
+}
+
+/** Attribution per asset id; only stock assets carry a credit. */
+export function creditsFor(assets: { id: string; credit: ImageCredit | null }[]): Record<string, ImageCredit> {
+  return Object.fromEntries(assets.flatMap((a) => (a.credit ? [[a.id, a.credit]] : [])))
 }
 
 export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): FeedRepo {
@@ -71,7 +76,8 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
       for (const r of rows) {
         const content = unitContentSchema.safeParse(r.content)
         if (!content.success) continue
-        const media = Object.fromEntries(assets.filter((a) => a.unitId === r.id).map((a) => [a.id, mediaUrl(a.path)]))
+        const own = assets.filter((a) => a.unitId === r.id)
+        const media = Object.fromEntries(own.map((a) => [a.id, mediaUrl(a.path)]))
         out.set(r.id, {
           id: r.id,
           title: r.title ?? '',
@@ -79,7 +85,7 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
           field: { id: r.field.id, slug: r.field.slug, nameDe: r.field.nameDe, adviceDisclaimer: r.field.adviceDisclaimer },
           content: content.data,
           media,
-          credits: {},
+          credits: creditsFor(own),
         })
       }
       return out

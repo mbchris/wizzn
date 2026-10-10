@@ -11,13 +11,14 @@ import { progressRoutes } from './routes/progress.js'
 import { webhookRoutes } from './routes/webhooks.js'
 import type { ProgressRepo } from './progress-repo.js'
 import type { RevenueCatClient } from './revenuecat.js'
+import type { ImageReplacer } from './pipeline/replace-image.js'
 import type { AdminRepo, AuthPort, JobQueue, Repos } from './types.js'
 
 export interface AppDeps {
   auth: AuthPort
   repos: Repos
   corsOrigins: string[]
-  admin?: { emails: string[]; repo: AdminRepo; queue: JobQueue }
+  admin?: { emails: string[]; repo: AdminRepo; queue: JobQueue; images?: ImageReplacer }
   feed?: FeedRepo
   progress?: { repo: ProgressRepo; freeDailyCap: number; revenueCat?: RevenueCatClient; webhookAuth?: string }
   logRequests?: boolean
@@ -39,7 +40,7 @@ export function createApp({ auth, repos, corsOrigins, admin, feed, progress, log
     app.route('/api/me', progressRoutes(auth, { progress: progress.repo, feed, freeDailyCap: progress.freeDailyCap, ...(progress.revenueCat ? { revenueCat: progress.revenueCat } : {}) }))
     app.route('/api', feedRoutes(auth, feed, progress.repo, progress.freeDailyCap))
   }
-  if (admin) app.route('/api/admin', adminRoutes(auth, admin.emails, admin.repo, admin.queue))
+  if (admin) app.route('/api/admin', adminRoutes(auth, admin.emails, admin.repo, admin.queue, admin.images))
   app.onError((err, c) => {
     console.error(err)
     return c.json({ error: 'Internal Error' }, 500)

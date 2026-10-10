@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { dailyCap, levelFor, type CompletionRewardsDto, type UnitContent } from '@wizzn/shared'
 import { createApp } from '../src/app.js'
-import type { FeedPrefs, FeedRepo } from '../src/feed-repo.js'
+import { creditsFor, type FeedPrefs, type FeedRepo } from '../src/feed-repo.js'
 import { localDate } from '../src/local-date.js'
 import { fakeAuth, fakeProgress, fakeRepos } from './fakes.js'
 
@@ -111,5 +111,15 @@ describe('localDate', () => {
   })
   it('falls back to Berlin for unknown zones', () => {
     expect(localDate(new Date('2026-10-09T22:30:00Z'), 'Mars/Olympus')).toBe('2026-10-10')
+  })
+})
+
+describe('creditsFor', () => {
+  const c = { title: 't', creator: null, creatorUrl: null, license: 'cc0' as const, licenseVersion: null, licenseUrl: 'https://l', sourceUrl: 'https://s', provider: 'commons' as const, providerId: '1' }
+  it('maps only assets with a credit (stock)', () => {
+    expect(creditsFor([{ id: 's', credit: c }, { id: 'g', credit: null }])).toEqual({ s: c })
+  })
+  it('is empty for units without credits (pre-migration)', () => {
+    expect(creditsFor([{ id: 'g', credit: null }])).toEqual({})
   })
 })

@@ -50,6 +50,17 @@ export async function resolveImage(
   return { path, origin: 'generated', credit: null, stockQuery: null, key: null }
 }
 
+/** Stock-only variant for admin swaps: returns null instead of generating an AI image when no stock candidate fits. */
+export async function resolveStockImage(
+  unitId: string,
+  slot: ImageSlot,
+  exclude: Set<string>,
+  deps: ImageDeps,
+  opts: { skipPick?: boolean } = {},
+): Promise<ResolvedImage | null> {
+  return deps.stock ? tryStock(unitId, slot, exclude, deps, deps.stock, opts.skipPick ?? false) : null
+}
+
 async function tryStock(
   unitId: string,
   slot: ImageSlot,
