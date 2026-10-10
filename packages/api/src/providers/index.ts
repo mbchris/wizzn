@@ -25,7 +25,7 @@ export function createProviders(env: Env) {
 function createImageClient(env: Env): ImageClient {
   if (env.IMAGE_PROVIDER === 'placeholder') return createPlaceholderImages()
   if (!env.IMAGE_BASE_URL || !env.IMAGE_MODEL) throw new Error('IMAGE_PROVIDER=api requires IMAGE_BASE_URL and IMAGE_MODEL')
-  return createApiImages({ baseUrl: env.IMAGE_BASE_URL, model: env.IMAGE_MODEL, apiKey: env.IMAGE_API_KEY })
+  return createApiImages({ baseUrl: env.IMAGE_BASE_URL, model: env.IMAGE_MODEL, apiKey: env.IMAGE_API_KEY, ephemeral: env.IMAGE_EPHEMERAL })
 }
 
 function createStockClient(env: Env): StockImageClient | null {
