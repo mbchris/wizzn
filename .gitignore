@@ -22,3 +22,7 @@ secrets/
 *.onnx
 
 .chatterbox/
+
+.creds.config
+__pycache__/
+.DS_Store
