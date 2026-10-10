@@ -11,6 +11,7 @@ import {
   type DraftWritten,
   type UnitStatus,
 } from '@wizzn/shared'
+import type { StockImageClient } from '../providers/stock-images/types.js'
 import type { ImageClient } from '../providers/image.js'
 import type { LlmClient } from '../providers/llm.js'
 import { extFor, type MediaStore } from '../providers/media-store.js'
@@ -28,7 +29,8 @@ import {
   sourcePickPrompt,
   type ResearchedSource,
 } from './prompts.js'
-import type { PipelineStore, PipelineUnit } from './store.js'
+import { resolveImage, type ImageSlot, type ResolvedImage } from './images.js'
+import type { NewAsset, PipelineStore, PipelineUnit } from './store.js'
 
 export interface PipelineDeps {
   store: PipelineStore
@@ -38,6 +40,9 @@ export interface PipelineDeps {
   tts: TtsClient
   images: ImageClient
   media: MediaStore
+  stock: StockImageClient | null
+  stockConfig: { minEdgePx: number; maxBytes: number }
+  fetchFn?: typeof fetch
   enqueue(queue: QueueName, unitId: string): Promise<void>
   transcode?: (wav: Buffer) => Promise<Buffer | null>
 }
@@ -113,9 +118,9 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
     const sources = (await deps.store.getSources(unit.id)).map(({ url, title, publisher }) => ({ url, title, publisher }))
     if (unit.format === 'written') {
       const draft = draftWrittenSchema.parse(current?.contentJson)
-      const prompts = draft.slides.map((s) => s.imagePrompt).filter((p): p is string => Boolean(p))
-      const imagePaths = await Promise.all(prompts.map((p) => storeImage(unit.id, p, deps)))
-      const assets = await deps.store.replaceAssets(unit.id, imagePaths.map((path) => ({ kind: 'image', path })))
+      const slots = draft.slides.flatMap((s) => (s.imagePrompt ? [{ prompt: s.imagePrompt, query: s.imageQuery }] : []))
+      const resolved = await resolveSlots(unit.id, slots, deps)
+      const assets = await deps.store.replaceAssets(unit.id, resolved.map(toImageAsset))
       let next = 0
       const slides = draft.slides.map(({ title, body, imagePrompt }) => ({
         title,
@@ -129,10 +134,10 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
     const speech = await deps.tts.synthesize(draft.script)
     const mp3 = await (deps.transcode ?? wavToMp3)(speech.audio)
     const audioPath = mp3 ? await deps.media.put(unit.id, mp3, 'mp3') : await deps.media.put(unit.id, speech.audio, extFor(speech.contentType))
-    const imagePaths = await Promise.all(draft.images.map((i) => storeImage(unit.id, i.prompt, deps)))
+    const resolved = await resolveSlots(unit.id, draft.images, deps)
     const assets = await deps.store.replaceAssets(unit.id, [
       { kind: 'audio', path: audioPath, durationSec: speech.durationSec },
-      ...imagePaths.map((path) => ({ kind: 'image' as const, path })),
+      ...resolved.map(toImageAsset),
     ])
     const [audio, ...imgs] = assets
     if (!audio) throw new Error('Audio asset missing')
@@ -151,9 +156,25 @@ const WORK: Record<StepName, (unit: PipelineUnit, deps: PipelineDeps) => Promise
   },
 }
 
-async function storeImage(unitId: string, prompt: string, { images, media }: PipelineDeps): Promise<string> {
-  const img = await images.generate(prompt)
-  return media.put(unitId, img.data, extFor(img.contentType))
+/** Sequential on purpose: slots of one unit share an exclude set so they never get the same stock image. */
+async function resolveSlots(unitId: string, slots: ImageSlot[], deps: PipelineDeps): Promise<(ResolvedImage & { prompt: string })[]> {
+  const exclude = new Set<string>()
+  const imageDeps = {
+    stock: deps.stock,
+    images: deps.images,
+    media: deps.media,
+    llm: deps.llm,
+    fetchFn: deps.fetchFn,
+    ...deps.stockConfig,
+    log: (m: string) => console.warn(`[media] ${unitId}: ${m}`),
+  }
+  const out: (ResolvedImage & { prompt: string })[] = []
+  for (const slot of slots) out.push({ ...(await resolveImage(unitId, slot, exclude, imageDeps)), prompt: slot.prompt })
+  return out
+}
+
+function toImageAsset(r: ResolvedImage & { prompt: string }): NewAsset {
+  return { kind: 'image', path: r.path, origin: r.origin, credit: r.credit, stockQuery: r.stockQuery, prompt: r.prompt }
 }
 
 function draftText(format: PipelineUnit['format'], json: unknown): string {

@@ -1,7 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ZodType } from 'zod'
 import { audioUnitSchema, writtenUnitSchema } from '@wizzn/shared'
 import { runStep, type PipelineDeps } from '../../src/pipeline/steps.js'
+import { PROMPT_VERSION, draftWrittenPrompt } from '../../src/pipeline/prompts.js'
+import type { StockCandidate, StockImageClient } from '../../src/providers/stock-images/types.js'
 import { createPlaceholderImages } from '../../src/providers/image.js'
 import { createSilentTts } from '../../src/providers/tts.js'
 import type { ChatMessage, LlmClient } from '../../src/providers/llm.js'
@@ -10,16 +12,17 @@ import { FakeStore } from './fake-store.js'
 const words = (n: number) => Array(n).fill('Geld').join(' ')
 
 /** Answers by recognising which prompt it got. */
-function scriptedLlm(overrides: { claims?: { text: string; sourceIndex: number | null }[] } = {}): LlmClient {
+function scriptedLlm(overrides: { claims?: { text: string; sourceIndex: number | null }[]; slides?: unknown[] } = {}): LlmClient {
   return {
     model: 'fake',
     async chatJson<T>(messages: ChatMessage[], schema: ZodType<T>): Promise<T> {
       const prompt = messages.map((m) => m.content).join('\n')
       let answer: unknown
-      if (prompt.includes('"picks"')) answer = { picks: [{ index: 0, publisher: 'Verbraucherzentrale' }, { index: 1, publisher: 'BaFin' }] }
+      if (prompt.includes('Gesuchtes Motiv')) answer = { index: 0 }
+      else if (prompt.includes('"picks"')) answer = { picks: [{ index: 0, publisher: 'Verbraucherzentrale' }, { index: 1, publisher: 'BaFin' }] }
       else if (prompt.includes('Sprechskript')) answer = { title: 'Budget mit System', script: words(500), images: [{ prompt: 'Sparschwein', atFraction: 0.1 }, { prompt: 'Kuchendiagramm', atFraction: 0.6 }] }
       else if (prompt.includes('3–5 Slides'))
-        answer = { title: 'Die 50/30/20-Regel', slides: [{ title: 'A', body: 'eins', imagePrompt: 'Sparschwein' }, { title: 'B', body: 'zwei' }, { title: 'C', body: 'drei', imagePrompt: 'Waage' }] }
+        answer = { title: 'Die 50/30/20-Regel', slides: overrides.slides ?? [{ title: 'A', body: 'eins', imagePrompt: 'Sparschwein' }, { title: 'B', body: 'zwei' }, { title: 'C', body: 'drei', imagePrompt: 'Waage' }] }
       else answer = { claims: overrides.claims ?? [{ text: '50 % für Fixkosten', sourceIndex: 0 }], issues: [] }
       return schema.parse(answer)
     },
@@ -47,6 +50,85 @@ function deps(store: FakeStore, over: Partial<PipelineDeps> = {}): PipelineDeps 
 async function runAll(id: string, d: PipelineDeps) {
   for (const step of ['research', 'draft', 'check', 'media'] as const) await runStep(step, id, d)
 }
+
+function cand(id: string): StockCandidate {
+  return {
+    provider: 'openverse',
+    providerId: id,
+    title: `Bild ${id}`,
+    tags: [],
+    imageUrl: `https://img.test/${id}.jpg`,
+    width: 1200,
+    height: 900,
+    mime: 'image/jpeg',
+    credit: { title: `Bild ${id}`, creator: 'Anna', creatorUrl: null, license: 'by', licenseVersion: '4.0', licenseUrl: 'https://cc/by/4.0', sourceUrl: `https://src/${id}`, provider: 'openverse', providerId: id },
+  }
+}
+
+const stockDeps = (search: StockImageClient['search']): Partial<PipelineDeps> => ({
+  stock: { name: 'fake', search },
+  stockConfig: { minEdgePx: 800, maxBytes: 5_000_000 },
+  fetchFn: (async (url: string | URL | Request) => new Response(Buffer.from(`b:${String(url)}`), { headers: { 'content-type': 'image/jpeg' } })) as typeof fetch,
+})
+
+const threeSlides = [1, 2, 3].map((n) => ({ title: `S${n}`, body: 'text', imagePrompt: `Motiv ${n}`, imageQuery: `query ${n}` }))
+
+describe('media step stock images', () => {
+  it('uses distinct stock images for slides that hit the same top result', async () => {
+    const store = new FakeStore()
+    store.add('s1', 'written')
+    const d = deps(store, {
+      llm: scriptedLlm({ slides: threeSlides }),
+      ...stockDeps(async () => [cand('top'), cand('x'), cand('y')]),
+    })
+    await runAll('s1', d)
+    const assets = store.assets.get('s1')!
+    expect(assets).toHaveLength(3)
+    expect(assets.every((a) => a.origin === 'stock')).toBe(true)
+    expect(new Set(assets.map((a) => a.credit?.providerId)).size).toBe(3)
+    expect(assets.map((a) => a.stockQuery)).toEqual(['query 1', 'query 2', 'query 3'])
+    expect(assets.map((a) => a.prompt)).toEqual(['Motiv 1', 'Motiv 2', 'Motiv 3'])
+    const content = writtenUnitSchema.parse(store.units.get('s1')!.contentJson)
+    expect(content.slides.map((s) => s.imageId)).toEqual(assets.map((a) => a.id))
+  })
+
+  it('generates images for an audio unit when stock is disabled and keeps the audio asset', async () => {
+    const store = new FakeStore()
+    store.add('a2', 'audio')
+    await runAll('a2', deps(store))
+    const assets = store.assets.get('a2')!
+    expect(assets[0]).toMatchObject({ kind: 'audio' })
+    const imgs = assets.slice(1)
+    expect(imgs).toHaveLength(2)
+    expect(imgs.every((a) => a.origin === 'generated' && !a.credit)).toBe(true)
+  })
+
+  it('falls back to a generated image when one stock search throws', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const store = new FakeStore()
+    store.add('s2', 'written')
+    const d = deps(store, {
+      llm: scriptedLlm({ slides: threeSlides }),
+      ...stockDeps(async (q) => {
+        if (q === 'query 2') throw new Error('boom')
+        return [cand(q.replace(' ', '-'))]
+      }),
+    })
+    await runAll('s2', d)
+    expect(store.units.get('s2')!.status).toBe('in_review')
+    expect(store.assets.get('s2')!.map((a) => a.origin)).toEqual(['stock', 'generated', 'stock'])
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('query 2'))
+    warn.mockRestore()
+  })
+})
+
+describe('draft prompts', () => {
+  it('asks for imageQuery and has the new prompt version', () => {
+    const text = draftWrittenPrompt({ topic: 'Geld', format: 'written' } as never, []).map((m) => m.content).join('\n')
+    expect(text).toContain('imageQuery')
+    expect(PROMPT_VERSION).toBe('2026-10-10.1')
+  })
+})
 
 describe('pipeline', () => {
   it('takes a written unit from queued to in_review with valid content', async () => {
