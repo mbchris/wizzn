@@ -1,7 +1,8 @@
 import { and, desc, eq, type SQL } from 'drizzle-orm'
-import { canDelete, canTransition, unitContentSchema, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
+import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, unitContentSchema, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import type { Db } from './db/client.js'
 import { completionEvent, contentBrief, feedImpression, unit } from './db/schema/index.js'
+import { claimResume, isUnitStuck, stillStuck, stuckIds } from './pipeline/recover.js'
 import type { AdminActionResult, AdminRepo } from './types.js'
 
 type UnitRow = NonNullable<Awaited<ReturnType<typeof loadUnit>>>
@@ -19,7 +20,7 @@ function loadUnit(db: Db, id: string) {
   })
 }
 
-function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'failureReason' | 'updatedAt' | 'field' | 'brief' | 'checkReport'>): UnitSummaryDto {
+function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'failureReason' | 'updatedAt' | 'field' | 'brief' | 'checkReport'>, stuck: boolean): UnitSummaryDto {
   return {
     id: row.id,
     title: row.title,
@@ -30,18 +31,21 @@ function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'fail
     checkPassed: row.checkReport?.passed ?? null,
     failureReason: row.failureReason,
     updatedAt: row.updatedAt.toISOString(),
+    stuck,
   }
 }
 
 export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): AdminRepo {
   async function move(id: string, to: UnitStatus, extra: Partial<typeof unit.$inferInsert> = {}): Promise<AdminActionResult> {
-    const row = await db.query.unit.findFirst({ where: eq(unit.id, id), columns: { status: true } })
+    const row = await db.query.unit.findFirst({ where: eq(unit.id, id), columns: { id: true, status: true, updatedAt: true } })
     if (!row) return 'not_found'
-    if (!canTransition(row.status, to)) return 'invalid_state'
+    // A stuck unit lost its job, so admins may take it out of the pipeline (regenerate or reject)
+    const takeOver = !canTransition(row.status, to) && (to === 'queued' || to === 'rejected') && (await isUnitStuck(db, row))
+    if (!canTransition(row.status, to) && !takeOver) return 'invalid_state'
     const updated = await db
       .update(unit)
       .set({ status: to, updatedAt: new Date(), ...extra })
-      .where(and(eq(unit.id, id), eq(unit.status, row.status)))
+      .where(takeOver ? stillStuck(id, row.status) : and(eq(unit.id, id), eq(unit.status, row.status)))
       .returning({ id: unit.id })
     return updated.length ? 'ok' : 'invalid_state'
   }
@@ -76,14 +80,15 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
         orderBy: [desc(unit.updatedAt)],
         limit: 200,
       })
-      return rows.map(summary)
+      const stuck = await stuckIds(db, rows)
+      return rows.map((r) => summary(r, stuck.has(r.id)))
     },
 
     async getUnit(id): Promise<UnitDetailDto | null> {
       const row = await loadUnit(db, id)
       if (!row) return null
       return {
-        ...summary(row),
+        ...summary(row, await isUnitStuck(db, row)),
         contentJson: row.contentJson,
         promptVersion: row.promptVersion,
         model: row.model,
@@ -94,8 +99,16 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
     },
 
     async editUnit(id, edit) {
-      const row = await db.query.unit.findFirst({ where: eq(unit.id, id), columns: { status: true } })
+      const row = await db.query.unit.findFirst({ where: eq(unit.id, id), columns: { id: true, status: true, format: true, updatedAt: true } })
       if (!row) return 'not_found'
+      if (row.status === 'drafting' && (await isUnitStuck(db, row))) {
+        // The edited draft is what "Fortsetzen" checks and renders, so it must be complete
+        const schema = row.format === 'written' ? draftWrittenSchema : draftAudioSchema
+        if (!schema.safeParse(edit.contentJson).success) return 'invalid_content'
+        // updatedAt stays untouched: the unit must remain stuck so it can be resumed afterwards
+        const saved = await db.update(unit).set({ title: edit.title, contentJson: edit.contentJson }).where(stillStuck(id, 'drafting')).returning({ id: unit.id })
+        return saved.length ? 'ok' : 'invalid_state'
+      }
       if (row.status !== 'in_review') return 'invalid_state'
       if (!unitContentSchema.safeParse(edit.contentJson).success) return 'invalid_content'
       await db.update(unit).set({ title: edit.title, contentJson: edit.contentJson, updatedAt: new Date() }).where(eq(unit.id, id))
@@ -117,9 +130,9 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
 
     async deleteUnit(id) {
       return db.transaction(async (tx): Promise<AdminActionResult> => {
-        const row = await tx.query.unit.findFirst({ where: eq(unit.id, id), columns: { status: true } })
+        const row = await tx.query.unit.findFirst({ where: eq(unit.id, id), columns: { id: true, status: true, updatedAt: true } })
         if (!row) return 'not_found'
-        if (!canDelete(row.status)) return 'invalid_state'
+        if (!canDelete(row.status, await isUnitStuck(db, row))) return 'invalid_state'
         // Completions feed XP/streaks and impressions the feed history: never drop units users have seen
         const [done] = await tx.select({ id: completionEvent.unitId }).from(completionEvent).where(eq(completionEvent.unitId, id)).limit(1)
         const [served] = await tx.select({ id: feedImpression.unitId }).from(feedImpression).where(eq(feedImpression.unitId, id)).limit(1)
@@ -129,6 +142,8 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
         return deleted.length ? 'ok' : 'invalid_state'
       })
     },
+
+    resume: (id) => claimResume(db, id),
   }
 }
 

@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { UNIT_STATUSES, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
-import { STATUS_COLOR, STATUS_LABEL } from 'src/status'
+import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -47,10 +47,16 @@ watch(status, () => {
 
 const SKIP_LABEL: Record<BulkSkipReason, string> = {
   not_found: 'nicht gefunden',
-  invalid_state: 'in Bearbeitung',
+  invalid_state: 'Status passt nicht',
   has_history: 'hat Nutzerverlauf',
 }
 const ACTION_TEXT: Record<BulkActionInput['action'], { title: string; message: (n: number) => string; done: string; color: string }> = {
+  resume: {
+    title: 'Fortsetzen',
+    message: (n) => `${n} Wissenshappen beim unterbrochenen Schritt fortsetzen? Nur hängende Einträge werden fortgesetzt.`,
+    done: 'fortgesetzt',
+    color: 'primary',
+  },
   regenerate: {
     title: 'Neu generieren',
     message: (n) => `${n} Wissenshappen mit dem aktuellen Auftrag und den aktuellen Prompts neu erstellen? Veröffentlichte werden bis zur erneuten Freigabe aus dem Feed genommen.`,
@@ -116,6 +122,7 @@ onUnmounted(() => clearInterval(timer))
       <div class="row items-center q-gutter-sm">
         <div class="text-weight-medium">{{ selected.length }} ausgewählt</div>
         <q-space />
+        <q-btn v-if="selected.some((u) => u.stuck)" flat icon="play_arrow" label="Fortsetzen" :disable="busy" @click="confirmBulk('resume')" />
         <q-btn flat icon="replay" label="Neu generieren" :disable="busy" @click="confirmBulk('regenerate')" />
         <q-btn flat color="negative" icon="delete" label="Löschen" :disable="busy" @click="confirmBulk('delete')" />
         <q-btn flat round dense icon="close" :disable="busy" @click="selected = []"><q-tooltip>Auswahl aufheben</q-tooltip></q-btn>
@@ -138,7 +145,10 @@ onUnmounted(() => clearInterval(timer))
         <div @click.stop><q-checkbox v-model="scope.selected" dense /></div>
       </template>
       <template #body-cell-status="props">
-        <q-td :props="props"><q-badge :color="STATUS_COLOR[props.row.status as UnitStatus]" :label="STATUS_LABEL[props.row.status as UnitStatus]" /></q-td>
+        <q-td :props="props">
+          <q-badge :color="STATUS_COLOR[props.row.status as UnitStatus]" :label="STATUS_LABEL[props.row.status as UnitStatus]" />
+          <div v-if="props.row.stuck" class="text-caption text-deep-orange">{{ stuckLabel(props.row.updatedAt) }}</div>
+        </q-td>
       </template>
       <template #body-cell-title="props">
         <q-td :props="props">

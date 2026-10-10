@@ -16,6 +16,12 @@ pnpm dev:worker             # job worker
 pnpm test
 ```
 
+## Seed data & media
+- `pnpm db:seed` — fields + themes from `packages/shared/src/fields.ts` (`FIELD_SEEDS`). Idempotent; also runs on container start.
+- `pnpm db:seed:samples` — dev-only sample units from `packages/api/src/db/samples/<field>.json` (5 written + 5 audio per field). Needs `db:seed` first; skips existing samples. `scripts/dev.sh` runs both.
+- Generated images/audio → `packages/api/media-data/<unitId>/<hash>.<ext>` (`MEDIA_DIR`, relative to `packages/api`; `MEDIA_DRIVER=s3` for S3). Served in dev by nginx at http://localhost:8081 (`docker-compose.dev.yml`).
+- Full reset: empty the DB **and** `packages/api/media-data/`.
+
 ## Content pipeline (local)
 ```bash
 ollama serve & ollama pull qwen3:8b

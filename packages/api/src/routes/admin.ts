@@ -1,6 +1,6 @@
 import { Hono, type Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { briefInputSchema, bulkActionSchema, rejectSchema, type BulkResultDto, replaceImageSchema, unitEditSchema, unitListQuerySchema } from '@wizzn/shared'
+import { briefBatchSchema, briefInputSchema, bulkActionSchema, type BriefBatchResultDto, rejectSchema, type BulkResultDto, replaceImageSchema, unitEditSchema, unitListQuerySchema } from '@wizzn/shared'
 import { z } from 'zod'
 import { requireAdmin } from '../middleware/require-admin.js'
 import type { ImageReplacer } from '../pipeline/replace-image.js'
@@ -24,6 +24,17 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
       await Promise.all(created.unitIds.map((id) => queue.enqueueResearch(id)))
       return c.json(created, 201)
     })
+    .post('/briefs/batch', zValidator('json', briefBatchSchema), async (c) => {
+      // Whole body is validated up front (all-or-nothing); briefs are then created in file order
+      const email = c.get('user').email
+      const out: BriefBatchResultDto = { briefs: [] }
+      for (const brief of c.req.valid('json').briefs) {
+        const created = await repo.createBrief(brief, email)
+        await Promise.all(created.unitIds.map((id) => queue.enqueueResearch(id)))
+        out.briefs.push(created)
+      }
+      return c.json(out, 201)
+    })
     .get('/units', zValidator('query', unitListQuerySchema), async (c) => c.json(await repo.listUnits(c.req.valid('query'))))
     .get('/units/:id', idParam, async (c) => {
       const unit = await repo.getUnit(c.req.valid('param').id)
@@ -42,14 +53,29 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
       if (result === 'ok') await queue.enqueueResearch(id)
       return respond(c, result)
     })
+    .post('/units/:id/resume', idParam, async (c) => {
+      const id = c.req.valid('param').id
+      const claim = await repo.resume(id)
+      if (claim.result === 'ok') await queue.enqueue(claim.queue, id)
+      return respond(c, claim.result)
+    })
     .post('/units/bulk', zValidator('json', bulkActionSchema), async (c) => {
       const { action, ids } = c.req.valid('json')
       const out: BulkResultDto = { done: [], skipped: [] }
       // Sequential: each unit uses its own compare-and-set, and enqueueing stays in order
       for (const id of new Set(ids)) {
-        const result = action === 'delete' ? await repo.deleteUnit(id) : await repo.requeue(id)
+        let result: AdminActionResult
+        if (action === 'resume') {
+          const claim = await repo.resume(id)
+          if (claim.result === 'ok') await queue.enqueue(claim.queue, id)
+          result = claim.result
+        } else if (action === 'delete') {
+          result = await repo.deleteUnit(id)
+        } else {
+          result = await repo.requeue(id)
+          if (result === 'ok') await queue.enqueueResearch(id)
+        }
         if (result === 'ok') {
-          if (action === 'regenerate') await queue.enqueueResearch(id)
           out.done.push(id)
         } else {
           out.skipped.push({ id, reason: result === 'invalid_content' ? 'invalid_state' : result })

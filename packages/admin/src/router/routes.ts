@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'units', component: () => import('pages/UnitsPage.vue') },
       { path: 'units/:id', component: () => import('pages/UnitDetailPage.vue'), props: true },
       { path: 'briefs/new', component: () => import('pages/NewBriefPage.vue') },
+      { path: 'briefs/import', component: () => import('pages/BatchImportPage.vue') },
     ],
   },
   { path: '/:catchAll(.*)*', redirect: '/units' },

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "field": "finance",
+      "theme": "budget",
+      "topic": "Warum ein Notgroschen drei Monatsgehälter haben sollte",
+      "context": "Zielgruppe: Berufseinsteiger 22–30 ohne Rücklagen. Blickwinkel: Der Notgroschen ist keine Geldanlage, sondern eine Versicherung gegen teure Kredite. Kernfakten aus offiziellen Quellen (Verbraucherzentrale, Bundesbank) belegen. Vermeiden: Produktempfehlungen, konkrete Banken. Bevorzugte Quellen: verbraucherzentrale.de, bundesbank.de.",
+      "format": "both",
+      "style": null,
+      "storyArc": "overcoming_the_monster",
+      "count": 1
+    },
+    {
+      "field": "sports",
+      "theme": "routine",
+      "topic": "Warum Mini-Workouts von zwei Minuten eine Gewohnheit eher festigen als lange Einheiten",
+      "context": "Zielgruppe: Sporteinsteiger mit wenig Zeit. Blickwinkel: Gewohnheitsbildung vor Trainingsleistung. Belege aus der Gewohnheitsforschung (z. B. Lally et al. 2010, European Journal of Social Psychology). Vermeiden: Versprechen zum Abnehmen.",
+      "format": "written",
+      "style": "friendly",
+      "storyArc": "rebirth",
+      "count": 2
+    }
+  ]
+}

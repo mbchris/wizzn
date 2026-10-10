@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canDelete, canTransition } from '../src/unit-status.js'
+import { STUCK_AFTER_MS, canDelete, canTransition, isStuck } from '../src/unit-status.js'
 import { FIELD_SEEDS } from '../src/fields.js'
 
 describe('canTransition', () => {
@@ -26,6 +26,21 @@ describe('canDelete', () => {
   })
   it('blocks units a worker is processing', () => {
     for (const s of ['researching', 'drafting', 'checking', 'rendering_media'] as const) expect(canDelete(s)).toBe(false)
+  })
+  it('allows stuck units', () => expect(canDelete('drafting', true)).toBe(true))
+})
+
+describe('isStuck', () => {
+  const now = Date.parse('2026-10-10T12:00:00Z')
+  const ago = (ms: number) => new Date(now - ms).toISOString()
+  it('flags working units older than the job expiry', () => {
+    expect(isStuck('drafting', ago(STUCK_AFTER_MS + 1), now)).toBe(true)
+    expect(isStuck('rendering_media', ago(STUCK_AFTER_MS + 1), now)).toBe(true)
+  })
+  it('ignores fresh working units and idle statuses', () => {
+    expect(isStuck('drafting', ago(60_000), now)).toBe(false)
+    expect(isStuck('queued', ago(STUCK_AFTER_MS * 10), now)).toBe(false)
+    expect(isStuck('in_review', ago(STUCK_AFTER_MS * 10), now)).toBe(false)
   })
 })
 

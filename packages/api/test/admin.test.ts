@@ -11,6 +11,7 @@ const UNIT = '7f1c2a3e-1b2c-4d5e-8f90-123456789abc'
 
 function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}, images?: ImageReplacer) {
   const enqueued: string[] = []
+  const jobs: [string, string][] = []
   const repo: AdminRepo = {
     createBrief: async (input) => ({ briefId: 'b1', unitIds: Array.from({ length: input.count }, (_, i) => `u${i}`) }),
     listUnits: async () => [],
@@ -20,15 +21,16 @@ function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}, im
     reject: async () => 'ok',
     requeue: async () => 'ok',
     deleteUnit: async () => 'ok',
+    resume: async () => ({ result: 'ok', queue: 'unit.check' }),
     ...overrides,
   }
   const app = createApp({
     auth: fakeAuth(user),
     repos: fakeRepos(),
     corsOrigins: [],
-    admin: { emails: ['chris@wizzn.app'], repo, queue: { enqueueResearch: async (id) => void enqueued.push(id) }, ...(images ? { images } : {}) },
+    admin: { emails: ['chris@wizzn.app'], repo, queue: { enqueueResearch: async (id) => void enqueued.push(id), enqueue: async (q, id) => void jobs.push([q, id]) }, ...(images ? { images } : {}) },
   })
-  return { app, enqueued }
+  return { app, enqueued, jobs }
 }
 
 describe('/api/admin', () => {
@@ -46,6 +48,21 @@ describe('/api/admin', () => {
     const res = await app.request('/api/admin/briefs', { method: 'POST', headers, body: JSON.stringify({ fieldId: FIELD, topic: 'Notgroschen', format: 'written', count: 3 }) })
     expect(res.status).toBe(201)
     expect(enqueued).toEqual(['u0', 'u1', 'u2'])
+  })
+  it('creates a batch of briefs and enqueues all units', async () => {
+    const { app, enqueued } = setup()
+    const brief = { fieldId: FIELD, topic: 'Notgroschen', format: 'written', count: 2 }
+    const res = await app.request('/api/admin/briefs/batch', { method: 'POST', headers, body: JSON.stringify({ briefs: [brief, { ...brief, format: 'audio', count: 1 }] }) })
+    expect(res.status).toBe(201)
+    expect(((await res.json()) as { briefs: unknown[] }).briefs).toHaveLength(2)
+    expect(enqueued).toEqual(['u0', 'u1', 'u0'])
+  })
+  it('rejects the whole batch if one brief is invalid, creating nothing', async () => {
+    const { app, enqueued } = setup()
+    const ok = { fieldId: FIELD, topic: 'Notgroschen', format: 'written' }
+    const res = await app.request('/api/admin/briefs/batch', { method: 'POST', headers, body: JSON.stringify({ briefs: [ok, { ...ok, topic: 'x' }] }) })
+    expect(res.status).toBe(400)
+    expect(enqueued).toEqual([])
   })
   it('rejects a brief with count > 10', async () => {
     const res = await setup().app.request('/api/admin/briefs', { method: 'POST', headers, body: JSON.stringify({ fieldId: FIELD, topic: 'Notgroschen', format: 'written', count: 11 }) })
@@ -66,6 +83,20 @@ describe('/api/admin', () => {
     expect(blocked.enqueued).toEqual([])
   })
 
+  describe('POST /units/:id/resume', () => {
+    it('enqueues the step the repo resumes at', async () => {
+      const { app, jobs } = setup(admin, { resume: async () => ({ result: 'ok', queue: 'unit.media' }) })
+      const res = await app.request(`/api/admin/units/${UNIT}/resume`, { method: 'POST', headers })
+      expect(res.status).toBe(200)
+      expect(jobs).toEqual([['unit.media', UNIT]])
+    })
+    it('returns 409 and enqueues nothing for units that are not stuck', async () => {
+      const { app, jobs } = setup(admin, { resume: async () => ({ result: 'invalid_state' }) })
+      expect((await app.request(`/api/admin/units/${UNIT}/resume`, { method: 'POST', headers })).status).toBe(409)
+      expect(jobs).toEqual([])
+    })
+  })
+
   describe('POST /units/bulk', () => {
     const U2 = '9f1c2a3e-1b2c-4d5e-8f90-123456789abc'
     const bulk = (app: ReturnType<typeof setup>['app'], body: unknown) => app.request('/api/admin/units/bulk', { method: 'POST', headers, body: JSON.stringify(body) })
@@ -82,6 +113,13 @@ describe('/api/admin', () => {
       expect(res.status).toBe(200)
       expect(await res.json()).toEqual({ done: [UNIT], skipped: [{ id: U2, reason: 'invalid_state' }] })
       expect(enqueued).toEqual([UNIT])
+    })
+    it('resumes stuck units at their own step', async () => {
+      const { app, jobs, enqueued } = setup(admin, { resume: async (id) => (id === UNIT ? { result: 'ok', queue: 'unit.check' } : { result: 'invalid_state' }) })
+      const res = await bulk(app, { action: 'resume', ids: [UNIT, U2] })
+      expect(await res.json()).toEqual({ done: [UNIT], skipped: [{ id: U2, reason: 'invalid_state' }] })
+      expect(jobs).toEqual([['unit.check', UNIT]])
+      expect(enqueued).toEqual([])
     })
     it('deletes without enqueueing and reports units with user history', async () => {
       const deleted: string[] = []

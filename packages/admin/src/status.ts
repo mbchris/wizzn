@@ -23,3 +23,10 @@ export const STATUS_COLOR: Record<UnitStatus, string> = {
   rejected: 'grey-8',
   failed: 'negative',
 }
+
+/** Badge text for units whose pipeline job died (see STUCK_AFTER_MS) */
+export function stuckLabel(updatedAt: string): string {
+  const d = new Date(updatedAt)
+  const sameDay = d.toDateString() === new Date().toDateString()
+  return `hängt seit ${sameDay ? d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}`
+}

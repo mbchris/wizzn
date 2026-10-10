@@ -4,7 +4,7 @@ import { useQuasar } from 'quasar'
 import { formatLicense, type ReplaceImageMode, type UnitDetailDto } from '@wizzn/shared'
 import { api, ApiError, errorMessage, replaceImage } from 'src/api'
 import UnitPreview from 'components/UnitPreview.vue'
-import { STATUS_COLOR, STATUS_LABEL } from 'src/status'
+import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
 
 const props = defineProps<{ id: string }>()
 const $q = useQuasar()
@@ -15,7 +15,11 @@ const busy = ref(false)
 
 const swapping = ref<Record<string, boolean>>({})
 const images = computed(() => (unit.value?.assets ?? []).filter((a) => a.kind === 'image'))
-const editable = computed(() => unit.value?.status === 'in_review')
+const reviewable = computed(() => unit.value?.status === 'in_review')
+const stuck = computed(() => !!unit.value?.stuck)
+/** A stuck draft can be fixed by hand and then resumed (check → media → review) */
+const draftEditable = computed(() => stuck.value && unit.value?.status === 'drafting')
+const editable = computed(() => reviewable.value || draftEditable.value)
 /** Issue #4: source tiers and the derived trust level */
 const TIER_LABEL: Record<number, string> = { 1: 'Stufe 1 · kuratiert', 2: 'Stufe 2 · Wikipedia', 3: 'Stufe 3 · Studie', 4: 'Stufe 4 · Web' }
 const TIER_COLOR: Record<number, string> = { 1: 'positive', 2: 'primary', 3: 'teal', 4: 'orange' }
@@ -67,7 +71,8 @@ async function swap(assetId: string, mode: ReplaceImageMode): Promise<void> {
 const save = () => act('Gespeichert', () => api(`/api/admin/units/${props.id}`, { method: 'PUT', body: { title: title.value, contentJson: previewContent.value } }))
 const approve = () => act('Veröffentlicht', () => api(`/api/admin/units/${props.id}/approve`, { method: 'POST' }))
 const REGENERATABLE = ['in_review', 'failed', 'rejected', 'published'] as const
-const canRegenerate = computed(() => !!unit.value && (REGENERATABLE as readonly string[]).includes(unit.value.status))
+const canRegenerate = computed(() => !!unit.value && (stuck.value || (REGENERATABLE as readonly string[]).includes(unit.value.status)))
+const resume = () => act('Wird fortgesetzt', () => api(`/api/admin/units/${props.id}/resume`, { method: 'POST' }))
 const doRequeue = () => act('Neu in der Pipeline', () => api(`/api/admin/units/${props.id}/requeue`, { method: 'POST' }))
 function requeue(): void {
   if (unit.value?.status !== 'published') return void doRequeue()
@@ -97,12 +102,21 @@ onMounted(load)
         <div class="row items-center q-gutter-sm">
           <q-badge :color="STATUS_COLOR[unit.status]" :label="STATUS_LABEL[unit.status]" class="text-subtitle2" />
           <div class="text-caption text-grey-7">{{ unit.fieldSlug }} · {{ unit.format }} · {{ unit.model }} · Prompt {{ unit.promptVersion }}</div>
+          <q-badge v-if="stuck" color="deep-orange" outline :label="stuckLabel(unit.updatedAt)" />
           <q-space />
-          <q-btn color="positive" icon="done" label="Freigeben" :disable="!editable || busy" @click="approve" />
-          <q-btn color="negative" flat icon="block" label="Ablehnen" :disable="!editable || busy" @click="reject" />
+          <q-btn v-if="stuck" color="primary" icon="play_arrow" label="Fortsetzen" :disable="busy" @click="resume">
+            <q-tooltip>Den unterbrochenen Schritt erneut ausführen{{ draftEditable ? ' – ein vollständiger Entwurf (auch bearbeitet) wird geprüft und vertont/bebildert' : '' }}</q-tooltip>
+          </q-btn>
+          <q-btn color="positive" icon="done" label="Freigeben" :disable="!reviewable || busy" @click="approve" />
+          <q-btn color="negative" flat icon="block" label="Ablehnen" :disable="!(reviewable || stuck) || busy" @click="reject" />
           <q-btn flat icon="replay" label="Neu generieren" :disable="busy || !canRegenerate" @click="requeue" />
         </div>
         <q-banner v-if="unit.failureReason" class="bg-red-1 text-negative">{{ unit.failureReason }}</q-banner>
+        <q-banner v-if="stuck" class="bg-orange-1">
+          Der Pipeline-Job dieses Wissenshappens ist abgebrochen (z. B. Worker-Neustart). Der Worker setzt hängende Einträge
+          automatisch fort; du kannst ihn auch selbst fortsetzen, neu generieren oder ablehnen (Löschen über die Liste).
+          <template v-if="draftEditable"> Der Entwurf kann unten bearbeitet werden – speichern, dann „Fortsetzen“. Freigeben ist erst nach Prüfung und Medien möglich.</template>
+        </q-banner>
 
         <q-card v-if="unit.checkReport" flat bordered>
           <q-card-section class="row items-center">
@@ -128,7 +142,7 @@ onMounted(load)
           </q-list>
         </q-card>
 
-        <q-card v-if="editable && images.length" flat bordered>
+        <q-card v-if="reviewable && images.length" flat bordered>
           <q-card-section class="text-subtitle1">Bilder</q-card-section>
           <q-list separator>
             <q-item v-for="img in images" :key="img.id">
@@ -166,7 +180,7 @@ onMounted(load)
         <q-card flat bordered>
           <q-card-section class="q-gutter-sm">
             <q-input v-model="title" outlined dense label="Titel" :disable="!editable" />
-            <q-input v-model="json" outlined type="textarea" input-class="mono" rows="18" label="Inhalt (JSON)" :disable="!editable" :error="previewContent === null" error-message="Kein gültiges JSON" />
+            <q-input v-model="json" outlined type="textarea" input-class="mono" rows="18" :label="draftEditable ? 'Entwurf (JSON)' : 'Inhalt (JSON)'" :disable="!editable" :error="previewContent === null" error-message="Kein gültiges JSON" />
             <q-btn color="primary" icon="save" label="Speichern" :disable="!editable || busy || previewContent === null" @click="save" />
           </q-card-section>
         </q-card>

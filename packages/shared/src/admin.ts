@@ -19,7 +19,7 @@ export const briefInputSchema = z.object({
 export type BriefInput = z.infer<typeof briefInputSchema>
 
 export const bulkActionSchema = z.object({
-  action: z.enum(['regenerate', 'delete']),
+  action: z.enum(['regenerate', 'resume', 'delete']),
   ids: z.array(z.string().uuid()).min(1).max(200),
 })
 export type BulkActionInput = z.infer<typeof bulkActionSchema>
@@ -53,6 +53,8 @@ export interface UnitSummaryDto {
   checkPassed: boolean | null
   failureReason: string | null
   updatedAt: string
+  /** Working status older than STUCK_AFTER_MS: its job is gone, admins may resume/regenerate/edit it */
+  stuck: boolean
 }
 
 export interface UnitDetailDto extends UnitSummaryDto {

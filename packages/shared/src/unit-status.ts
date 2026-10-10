@@ -24,7 +24,21 @@ export function canTransition(from: UnitStatus, to: UnitStatus): boolean {
   return false
 }
 
-/** Units a pipeline worker is currently processing must not be deleted under its feet. */
-export function canDelete(status: UnitStatus): boolean {
-  return !['researching', 'drafting', 'checking', 'rendering_media'].includes(status)
+/** Statuses in which a pipeline worker owns the unit. */
+export const WORKING_STATUSES = ['researching', 'drafting', 'checking', 'rendering_media'] as const satisfies readonly UnitStatus[]
+export const isWorking = (status: UnitStatus): boolean => (WORKING_STATUSES as readonly UnitStatus[]).includes(status)
+
+/**
+ * Matches the pg-boss job expiry (15 min, retryLimit 0): a unit still "working" after this lost its job,
+ * typically because the worker restarted (tsx watch) mid-step. Such units are safe for admins to take over.
+ */
+export const STUCK_AFTER_MS = 15 * 60 * 1000
+
+export function isStuck(status: UnitStatus, updatedAt: Date | string, now: number = Date.now()): boolean {
+  return isWorking(status) && now - new Date(updatedAt).getTime() > STUCK_AFTER_MS
+}
+
+/** Units a pipeline worker is currently processing must not be deleted under its feet; stuck ones may. */
+export function canDelete(status: UnitStatus, stuck = false): boolean {
+  return !isWorking(status) || stuck
 }

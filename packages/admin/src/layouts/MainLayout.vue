@@ -17,6 +17,7 @@ async function signOut(): Promise<void> {
         <q-toolbar-title class="text-weight-bold">wizzn · Redaktion</q-toolbar-title>
         <q-btn flat to="/units" label="Wissenshappen" />
         <q-btn flat to="/briefs/new" icon="add" label="Neuer Auftrag" />
+        <q-btn flat to="/briefs/import" icon="upload_file" label="Batch-Import" />
         <q-btn flat round icon="logout" @click="signOut" />
       </q-toolbar>
     </q-header>

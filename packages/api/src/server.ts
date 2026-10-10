@@ -57,7 +57,10 @@ const app = createApp({ auth: authPort, repos: createRepos(db), corsOrigins: env
   admin: {
     emails: env.ADMIN_EMAILS,
     repo: createAdminRepo(db, media.publicUrl),
-    queue: { enqueueResearch: async (id) => void (await sendUnitJob(boss, QUEUES.research, id)) },
+    queue: {
+      enqueueResearch: async (id) => void (await sendUnitJob(boss, QUEUES.research, id)),
+      enqueue: async (queue, id) => void (await sendUnitJob(boss, queue, id)),
+    },
     images,
   },
   logRequests: env.NODE_ENV !== 'test' })

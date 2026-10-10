@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
-import type { EditorialStyle, FieldDto, StoryArc } from '@wizzn/shared'
+import type { BriefBatchResultDto, EditorialStyle, FieldDto, StoryArc } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
 
 const $q = useQuasar()
@@ -43,11 +43,13 @@ async function submit(): Promise<void> {
   if (!fieldId.value) return
   saving.value = true
   try {
-    const res = await api<{ unitIds: string[] }>('/api/admin/briefs', {
+    // briefInputSchema requires a format: one brief per format, so each variant yields slides and audio
+    const base = { fieldId: fieldId.value, themeId: themeId.value, topic: topic.value, context: context.value, style: style.value, storyArc: storyArc.value, count: count.value }
+    const res = await api<BriefBatchResultDto>('/api/admin/briefs/batch', {
       method: 'POST',
-      body: { fieldId: fieldId.value, themeId: themeId.value, topic: topic.value, context: context.value, style: style.value, storyArc: storyArc.value, count: count.value },
+      body: { briefs: [{ ...base, format: 'written' }, { ...base, format: 'audio' }] },
     })
-    $q.notify({ type: 'positive', message: `${res.unitIds.length} Wissenshappen in Arbeit` })
+    $q.notify({ type: 'positive', message: `${res.briefs.reduce((n, b) => n + b.unitIds.length, 0)} Wissenshappen in Arbeit` })
     await router.push('/units?status=')
   } catch (e) {
     $q.notify({ type: 'negative', message: errorMessage(e) })
