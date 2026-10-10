@@ -81,7 +81,7 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
         promptVersion: row.promptVersion,
         model: row.model,
         sources: row.sources.map(({ url, title, publisher }) => ({ url, title, publisher })),
-        assets: row.assets.map((a) => ({ id: a.id, kind: a.kind, url: mediaUrl(a.path), durationSec: a.durationSec })),
+        assets: row.assets.map((a) => ({ id: a.id, kind: a.kind, url: mediaUrl(a.path), durationSec: a.durationSec, origin: 'generated' as const, credit: null, stockQuery: null })),
         checkReport: (row.checkReport?.reportJson as CheckReport | undefined) ?? null,
       }
     },

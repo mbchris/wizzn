@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { UnitContent, UnitFormat } from './content.js'
+import type { ImageCredit, UnitContent, UnitFormat } from './content.js'
 import type { CompletionRewardsDto, DailyCapDto } from './gamification.js'
 
 export const FEED_PAGE_SIZE = 10
@@ -19,6 +19,8 @@ export interface FeedUnitDto {
   content: UnitContent
   /** asset id → public URL */
   media: Record<string, string>
+  /** asset id → credit; only stock images have an entry */
+  credits: Record<string, ImageCredit>
   /** true when the unit comes from a field the user did not select */
   discovery: boolean
 }

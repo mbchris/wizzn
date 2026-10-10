@@ -14,6 +14,36 @@ export const sourceSchema = z.object({
 })
 export type Source = z.infer<typeof sourceSchema>
 
+/** Only licenses that allow commercial reuse with at most attribution/share-alike (NC/ND are dropped). */
+export const STOCK_LICENSES = ['cc0', 'pdm', 'by', 'by-sa'] as const
+export type StockLicense = (typeof STOCK_LICENSES)[number]
+
+export const imageCreditSchema = z.object({
+  title: z.string(),
+  creator: z.string().nullable(),
+  creatorUrl: z.string().url().nullable(),
+  license: z.enum(STOCK_LICENSES),
+  licenseVersion: z.string().nullable(),
+  licenseUrl: z.string().url(),
+  sourceUrl: z.string().url(),
+  provider: z.string().min(1),
+  providerId: z.string().min(1),
+})
+export type ImageCredit = z.infer<typeof imageCreditSchema>
+
+const LICENSE_LABELS: Record<StockLicense, string> = {
+  cc0: 'CC0',
+  pdm: 'Gemeinfrei',
+  by: 'CC BY',
+  'by-sa': 'CC BY-SA',
+}
+
+export function formatLicense(c: Pick<ImageCredit, 'license' | 'licenseVersion'>): string {
+  const label = LICENSE_LABELS[c.license]
+  // Public domain marks carry no meaningful version
+  return c.licenseVersion && c.license !== 'pdm' ? `${label} ${c.licenseVersion}` : label
+}
+
 const wordCount = (s: string): number => s.trim().split(/\s+/).filter(Boolean).length
 
 // Spec: 3–5 slides, ≤ 60 words body each, ≥ 1 source

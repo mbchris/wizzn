@@ -79,6 +79,7 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
           field: { id: r.field.id, slug: r.field.slug, nameDe: r.field.nameDe, adviceDisclaimer: r.field.adviceDisclaimer },
           content: content.data,
           media,
+          credits: {},
         })
       }
       return out
