@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { ImageCredit } from '@wizzn/shared'
 import type { ImageDeps } from '../../src/pipeline/images.js'
+import { createStockChain } from '../../src/providers/stock-images/chain.js'
 import { createImageReplacer } from '../../src/pipeline/replace-image.js'
 import type { StockCandidate } from '../../src/providers/stock-images/types.js'
 import { FakeStore } from './fake-store.js'
@@ -15,7 +16,7 @@ function cand(id: string): StockCandidate {
   return { provider: 'openverse', providerId: id, title: `Bild ${id}`, tags: [], imageUrl: `https://img.test/${id}.jpg`, width: 1200, height: 900, mime: 'image/jpeg', credit: credit(id) }
 }
 
-function setup(candidates: StockCandidate[] = [], status: 'in_review' | 'published' = 'in_review') {
+function setup(candidates: StockCandidate[] = [], status: 'in_review' | 'published' = 'in_review', stock?: ImageDeps['stock']) {
   const store = new FakeStore()
   store.add('u1', 'written', status)
   store.add('u2', 'written', 'in_review')
@@ -32,7 +33,7 @@ function setup(candidates: StockCandidate[] = [], status: 'in_review' | 'publish
   const chatJson = vi.fn(async () => ({ index: 0 }) as never)
   let n = 0
   const image: ImageDeps = {
-    stock: { name: 'chain', search },
+    stock: stock ?? { name: 'chain', search },
     images: { generate },
     media: { put: async (prefix, _d, ext) => `${prefix}/new${++n}.${ext}`, publicUrl: (p) => p },
     llm: { model: 'fake', chatJson },
@@ -59,7 +60,7 @@ describe('createImageReplacer', () => {
   it('next-stock excludes unit keys, rejected and current key, skips the pick and records the old key', async () => {
     const { replacer, store, search, chatJson } = setup([cand('a'), cand('b'), cand('old'), cand('n')])
     const res = await replacer.replace('u1', 'u1-asset-0', 'next-stock')
-    expect(search).toHaveBeenCalledWith('Sparschwein')
+    expect(search).toHaveBeenCalledWith('Sparschwein', expect.objectContaining({ accept: expect.any(Function) }))
     expect(chatJson).not.toHaveBeenCalled()
     expect(res).toEqual({
       ok: true,
@@ -73,7 +74,7 @@ describe('createImageReplacer', () => {
     const { replacer, store, search } = setup([cand('n')])
     store.assets.get('u1')![1]!.stockQuery = null
     await replacer.replace('u1', 'u1-asset-1', 'next-stock')
-    expect(search).toHaveBeenCalledWith('Geldscheine')
+    expect(search).toHaveBeenCalledWith('Geldscheine', expect.anything())
   })
   it('next-stock with only excluded candidates → no_stock_candidate, nothing generated or stored', async () => {
     const { replacer, store, generate } = setup([cand('a'), cand('b'), cand('old')])
@@ -100,5 +101,27 @@ describe('createImageReplacer', () => {
     await replacer.replace('u1', 'u1-asset-0', 'generated')
     expect(generate).toHaveBeenLastCalledWith('Sparschwein')
     expect(await replacer.replace('u1', 'u1-asset-3', 'generated')).toEqual({ ok: false, error: 'not_found' })
+  })
+  it('next-stock matches openverse/<source> credits against openverse candidates', async () => {
+    const { replacer, store } = setup([cand('a'), cand('b'), cand('old'), cand('n')])
+    for (const a of store.assets.get('u1')!) if (a.credit) a.credit = { ...a.credit, provider: 'openverse/flickr' }
+    const res = await replacer.replace('u1', 'u1-asset-0', 'next-stock')
+    expect(res).toMatchObject({ ok: true, asset: { credit: { providerId: 'n' } } })
+    expect(store.assets.get('u1')![0]!.rejectedStockIds).toEqual(['openverse:old', 'openverse:a'])
+  })
+  it('next-stock falls through the chain when all first-provider results are excluded', async () => {
+    const commons = { ...cand('c1'), provider: 'commons' as const, credit: { ...credit('c1'), provider: 'commons' } }
+    const first = vi.fn(async () => [cand('a'), cand('b'), cand('old')])
+    const second = vi.fn(async () => [commons])
+    const chain = createStockChain([{ name: 'openverse', search: first }, { name: 'commons', search: second }])
+    const { replacer } = setup([], 'in_review', chain)
+    const res = await replacer.replace('u1', 'u1-asset-0', 'next-stock')
+    expect(second).toHaveBeenCalled()
+    expect(res).toMatchObject({ ok: true, asset: { credit: { providerId: 'c1', provider: 'commons' } } })
+  })
+  it('generated records the outgoing stock key as rejected', async () => {
+    const { replacer, store } = setup()
+    await replacer.replace('u1', 'u1-asset-0', 'generated')
+    expect(store.assets.get('u1')![0]!.rejectedStockIds).toEqual(['openverse:old', 'openverse:a'])
   })
 })

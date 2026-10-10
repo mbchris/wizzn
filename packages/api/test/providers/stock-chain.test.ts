@@ -59,4 +59,17 @@ describe('stock chain', () => {
     expect(await createStockChain([a, b], { timeoutMs: 20, log }).search('q')).toHaveLength(1)
     expect(log).toHaveBeenCalledTimes(1)
   })
+  it('moves to the next client when accept rejects every candidate', async () => {
+    const a = client('a', async () => [cand('1'), cand('2')])
+    const b = client('b', async () => [cand('3'), cand('4')])
+    const out = await createStockChain([a, b]).search('q', { accept: (c) => c.providerId !== '1' && c.providerId !== '2' })
+    expect(out.map((c) => c.providerId)).toEqual(['3', '4'])
+  })
+  it('keeps the first client result when at least one candidate is accepted', async () => {
+    const a = client('a', async () => [cand('1'), cand('2')])
+    const b = client('b', async () => [cand('3')])
+    const out = await createStockChain([a, b]).search('q', { accept: (c) => c.providerId === '2' })
+    expect(out.map((c) => c.providerId)).toEqual(['1', '2'])
+    expect(b.search).not.toHaveBeenCalled()
+  })
 })

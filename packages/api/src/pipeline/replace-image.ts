@@ -1,13 +1,12 @@
-import type { ImageCredit, ReplaceImageMode, UnitDetailDto } from '@wizzn/shared'
+import type { ReplaceImageMode, UnitDetailDto } from '@wizzn/shared'
 import { resolveImage, resolveStockImage, type ImageDeps, type ResolvedImage } from './images.js'
+import { creditStockKey as creditKey } from '../providers/stock-images/types.js'
 import type { PipelineStore } from './store.js'
 
 export type ReplaceImageResult =
   | { ok: true; asset: UnitDetailDto['assets'][number] }
   | { ok: false; error: 'not_found' | 'invalid_state' | 'no_stock_candidate' }
 
-/** Same format as stockKey(); credit.provider is a plain string in the shared schema */
-const creditKey = (c: ImageCredit) => `${c.provider}:${c.providerId}`
 
 export interface ImageReplacer {
   replace(unitId: string, assetId: string, mode: ReplaceImageMode): Promise<ReplaceImageResult>
@@ -34,12 +33,13 @@ export function createImageReplacer(deps: { store: PipelineStore; image: ImageDe
         const hit = await resolveStockImage(unitId, { prompt: asset.prompt ?? query, query }, exclude, image, { skipPick: true })
         if (!hit) return { ok: false, error: 'no_stock_candidate' }
         resolved = hit
-        if (currentKey) rejectedStockIds = [...asset.rejectedStockIds, currentKey]
       } else {
         const prompt = asset.prompt ?? asset.credit?.title ?? asset.stockQuery
         if (!prompt) return { ok: false, error: 'not_found' }
         resolved = await resolveImage(unitId, { prompt }, new Set(), image, { forceGenerated: true })
       }
+
+      if (currentKey) rejectedStockIds = [...asset.rejectedStockIds, currentKey]
 
       const { path, origin, credit, stockQuery } = resolved
       await store.updateAsset(assetId, { path, origin, credit, stockQuery, ...(rejectedStockIds ? { rejectedStockIds } : {}) })

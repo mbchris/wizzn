@@ -72,9 +72,8 @@ async function tryStock(
   const query = slot.query ?? slot.prompt
   let candidates: StockCandidate[]
   try {
-    candidates = (await stock.search(query)).filter(
-      (c) => Math.min(c.width, c.height) >= deps.minEdgePx && ALLOWED_MIMES.has(c.mime) && !exclude.has(stockKey(c)),
-    )
+    const accept = (c: StockCandidate) => Math.min(c.width, c.height) >= deps.minEdgePx && ALLOWED_MIMES.has(c.mime) && !exclude.has(stockKey(c))
+    candidates = (await stock.search(query, { accept })).filter(accept)
   } catch (err) {
     deps.log?.(`stock search failed for "${query}": ${(err as Error).message}`)
     return null

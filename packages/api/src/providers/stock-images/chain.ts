@@ -6,7 +6,8 @@ export interface StockChainOptions {
 }
 
 /**
- * Tries clients in order; the first non-empty result wins. Any error (including raw
+ * Tries clients in order; the first non-empty result wins (with `accept`,
+ * the first result containing at least one accepted candidate). Any error (including raw
  * TypeError/SyntaxError from adapters) or timeout is logged and the next client is tried.
  * Adapters take no AbortSignal, so the timeout is a race: a hung request is abandoned, not cancelled.
  */
@@ -23,7 +24,8 @@ export function createStockChain(clients: StockImageClient[], opts: StockChainOp
             timer = setTimeout(() => reject(new Error(`timeout after ${timeoutMs}ms`)), timeoutMs)
           })
           const found: StockCandidate[] = await Promise.race([client.search(query, searchOpts), timeout])
-          if (found.length > 0) return found
+          const accept = searchOpts?.accept
+          if (accept ? found.some(accept) : found.length > 0) return found
         } catch (err) {
           const status = err instanceof StockSearchError ? err.status : null
           const reason = err instanceof Error ? err.message : String(err)

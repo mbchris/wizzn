@@ -79,7 +79,7 @@ describe('resolveImage', () => {
     const t = setup({ candidates: cs, pick: { index: 1 } })
     const exclude = new Set<string>()
     const r = await resolveImage('u1', slot, exclude, t.deps)
-    expect(t.search).toHaveBeenCalledWith('apple table')
+    expect(t.search).toHaveBeenCalledWith('apple table', expect.anything())
     expect(t.stored[0]!.data.toString()).toBe('bytes:https://img.test/b.jpg')
     expect(t.stored[0]!.ext).toBe('jpg')
     expect(r).toEqual({ path: 'u1/f1.jpg', origin: 'stock', credit: cs[1]!.credit, stockQuery: 'apple table', key: 'openverse:b' })
@@ -89,7 +89,7 @@ describe('resolveImage', () => {
   it('searches with the prompt when query is missing', async () => {
     const t = setup({ candidates: [cand('a')] })
     const r = await resolveImage('u1', { prompt: 'Ein Apfel' }, new Set(), t.deps)
-    expect(t.search).toHaveBeenCalledWith('Ein Apfel')
+    expect(t.search).toHaveBeenCalledWith('Ein Apfel', expect.anything())
     expect(r.stockQuery).toBe('Ein Apfel')
   })
 
