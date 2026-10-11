@@ -2,6 +2,7 @@ import { serve } from '@hono/node-server'
 import { createAdminRepo } from './admin-repo.js'
 import { createApp } from './app.js'
 import { createFeedRepo } from './feed-repo.js'
+import { createKnowledgeRepo } from './knowledge-repo.js'
 import { createAuth } from './auth.js'
 import { createDb } from './db/client.js'
 import { loadEnv } from './env.js'
@@ -47,8 +48,10 @@ const authPort: AuthPort = {
   },
 }
 
+const knowledge = createKnowledgeRepo(db, media.publicUrl)
 const app = createApp({ auth: authPort, repos: createRepos(db), corsOrigins: env.CORS_ORIGINS,
   feed: createFeedRepo(db, media.publicUrl),
+  knowledge,
   progress: {
     repo: progress,
     freeDailyCap: env.FREE_DAILY_CAP,
@@ -57,7 +60,7 @@ const app = createApp({ auth: authPort, repos: createRepos(db), corsOrigins: env
   },
   admin: {
     emails: env.ADMIN_EMAILS,
-    repo: createAdminRepo(db, media.publicUrl),
+    repo: createAdminRepo(db, media.publicUrl, (id) => knowledge.linkUnit(id)),
     queue: {
       enqueueResearch: async (id) => void (await sendUnitJob(boss, QUEUES.research, id)),
       enqueue: async (queue, id) => void (await sendUnitJob(boss, queue, id)),

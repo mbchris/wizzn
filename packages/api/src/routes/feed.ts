@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
-import { FEED_PAGE_SIZE, completionInputSchema, dailyCap, isCompletion, orderFeed, type CompletionResult, type FeedResponse } from '@wizzn/shared'
+import { FEED_PAGE_SIZE, buildAffinity, completionInputSchema, dailyCap, isCompletion, orderFeed, rankCandidates, type CompletionResult, type FeedResponse } from '@wizzn/shared'
 import type { FeedRepo } from '../feed-repo.js'
 import { localDate } from '../local-date.js'
 import { requireUser } from '../middleware/require-user.js'
@@ -20,9 +20,11 @@ export const feedRoutes = (auth: AuthPort, repo: FeedRepo, progress: ProgressRep
       const cap = dailyCap(await progress.countDoneOn(userId, localDate(at, prefs.timezone)), premium.active, freeDailyCap)
       // Spec §6.4: free users get the paywall after the cap; no units are served (or marked as seen) until tomorrow
       if (cap.reached) return c.json({ units: [], cap } satisfies FeedResponse)
-      const candidates = await repo.getCandidates(userId, prefs.themeIds, prefs.formats)
-      const picked = orderFeed(candidates, prefs.fieldIds, c.req.valid('query').limit)
-      const units = await repo.loadUnits(picked.map((p) => p.id))
+      const [candidates, signals] = await Promise.all([repo.getCandidates(userId, prefs.themeIds, prefs.formats), repo.getSignals(userId)])
+      // Knowledge stream: level gating + more/less affinity before the round-robin
+      const ranked = rankCandidates(candidates, buildAffinity(signals, at), prefs.themeIds)
+      const picked = orderFeed(ranked, prefs.fieldIds, c.req.valid('query').limit)
+      const units = await repo.loadUnits(picked.map((p) => p.id), userId)
       const body: FeedResponse = {
         units: picked.flatMap((p) => {
           const u = units.get(p.id)

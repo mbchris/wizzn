@@ -6,6 +6,8 @@ import { feedRoutes } from './routes/feed.js'
 import { fieldRoutes } from './routes/fields.js'
 import type { FeedRepo } from './feed-repo.js'
 import { healthRoutes } from './routes/health.js'
+import { knowledgeRoutes } from './routes/knowledge.js'
+import type { KnowledgeRepo } from './knowledge-repo.js'
 import { meRoutes } from './routes/me.js'
 import { progressRoutes } from './routes/progress.js'
 import { webhookRoutes } from './routes/webhooks.js'
@@ -20,11 +22,12 @@ export interface AppDeps {
   corsOrigins: string[]
   admin?: { emails: string[]; repo: AdminRepo; queue: JobQueue; images?: ImageReplacer }
   feed?: FeedRepo
+  knowledge?: KnowledgeRepo
   progress?: { repo: ProgressRepo; freeDailyCap: number; revenueCat?: RevenueCatClient; webhookAuth?: string }
   logRequests?: boolean
 }
 
-export function createApp({ auth, repos, corsOrigins, admin, feed, progress, logRequests = false }: AppDeps) {
+export function createApp({ auth, repos, corsOrigins, admin, feed, knowledge, progress, logRequests = false }: AppDeps) {
   const app = new Hono()
   if (logRequests) app.use('*', logger())
   app.use('/api/*', cors({ origin: corsOrigins, credentials: true }))
@@ -40,6 +43,7 @@ export function createApp({ auth, repos, corsOrigins, admin, feed, progress, log
     app.route('/api/me', progressRoutes(auth, { progress: progress.repo, feed, freeDailyCap: progress.freeDailyCap, ...(progress.revenueCat ? { revenueCat: progress.revenueCat } : {}) }))
     app.route('/api', feedRoutes(auth, feed, progress.repo, progress.freeDailyCap))
   }
+  if (feed && knowledge) app.route('/api', knowledgeRoutes(auth, feed, knowledge, repos))
   if (admin) app.route('/api/admin', adminRoutes(auth, admin.emails, admin.repo, admin.queue, admin.images))
   app.onError((err, c) => {
     console.error(err)
