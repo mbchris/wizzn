@@ -2,11 +2,13 @@
 # All config comes from Coolify env vars — generate them with `pnpm coolify:env -- --domain <base-domain>`
 # and paste setup-out/coolify.env into Coolify → Environment Variables → Developer view.
 # Domains are assigned per service in the Coolify UI (api :3000, web :80, admin :80, media :80). No host ports.
+# Postgres is NOT part of this stack: it runs as a separate Coolify Postgres resource (redeploys never touch it).
+# api/worker join Coolify's shared `coolify` network to reach it; DATABASE_URL = the resource's internal URL.
 
 x-api-env: &api-env
   NODE_ENV: production
   PORT: 3000
-  DATABASE_URL: postgres://wizzn:${POSTGRES_PASSWORD:?}@postgres:5432/wizzn
+  DATABASE_URL: ${DATABASE_URL:?}
   SEARCH_URL: http://searxng:8080
   MEDIA_DRIVER: local
   MEDIA_DIR: /media
@@ -62,8 +64,8 @@ services:
     environment: *api-env
     volumes:
       - media:/media
+    networks: [default, coolify]
     depends_on:
-      postgres: { condition: service_healthy }
       searxng: { condition: service_started }
 
   worker:
@@ -76,6 +78,7 @@ services:
       disable: true
     volumes:
       - media:/media
+    networks: [default, coolify]
     depends_on:
       api: { condition: service_healthy }
 
@@ -107,20 +110,6 @@ services:
     volumes:
       - media:/usr/share/nginx/html:ro
 
-  postgres:
-    image: postgres:17-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: wizzn
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
-      POSTGRES_DB: wizzn
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wizzn"]
-      interval: 5s
-      retries: 10
-
   searxng:
     build:
       context: .
@@ -133,5 +122,9 @@ services:
       SEARXNG_SECRET: ${SEARXNG_SECRET:?}
 
 volumes:
-  pgdata:
   media:
+
+networks:
+  # Coolify's shared network; standalone databases are attached to it
+  coolify:
+    external: true

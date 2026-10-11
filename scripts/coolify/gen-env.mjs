@@ -2,7 +2,8 @@
 // Builds setup-out/coolify.env for Coolify (Environment Variables → Developer view → paste).
 // Usage: pnpm coolify:env -- --domain wizzn.app [--api api.wizzn.app] [--admin admin.wizzn.app] [--media media.wizzn.app] [--fresh-secrets]
 // The output is deleted and rebuilt on every run from the root .env, with keys set in .env.production taking priority. Only the generated secrets are carried over
-// (rotating POSTGRES_PASSWORD would lock the api out of the existing DB volume); --fresh-secrets regenerates them too.
+// (rotating BETTER_AUTH_SECRET logs everyone out); --fresh-secrets regenerates them too.
+// DATABASE_URL comes from .env.production only (Postgres is a separate Coolify resource; the root .env holds the local dev URL).
 import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 
@@ -43,7 +44,7 @@ const OUT = 'setup-out/coolify.env'
 const base = parse('.env')
 const prod = Object.fromEntries(Object.entries(parse('.env.production')).filter(([, v]) => v !== ''))
 const dev = { ...base, ...prod }
-const SECRETS = ['POSTGRES_PASSWORD', 'BETTER_AUTH_SECRET', 'SEARXNG_SECRET']
+const SECRETS = ['BETTER_AUTH_SECRET', 'SEARXNG_SECRET']
 const prev = args['fresh-secrets'] ? {} : parse(OUT)
 rmSync(OUT, { force: true })
 const secret = (k, bytes) => prev[k] || randomBytes(bytes).toString('base64url')
@@ -65,7 +66,10 @@ const env = {
   MEDIA_PUBLIC_URL: MEDIA,
   CORS_ORIGINS: [ADMIN, WEB, 'capacitor://localhost', 'http://localhost', 'https://localhost'].join(','),
 }
-for (const k of SECRETS) env[k] = secret(k, k === 'BETTER_AUTH_SECRET' ? 48 : k === 'POSTGRES_PASSWORD' ? 24 : 32)
+for (const k of SECRETS) env[k] = secret(k, k === 'BETTER_AUTH_SECRET' ? 48 : 32)
+// Internal URL of the Coolify Postgres resource (Coolify → postgres resource → "Postgres URL (internal)")
+const DB_PLACEHOLDER = 'postgres://wizzn:CHANGE-ME@CHANGE-ME:5432/wizzn'
+env.DATABASE_URL = prod.DATABASE_URL || prev.DATABASE_URL || DB_PLACEHOLDER
 for (const k of COPY) if (dev[k]) env[k] = dev[k]
 env.STOCK_USER_AGENT ||= `wizzn/1.0 (https://${args.domain}; ops@${args.domain})`
 
@@ -92,6 +96,9 @@ if (env.TTS_PROVIDER !== 'requesty' && llm !== 'requesty') {
   for (const k of Object.keys(env)) if (k.startsWith('REQUESTY_')) delete env[k]
 } else if (!env.REQUESTY_API_KEY) warn.push('REQUESTY_API_KEY is empty — required for LLM_PROVIDER/TTS_PROVIDER=requesty (api will refuse to start)')
 
+if (env.DATABASE_URL === DB_PLACEHOLDER) warn.push('DATABASE_URL not set — create the Coolify Postgres resource and put its internal URL into .env.production (or edit it in Coolify)')
+else if (local.test(env.DATABASE_URL)) warn.push('DATABASE_URL points at localhost/LAN — use the Coolify Postgres resource\'s internal URL')
+if (prev.POSTGRES_PASSWORD) console.log('Dropped POSTGRES_PASSWORD (Postgres is now a separate Coolify resource) — delete it in Coolify too')
 if (!env.ADMIN_EMAILS) warn.push('ADMIN_EMAILS is empty — nobody can use the admin app')
 if (!env.REVENUECAT_WEBHOOK_AUTH) warn.push('REVENUECAT_WEBHOOK_AUTH is empty — purchases webhook disabled')
 if (!env.GOOGLE_CLIENT_IDS) warn.push('GOOGLE_CLIENT_IDS is empty — Google sign-in disabled')
