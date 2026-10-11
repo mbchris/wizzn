@@ -13,7 +13,7 @@ const idParam = zValidator('param', z.object({ id: z.string().uuid() }))
 const MORE_NEXT = 2
 const MIN_QUERY = 2
 
-const savedCursorSchema = z.object({ at: z.string().datetime(), id: z.string().uuid() })
+const savedCursorSchema = z.object({ at: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}$/), id: z.string().uuid() })
 function decodeSavedCursor(raw: string | undefined): SavedCursor | null {
   if (!raw) return null
   try {

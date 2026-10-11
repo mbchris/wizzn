@@ -100,7 +100,15 @@ export function createKnowledgeRepo(db: Db, mediaUrl: (path: string) => string):
         .select({ id: unit.id, pairId: unit.pairId, title: unit.title, topic: contentBrief.topic })
         .from(unit)
         .innerJoin(contentBrief, eq(contentBrief.id, unit.briefId))
-        .where(and(published, notSelf, me.themeId ? eq(unit.themeId, me.themeId) : eq(unit.fieldId, me.fieldId)))
+        .where(
+          and(
+            published,
+            notSelf,
+            me.themeId ? eq(unit.themeId, me.themeId) : eq(unit.fieldId, me.fieldId),
+            // Same-series units connect only via series edges, so "related" can never skip a locked level
+            me.series ? or(sql`${unit.series} is null`, ne(unit.series, me.series)) : undefined,
+          ),
+        )
         .orderBy(desc(unit.publishedAt))
         .limit(200)
       const related = scoreRelated(
@@ -173,22 +181,24 @@ export function createKnowledgeRepo(db: Db, mediaUrl: (path: string) => string):
     },
 
     async listSaved(userId, limit, cursor) {
+      // The cursor carries the timestamp as Postgres text (µs, no zone): a JS Date would lose precision and shift by the TZ
+      const savedAtText = sql<string>`to_char(${savedUnit.savedAt}, 'YYYY-MM-DD"T"HH24:MI:SS.US')`
       const rows = await db
-        .select({ id: savedUnit.unitId, at: savedUnit.savedAt })
+        .select({ id: savedUnit.unitId, at: savedAtText })
         .from(savedUnit)
         .innerJoin(unit, eq(unit.id, savedUnit.unitId))
         .where(
           and(
             eq(savedUnit.userId, userId),
             published,
-            cursor ? sql`(${savedUnit.savedAt}, ${savedUnit.unitId}) < (${new Date(cursor.at)}, ${cursor.id}::uuid)` : undefined,
+            cursor ? sql`(${savedUnit.savedAt}, ${savedUnit.unitId}) < (${cursor.at}::timestamp, ${cursor.id}::uuid)` : undefined,
           ),
         )
         .orderBy(desc(savedUnit.savedAt), desc(savedUnit.unitId))
         .limit(limit + 1)
       const page = rows.slice(0, limit)
       const last = page.at(-1)
-      return { tiles: await tiles(page.map((r) => r.id)), next: rows.length > limit && last ? { at: last.at.toISOString(), id: last.id } : null }
+      return { tiles: await tiles(page.map((r) => r.id)), next: rows.length > limit && last ? { at: last.at, id: last.id } : null }
     },
 
     async search(q, limit) {
