@@ -41,6 +41,7 @@ function setup(opts: {
       stored.push({ prefix, data, ext })
       return `${prefix}/f${stored.length}.${ext}`
     },
+    delete: async () => {},
     publicUrl: (p) => p,
   }
   const search = vi.fn(async (_q: string) => opts.candidates ?? [])

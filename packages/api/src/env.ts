@@ -56,6 +56,12 @@ export const envSchema = z.object({
   ADMIN_EMAILS: csv.default(''),
   MEDIA_DRIVER: z.enum(['local', 's3']).default('local'),
   MEDIA_DIR: z.string().default('./media-data'),
+  /** MEDIA_DRIVER=s3: S3-compatible endpoint (self-hosted Garage), path-style */
+  S3_ENDPOINT: z.string().default(''),
+  S3_REGION: z.string().default('garage'),
+  S3_BUCKET: z.string().default(''),
+  S3_ACCESS_KEY_ID: z.string().default(''),
+  S3_SECRET_ACCESS_KEY: z.string().default(''),
   // 'auto' (dev): http://<current LAN IP>:8081 → media loads in browser, emulator and phone alike
   MEDIA_PUBLIC_URL: z.preprocess(
     (v) => (v === 'auto' ? `http://${lanIPv4s()[0] ?? 'localhost'}:8081` : v),
@@ -90,6 +96,11 @@ export const envSchema = z.object({
   /** ImageRouter b64_ephemeral: no 30-day retention at the provider */
   IMAGE_EPHEMERAL: bool(true),
 }).superRefine((env, ctx) => {
+  if (env.MEDIA_DRIVER === 's3') {
+    for (const key of ['S3_ENDPOINT', 'S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'] as const) {
+      if (!env[key].trim()) ctx.addIssue({ code: 'custom', path: [key], message: 'required when MEDIA_DRIVER is s3' })
+    }
+  }
   if ((env.LLM_PROVIDER === 'requesty' || env.TTS_PROVIDER === 'requesty') && !env.REQUESTY_API_KEY.trim()) {
     ctx.addIssue({ code: 'custom', path: ['REQUESTY_API_KEY'], message: 'required when LLM_PROVIDER or TTS_PROVIDER is requesty' })
   }

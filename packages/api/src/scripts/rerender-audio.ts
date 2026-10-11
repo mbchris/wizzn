@@ -7,8 +7,6 @@
  *   pnpm --filter @wizzn/api audio:rerender <unitId> …      # only these
  *   add --dry-run to list what would be re-rendered
  */
-import { unlink } from 'node:fs/promises'
-import { join } from 'node:path'
 import { and, eq, inArray } from 'drizzle-orm'
 import { audioUnitSchema } from '@wizzn/shared'
 import { loadEnv } from '../env.js'
@@ -57,7 +55,7 @@ for (const [i, row] of rows.entries()) {
       await tx.update(asset).set({ path, durationSec, generator: ttsGeneratorLabel(tts, speech.voice ?? voice) }).where(eq(asset.id, row.assetId))
       await tx.update(unit).set({ contentJson: next, updatedAt: new Date() }).where(eq(unit.id, row.unitId))
     })
-    if (path !== row.path) await unlink(join(env.MEDIA_DIR, row.path)).catch(() => {})
+    if (path !== row.path) await media.delete(row.path).catch((err) => console.warn(`${label} — old file not deleted: ${err instanceof Error ? err.message : err}`))
     console.log(`${label} — ${oldSec}s → ${durationSec}s`)
     ok++
   } catch (err) {

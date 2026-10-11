@@ -12,7 +12,6 @@ import { QUEUES } from './jobs/queues.js'
 import { createImageReplacer } from './pipeline/replace-image.js'
 import { createDbPipelineStore } from './pipeline/store-db.js'
 import { createProviders } from './providers/index.js'
-import { createLocalMediaStore } from './providers/media-store.js'
 import { createProgressRepo } from './progress-repo.js'
 import { createRepos } from './repos.js'
 import { createRevenueCatClient } from './revenuecat.js'
@@ -30,8 +29,8 @@ const auth = createAuth(db, env, {
   },
 })
 const boss = await startBoss(env.DATABASE_URL)
-const media = createLocalMediaStore(env.MEDIA_DIR, env.MEDIA_PUBLIC_URL)
 const providers = createProviders(env)
+const { media } = providers
 const images = createImageReplacer({
   store: createDbPipelineStore(db),
   image: { stock: providers.stock, images: providers.images, media: providers.media, llm: providers.llm, minEdgePx: env.STOCK_MIN_EDGE_PX, maxBytes: env.STOCK_MAX_BYTES, log: console.log },
