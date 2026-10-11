@@ -23,5 +23,6 @@ if [ -z "$PG" ]; then
 fi
 grep -qx "$PG" <<<"$NAMES" || { echo "✗ PG_CONTAINER=$PG not found on $HOST"; exit 1; }
 MEDIA_VOL="$(r "docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/media\"}}{{.Name}}{{end}}{{end}}' $API")"
-[ -n "$MEDIA_VOL" ] || { echo "✗ could not find /media volume on $API"; exit 1; }
+# After the S3 cutover the api has no /media volume; callers in S3 mode don't need it
+[ -n "$MEDIA_VOL" ] || [ "${S3_MODE:-0}" = 1 ] || { echo "✗ could not find /media volume on $API"; exit 1; }
 echo "  postgres=$PG api=$API worker=${WORKER:-none} media=$MEDIA_VOL"

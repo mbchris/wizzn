@@ -8,6 +8,7 @@ set -euo pipefail
 HOST="${1:?ssh host}"; UUID_ARG="${2:?coolify app uuid or container name}"; DRY="${3:-}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MEDIA_DIR="$ROOT/packages/api/media-data"
+source "$(dirname "$0")/_s3.sh"
 source "$(dirname "$0")/_remote.sh"
 DC="docker compose -f $ROOT/docker-compose.dev.yml"
 TABLES=(field theme content_brief unit source asset check_report)
@@ -48,15 +49,22 @@ echo "→ merging into prod DB${DRY:+ (dry run, rolled back)}"
 r "docker exec -i $PG psql -U wizzn -d wizzn -v ON_ERROR_STOP=1 -q -At -F ': '" < "$TMP/run.sql"
 
 # ---------- media ----------
-echo "→ diffing media"
-(cd "$MEDIA_DIR" && find . -type f ! -name '.DS_Store' | LC_ALL=C sort) > "$TMP/local.txt"
-r "docker run --rm -v $MEDIA_VOL:/m:ro alpine sh -c 'cd /m && find . -type f'" | LC_ALL=C sort > "$TMP/remote.txt"
-LC_ALL=C comm -23 "$TMP/local.txt" "$TMP/remote.txt" > "$TMP/missing.txt"
-N=$(wc -l < "$TMP/missing.txt" | tr -d ' ')
-echo "  $N of $(wc -l < "$TMP/local.txt" | tr -d ' ') files missing on prod"
-if [ "$N" -gt 0 ] && [ "$DRY" != --dry-run ]; then
-  (cd "$MEDIA_DIR" && COPYFILE_DISABLE=1 tar -czf - -T "$TMP/missing.txt") \
-    | r "docker run --rm -i -v $MEDIA_VOL:/media alpine sh -c 'tar -xzf - -C /media && chown -R 1000:1000 /media'"
-  echo "  uploaded $N files"
+if [ "$S3_MODE" = 1 ]; then
+  use_prod_s3
+  echo "→ copying missing media to bucket $S3_BUCKET${DRY:+ (dry run)}"
+  # copy never deletes; content-addressed names → only new files transfer
+  rclone copy "$MEDIA_DIR" "prod:$S3_BUCKET" "${RCLONE_UPLOAD_FLAGS[@]}" --stats-one-line --stats 0 ${DRY:+--dry-run}
+else
+  echo "→ diffing media"
+  (cd "$MEDIA_DIR" && find . -type f ! -name '.DS_Store' | LC_ALL=C sort) > "$TMP/local.txt"
+  r "docker run --rm -v $MEDIA_VOL:/m:ro alpine sh -c 'cd /m && find . -type f'" | LC_ALL=C sort > "$TMP/remote.txt"
+  LC_ALL=C comm -23 "$TMP/local.txt" "$TMP/remote.txt" > "$TMP/missing.txt"
+  N=$(wc -l < "$TMP/missing.txt" | tr -d ' ')
+  echo "  $N of $(wc -l < "$TMP/local.txt" | tr -d ' ') files missing on prod"
+  if [ "$N" -gt 0 ] && [ "$DRY" != --dry-run ]; then
+    (cd "$MEDIA_DIR" && COPYFILE_DISABLE=1 tar -czf - -T "$TMP/missing.txt") \
+      | r "docker run --rm -i -v $MEDIA_VOL:/media alpine sh -c 'tar -xzf - -C /media && chown -R 1000:1000 /media'"
+    echo "  uploaded $N files"
+  fi
 fi
 echo "✓ done"
