@@ -2,7 +2,7 @@
 # Push only what prod doesn't have yet: content rows (insert-only) + missing media files.
 # Never updates/deletes remote rows; users/auth/progress are not touched.
 # field/theme are matched by slug (ids differ per env because each seeds its own).
-# Usage: [SSH_KEY=~/.ssh/key] pnpm coolify:push-delta -- <ssh-host> <coolify-app-uuid> [--dry-run]
+# Usage: [SSH_KEY=~/.ssh/key] [PG_CONTAINER=<db-resource-uuid>] pnpm coolify:push-delta -- <ssh-host> <coolify-app-uuid> [--dry-run]
 set -euo pipefail
 [ "${1:-}" = "--" ] && shift
 HOST="${1:?ssh host}"; UUID_ARG="${2:?coolify app uuid or container name}"; DRY="${3:-}"

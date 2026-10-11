@@ -141,7 +141,7 @@ Coolify → Docker Compose resource → `docker-compose.yml`. Container start ru
 Details: [docs/deploy-coolify.md](docs/deploy-coolify.md).
 
 ### Push local content to prod
-Runs on the Mac over SSH (key passphrase asked once). Needs the local dev Postgres running and the Coolify app UUID (containers are `<service>-<uuid>`).
+Runs on the Mac over SSH (key passphrase asked once). Needs the local dev Postgres running and the Coolify app UUID (containers are `<service>-<uuid>`). Prod Postgres is a separate Coolify resource: pass `PG_CONTAINER=<db-resource-uuid>` (optional if it's the only `postgres:*` container on the VPS).
 
 ```bash
 # Delta: insert-only, adds what prod doesn't have yet

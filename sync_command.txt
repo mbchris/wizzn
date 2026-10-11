@@ -11,3 +11,8 @@ pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  api-xc9yilrbgjyu4
 
 
 SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 bash scripts/coolify/push-delta.sh chris@apps.emailanschneiders.de xc9yilrbgjyu4ckrtjlbcrae --dry-run
+
+
+SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 
+
+ssh -i ~/SynologyDrive/CloudStation/Documents/id_ed25519 chris@apps.emailanschneiders.de "docker network ls | grep coolify; docker inspect -f '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' v75ucqaqms0othfmscihk6qq"

@@ -3,6 +3,7 @@
 # Usage: pnpm coolify:push-data -- <ssh-host> <coolify-app-uuid>
 #   ssh-host: e.g. root@netcup (needs docker access)
 #   uuid:     Coolify → app → URL/“Resource UUID”; containers are named <service>-<uuid>
+#   PG_CONTAINER=<uuid of the Coolify Postgres resource> (optional if it's the only postgres container on the host)
 set -euo pipefail
 [ "${1:-}" = "--" ] && shift
 HOST="${1:?ssh host}"; UUID_ARG="${2:?coolify app uuid or container name}"

@@ -45,7 +45,7 @@ Status: **proposed, awaiting approval** (2026-10-11)
 ### 2. Backups → Google Drive
 - New `backup` service in `docker-compose.yml`: restic, rclone, pg_dump 17, supercronic.
 - Nightly:
-  1. `pg_dump` streamed into restic.
+  1. `pg_dump` (via `DATABASE_URL`; Postgres is a separate Coolify resource) streamed into restic.
   2. `rclone sync` Garage → local mirror volume (incremental; plain files, restorable anywhere).
   3. `restic backup` mirror → encrypted repo `rclone:gdrive:wizzn-backup`.
 - Retention: 7 daily, 4 weekly, 6 monthly; weekly `restic check`.
