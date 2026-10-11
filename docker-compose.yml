@@ -10,9 +10,15 @@ x-api-env: &api-env
   PORT: 3000
   DATABASE_URL: ${DATABASE_URL:?}
   SEARCH_URL: http://searxng:8080
-  MEDIA_DRIVER: local
+  # s3 = self-hosted Garage (separate Coolify service); local = the `media` volume (pre-migration only)
+  MEDIA_DRIVER: ${MEDIA_DRIVER:-local}
   MEDIA_DIR: /media
   MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:?}
+  S3_ENDPOINT: ${S3_ENDPOINT:-}
+  S3_REGION: ${S3_REGION:-garage}
+  S3_BUCKET: ${S3_BUCKET:-wizzn-media}
+  S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+  S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
   BETTER_AUTH_URL: ${API_PUBLIC_URL:?}
   CORS_ORIGINS: ${CORS_ORIGINS:?}
@@ -99,6 +105,8 @@ services:
         GOOGLE_WEB_CLIENT_ID: ${GOOGLE_WEB_CLIENT_ID:-}
     restart: unless-stopped
 
+  # Legacy: serves the `media` volume until media.wizzn.app moves to Garage (docs/ops/media-storage.md, cutover).
+  # Remove together with the `media` volume mounts once MEDIA_DRIVER=s3 is live.
   media:
     # Config is baked in: Coolify doesn't place repo files on the host, so file bind mounts break
     build:
@@ -109,6 +117,35 @@ services:
     restart: unless-stopped
     volumes:
       - media:/usr/share/nginx/html:ro
+
+  # Nightly DB dump + media bucket → encrypted restic repo on Google Drive (docs/ops/media-storage.md)
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile.backup
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?}
+      RESTIC_PASSWORD: ${RESTIC_PASSWORD:-}
+      RESTIC_REPOSITORY: ${RESTIC_REPOSITORY:-rclone:gdrive:wizzn-backup}
+      GDRIVE_CLIENT_ID: ${GDRIVE_CLIENT_ID:-}
+      GDRIVE_CLIENT_SECRET: ${GDRIVE_CLIENT_SECRET:-}
+      GDRIVE_TOKEN: ${GDRIVE_TOKEN:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-garage}
+      S3_BUCKET: ${S3_BUCKET:-wizzn-media}
+      BACKUP_S3_ACCESS_KEY_ID: ${BACKUP_S3_ACCESS_KEY_ID:-}
+      BACKUP_S3_SECRET_ACCESS_KEY: ${BACKUP_S3_SECRET_ACCESS_KEY:-}
+      BACKUP_CRON: ${BACKUP_CRON:-15 3 * * *}
+      BACKUP_KEEP_DAILY: ${BACKUP_KEEP_DAILY:-7}
+      BACKUP_KEEP_WEEKLY: ${BACKUP_KEEP_WEEKLY:-4}
+      BACKUP_KEEP_MONTHLY: ${BACKUP_KEEP_MONTHLY:-6}
+      BACKUP_ON_START: ${BACKUP_ON_START:-false}
+      HEALTHCHECK_URL: ${HEALTHCHECK_URL:-}
+    volumes:
+      - backup-mirror:/mirror
+      - backup-cache:/cache
+    networks: [default, coolify]
 
   searxng:
     build:
@@ -123,6 +160,8 @@ services:
 
 volumes:
   media:
+  backup-mirror:
+  backup-cache:
 
 networks:
   # Coolify's shared network; standalone databases are attached to it

@@ -1,0 +1,10 @@
+# Nightly backup: Postgres dump + media bucket → encrypted restic repo on Google Drive (via rclone)
+FROM alpine:3.22
+# postgresql17-client must be >= the server's major version
+RUN apk add --no-cache bash ca-certificates curl tzdata restic rclone postgresql17-client supercronic
+COPY scripts/backup/ /backup/
+RUN chmod +x /backup/*.sh
+ENV TZ=Europe/Berlin \
+    RESTIC_CACHE_DIR=/cache/restic \
+    MIRROR_DIR=/mirror/media
+ENTRYPOINT ["/backup/entrypoint.sh"]
