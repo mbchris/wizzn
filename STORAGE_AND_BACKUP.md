@@ -1,6 +1,6 @@
 # Media Storage & Backup — Design Proposal
 
-Status: **proposed, awaiting approval** (2026-10-11)
+Status: **implemented** (2026-10-11) · setup + operations: [`docs/ops/media-storage.md`](docs/ops/media-storage.md)
 
 ## Requirements
 - Self-hosted S3 on the Coolify server; app stores all media there.
@@ -86,10 +86,11 @@ Status: **proposed, awaiting approval** (2026-10-11)
 - vitest: S3 store (mocked client), env validation, DevPack unit selection.
 - E2E: S3 store against local dev Garage.
 
-## Next Steps
-1. Approve this design.
-2. Spec → `docs/superpowers/specs/2026-10-11-media-object-storage-design.md`.
-3. Implementation plan → build.
+## Implementation Notes
+- Cutover keeps `MEDIA_DRIVER=${MEDIA_DRIVER:-local}` + legacy `media` nginx until the domain moves to Garage; removal is step 4.6 of the ops guide.
+- Backup mirror: restic on a plain-file mirror of the bucket (Garage has no versioning; restores work without Garage).
+- DevPack: CSV export per table (read-only on prod), media fetched from the public URL, schema guard via last Drizzle migration.
+- CORS: `pnpm storage:check` sets bucket CORS (GET/HEAD, `*`), replacing nginx's `Access-Control-Allow-Origin: *`.
 
 ## Sources
 - [Self-Hosted Object Storage in 2026 (MinIO archived)](https://www.offshoreserverhosting.com/blog/self-hosted-object-storage-2026-seaweedfs-garage-minio-replacement/)
