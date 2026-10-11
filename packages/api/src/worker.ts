@@ -21,6 +21,14 @@ const deps: PipelineDeps = {
   },
 }
 
+/** Error → printable text: strips NUL/control chars and binary noise, caps length. */
+function sanitizeError(err: unknown): string {
+  const raw = err instanceof Error ? `${err.name}: ${err.message}` : String(err)
+  // eslint-disable-next-line no-control-regex
+  const clean = raw.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uFFFD]/g, '')
+  return clean.length > 2000 ? `${clean.slice(0, 2000)}…` : clean
+}
+
 const STEP_BY_QUEUE: Record<string, StepName> = {
   [QUEUES.research]: 'research',
   [QUEUES.draft]: 'draft',
@@ -33,7 +41,13 @@ for (const [queue, step] of Object.entries(STEP_BY_QUEUE)) {
   await boss.work<UnitJob>(queue, { batchSize: 1 }, async ([job]) => {
     if (!job) return
     console.log(`[${step}] ${job.data.unitId}`)
-    await runStep(step, job.data.unitId, deps)
+    try {
+      await runStep(step, job.data.unitId, deps)
+    } catch (err) {
+      console.error(`[${step}] ${job.data.unitId} failed:`, sanitizeError(err))
+      // pg-boss stores the error as JSONB; raw bytes (\u0000) in it make Postgres reject the write and crash the worker.
+      throw new Error(sanitizeError(err))
+    }
   })
 }
 console.log(`wizzn worker started (llm: ${env.LLM_PROVIDER}/${env.LLM_MODEL || 'default'}, tts: ${env.TTS_PROVIDER}, images: ${env.IMAGE_PROVIDER})`)

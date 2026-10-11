@@ -29,8 +29,16 @@ export const envSchema = z.object({
   REQUESTY_BASE_URL: z.string().url().default('https://router.requesty.ai/v1'),
   /** Speech model for TTS_PROVIDER=requesty (only OpenAI TTS models are routed) */
   REQUESTY_TTS_MODEL: z.string().default('openai/gpt-4o-mini-tts'),
-  /** Voice for TTS_PROVIDER=requesty (OpenAI voice set); TTS_VOICE / TTS_VOICE_1..3 are not used by Requesty */
-  REQUESTY_TTS_VOICE: z.enum(['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse']).default('nova'),
+  /**
+   * Voice for TTS_PROVIDER=requesty; TTS_VOICE / TTS_VOICE_1..3 are not used by Requesty.
+   * openai/* models: alloy|ash|ballad|coral|echo|fable|onyx|nova|sage|shimmer|verse. Other models: passed through as-is
+   * (empty = the model's default voice).
+   */
+  REQUESTY_TTS_VOICE: z.string().default(''),
+  /** Language code for non-OpenAI speech models, e.g. `de` for deepinfra/ResembleAI/chatterbox-multilingual */
+  REQUESTY_TTS_LANGUAGE: z.string().default(''),
+  /** Max chars per request (whole sentences only); 0 = auto (OpenAI 3500, other models 300) */
+  REQUESTY_TTS_CHUNK_CHARS: z.coerce.number().int().min(0).max(4096).default(0),
   /** Optional voice steering (tone, accent, pacing); gpt-4o-mini-tts only */
   TTS_INSTRUCTIONS: z.string().default(''),
   TTS_URL: z.string().url().default('http://localhost:5100/synthesize'),

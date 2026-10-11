@@ -1,4 +1,5 @@
 import { AUDIO_MAX_SEC, AUDIO_MIN_SEC } from '@wizzn/shared'
+import { timeStretchWav } from './transcode.js'
 
 export interface TtsResult {
   audio: Buffer
@@ -96,6 +97,8 @@ export const REQUESTY_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fabl
 const REQUESTY_MAX_CHARS = 4096
 /** Soft target per request; whole sentences only, a chunk may grow up to REQUESTY_MAX_CHARS for one long sentence */
 const REQUESTY_CHUNK_CHARS = 3500
+/** Chatterbox & co. generate a limited length per call (local Chatterbox uses 280) → small, sentence-aligned requests */
+const REQUESTY_OTHER_CHUNK_CHARS = 300
 /** OpenAI `pcm` output: raw 16-bit signed LE, mono, 24 kHz */
 const REQUESTY_PCM_RATE = 24_000
 
@@ -103,11 +106,13 @@ export interface RequestyTtsConfig {
   /** Router base incl. /v1, e.g. https://router.requesty.ai/v1 */
   baseUrl: string
   apiKey: string
-  /** e.g. openai/gpt-4o-mini-tts, openai/tts-1-hd */
+  /** e.g. openai/gpt-4o-mini-tts, deepinfra/ResembleAI/chatterbox-multilingual */
   model: string
-  /** Fixed OpenAI voice (default `nova`) */
+  /** openai/*: one of REQUESTY_VOICES (empty → nova). Other models: passed through; empty → model default */
   voice?: string
-  /** gpt-4o-mini-tts only: tone/accent/pacing steering */
+  /** Non-OpenAI models: language code sent as `language`, e.g. `de` */
+  language?: string
+  /** openai/gpt-4o-mini-tts only: tone/accent/pacing steering */
   instructions?: string
   lengthScale?: number
   fit?: boolean
@@ -116,29 +121,81 @@ export interface RequestyTtsConfig {
 }
 
 /**
- * Requesty router (`POST /audio/speech`, OpenAI-compatible). Requests raw PCM and wraps it in a WAV header ourselves
- * (OpenAI's streamed WAV carries placeholder sizes). `length_scale` maps to `speed = 1 / scale`; every re-render of the
- * 3–5 min fitting is a paid API call (max 4 per unit).
+ * Requesty router (`POST /audio/speech`).
+ * - openai/* models: raw PCM wrapped in a WAV header here (OpenAI's streamed WAV carries placeholder sizes);
+ *   `length_scale` → `speed = 1 / scale`, so each fitting re-render is a paid call (max 4 per unit).
+ * - other models (e.g. deepinfra/ResembleAI/chatterbox-multilingual): `response_format: wav` + optional `voice` /
+ *   `language`. Like the local Chatterbox server, the raw render is generated once per text and cached in memory;
+ *   `length_scale` is applied as a local ffmpeg time-stretch, so fitting re-renders cost nothing.
  */
-export function createRequestyTts({ baseUrl, apiKey, model, voice = 'nova', instructions = '', lengthScale = 1, fit = true, maxChunkChars = REQUESTY_CHUNK_CHARS, fetchFn = fetch }: RequestyTtsConfig): TtsClient {
+export function createRequestyTts({ baseUrl, apiKey, model, voice = '', language = '', instructions = '', lengthScale = 1, fit = true, maxChunkChars, fetchFn = fetch, stretchFn = timeStretchWav }: RequestyTtsConfig & { stretchFn?: (wav: Buffer, scale: number) => Promise<Buffer | null> }): TtsClient {
   const url = `${baseUrl.replace(/\/$/, '')}/audio/speech`
-  const v = voice.trim().toLowerCase()
-  if (!(REQUESTY_VOICES as readonly string[]).includes(v)) throw new Error(`Requesty TTS: unknown voice "${voice}" (one of ${REQUESTY_VOICES.join(', ')})`)
-  const render: Render = async (text, scale) => {
-    const speed = Math.min(4, Math.max(0.25, 1 / scale))
-    const parts: Buffer[] = []
-    for (const chunk of splitIntoSentenceChunks(text, maxChunkChars, REQUESTY_MAX_CHARS)) {
-      const res = await fetchFn(url, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ model, input: chunk, voice: v, response_format: 'pcm', speed, ...(instructions && { instructions }) }),
-      })
-      if (!res.ok) throw new Error(`Requesty TTS HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`)
-      parts.push(Buffer.from(await res.arrayBuffer()))
-    }
-    return pcmToWav(Buffer.concat(parts), REQUESTY_PCM_RATE)
+  const openai = model.startsWith('openai/')
+  const v = openai ? voice.trim().toLowerCase() || 'nova' : voice.trim()
+  if (openai && !(REQUESTY_VOICES as readonly string[]).includes(v)) throw new Error(`Requesty TTS: unknown voice "${voice}" for ${model} (one of ${REQUESTY_VOICES.join(', ')})`)
+  const chunkChars = maxChunkChars ?? (openai ? REQUESTY_CHUNK_CHARS : REQUESTY_OTHER_CHUNK_CHARS)
+
+  const post = async (body: Record<string, unknown>): Promise<Buffer> => {
+    const res = await fetchFn(url, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` }, body: JSON.stringify(body) })
+    if (!res.ok) throw new Error(`Requesty TTS HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`)
+    return Buffer.from(await res.arrayBuffer())
   }
-  return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: `requesty · ${model} · ${v}` }
+  const chunks = (text: string): string[] => splitIntoSentenceChunks(text, chunkChars, REQUESTY_MAX_CHARS)
+
+  if (openai) {
+    const render: Render = async (text, scale) => {
+      const speed = Math.min(4, Math.max(0.25, 1 / scale))
+      const parts: Buffer[] = []
+      for (const chunk of chunks(text)) parts.push(await post({ model, input: chunk, voice: v, response_format: 'pcm', speed, ...(instructions && { instructions }) }))
+      return pcmToWav(Buffer.concat(parts), REQUESTY_PCM_RATE)
+    }
+    return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: `requesty · ${model} · ${v}` }
+  }
+
+  const raw = new Map<string, Promise<Buffer>>()
+  const renderRaw = (text: string): Promise<Buffer> => {
+    let p = raw.get(text)
+    if (!p) {
+      p = (async () => {
+        const parts: Buffer[] = []
+        for (const chunk of chunks(text)) {
+          const wav = await post({ model, input: chunk, response_format: 'wav', ...(v && { voice: v }), ...(language && { language }) })
+          if (wav.length < 12 || wav.toString('ascii', 0, 4) !== 'RIFF') throw new Error(`Requesty TTS: ${model} did not return WAV (got ${wav.length} bytes starting "${wav.toString('latin1', 0, 4)}")`)
+          parts.push(fixWavSizes(wav))
+        }
+        return concatWav(parts)
+      })()
+      p.catch(() => raw.delete(text))
+      if (raw.size > 8) raw.delete(raw.keys().next().value!)
+      raw.set(text, p)
+    }
+    return p
+  }
+  const render: Render = async (text, scale) => {
+    const wav = await renderRaw(text)
+    if (Math.abs(scale - 1) < 0.005) return wav
+    const stretched = await stretchFn(wav, scale)
+    if (!stretched) console.warn('tts: ffmpeg unavailable — Requesty audio kept at its native pace')
+    return stretched ?? wav
+  }
+  return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: `requesty · ${model}${v ? ` · ${v}` : ''}${language ? ` · ${language}` : ''}` }
+}
+
+/** Streamed WAVs may carry placeholder sizes (0 / 0xFFFFFFFF): rewrite RIFF + data sizes from the actual length */
+export function fixWavSizes(wav: Buffer): Buffer {
+  const out = Buffer.from(wav)
+  let offset = 12
+  while (offset + 8 <= out.length) {
+    const id = out.toString('ascii', offset, offset + 4)
+    const size = out.readUInt32LE(offset + 4)
+    if (id === 'data') {
+      out.writeUInt32LE(out.length - offset - 8, offset + 4)
+      out.writeUInt32LE(out.length - 8, 4)
+      return out
+    }
+    offset += 8 + size
+  }
+  throw new Error('WAV has no data chunk')
 }
 
 /**

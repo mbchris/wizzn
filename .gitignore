@@ -26,3 +26,5 @@ secrets/
 .creds.config
 __pycache__/
 .DS_Store
+.qwen-tts/
+tts-debug/

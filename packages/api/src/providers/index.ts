@@ -56,7 +56,7 @@ export function createTts(env: Env, { fit = true, noCache = false }: { fit?: boo
   if (env.TTS_PROVIDER === 'chatterbox') return createChatterboxTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit, noCache)
   if (env.TTS_PROVIDER === 'qwen') return createQwenTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit, noCache, env.TTS_VOICE ? [] : voices)
   if (env.TTS_PROVIDER === 'requesty')
-    return createRequestyTts({ baseUrl: env.REQUESTY_BASE_URL, apiKey: env.REQUESTY_API_KEY, model: env.REQUESTY_TTS_MODEL, voice: env.REQUESTY_TTS_VOICE, instructions: env.TTS_INSTRUCTIONS, lengthScale: env.TTS_LENGTH_SCALE, fit })
+    return createRequestyTts({ baseUrl: env.REQUESTY_BASE_URL, apiKey: env.REQUESTY_API_KEY, model: env.REQUESTY_TTS_MODEL, voice: env.REQUESTY_TTS_VOICE, language: env.REQUESTY_TTS_LANGUAGE, maxChunkChars: env.REQUESTY_TTS_CHUNK_CHARS || undefined, instructions: env.TTS_INSTRUCTIONS, lengthScale: env.TTS_LENGTH_SCALE, fit })
   return createSilentTts()
 }
 

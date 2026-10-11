@@ -20,6 +20,28 @@ function ffmpeg(args: string[], input: Buffer): Promise<{ code: number | null; s
   })
 }
 
+/**
+ * Changes pace without changing pitch: `scale` > 1 = slower (like length_scale). ffmpeg `atempo` takes 0.5–100, which
+ * covers the fitting range 0.7–2. Returns null when ffmpeg is unavailable or fails.
+ */
+export async function timeStretchWav(wav: Buffer, scale: number): Promise<Buffer | null> {
+  if (Math.abs(scale - 1) < 0.005) return wav
+  const tempo = Math.min(100, Math.max(0.5, 1 / scale))
+  const r = await ffmpeg(['-f', 'wav', '-i', 'pipe:0', '-af', `atempo=${tempo.toFixed(4)}`, '-c:a', 'pcm_s16le', '-f', 'wav', 'pipe:1'], wav)
+  if (!r || r.code !== 0 || r.stdout.length < 44) return null
+  // ffmpeg writes streamed WAV with placeholder sizes → fix RIFF + data sizes
+  const out = Buffer.from(r.stdout)
+  let offset = 12
+  while (offset + 8 <= out.length) {
+    const id = out.toString('ascii', offset, offset + 4)
+    const size = out.readUInt32LE(offset + 4)
+    if (id === 'data') { out.writeUInt32LE(out.length - offset - 8, offset + 4); break }
+    offset += 8 + size
+  }
+  out.writeUInt32LE(out.length - 8, 4)
+  return out
+}
+
 interface Measured { input_i: string; input_tp: string; input_lra: string; input_thresh: string; target_offset: string }
 
 /** Pass 1 of loudnorm: measures the input. Null when ffmpeg is missing or the output can't be parsed. */

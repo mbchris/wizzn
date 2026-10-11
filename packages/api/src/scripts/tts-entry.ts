@@ -89,7 +89,10 @@ function serverLogFile(): string {
 const info = await serverInfo()
 console.log('── TTS settings')
 console.log(`  provider      ${env.TTS_PROVIDER} @ ${env.TTS_PROVIDER === 'requesty' ? `${env.REQUESTY_BASE_URL} · ${env.REQUESTY_TTS_MODEL}` : env.TTS_URL}`)
-console.log(`  voice         ${env.TTS_VOICE || [env.TTS_VOICE_1, env.TTS_VOICE_2, env.TTS_VOICE_3].filter(Boolean).join(' | ') || '(server default)'}`)
+if (env.TTS_PROVIDER === 'requesty') {
+  console.log(`  voice         ${env.REQUESTY_TTS_VOICE || (env.REQUESTY_TTS_MODEL.startsWith('openai/') ? 'nova (default)' : '(model default)')}  [REQUESTY_TTS_VOICE]`)
+  if (env.REQUESTY_TTS_LANGUAGE) console.log(`  language      ${env.REQUESTY_TTS_LANGUAGE}`)
+} else console.log(`  voice         ${env.TTS_VOICE || [env.TTS_VOICE_1, env.TTS_VOICE_2, env.TTS_VOICE_3].filter(Boolean).join(' | ') || '(server default)'}`)
 console.log(`  length_scale  ${env.TTS_LENGTH_SCALE}${fit ? '  (3–5 min fitting on: may re-render)' : '  (single render)'}`)
 if (env.TTS_PROVIDER === 'chatterbox' || env.TTS_PROVIDER === 'qwen') {
   const max = env.TTS_PROVIDER === 'qwen' ? 500 : 280

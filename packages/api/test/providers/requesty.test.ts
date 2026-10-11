@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { loadEnv } from '../../src/env.js'
 import { createLlm, createTts } from '../../src/providers/index.js'
-import { createRequestyTts, pcmToWav, splitIntoSentenceChunks, wavDurationSec } from '../../src/providers/tts.js'
+import { createRequestyTts, fixWavSizes, pcmToWav, silentWav, splitIntoSentenceChunks, wavDurationSec } from '../../src/providers/tts.js'
 
 const base = {
   DATABASE_URL: 'postgres://u:p@localhost/db',
@@ -37,7 +37,9 @@ describe('requesty env', () => {
     const env = loadEnv({ ...base, LLM_PROVIDER: 'requesty', TTS_PROVIDER: 'requesty', REQUESTY_API_KEY: 'k', LLM_MODEL: 'google/gemini-2.5-flash' })
     expect(createLlm(env).model).toBe('google/gemini-2.5-flash')
     expect(createTts({ ...env, TTS_VOICE_1: 'Serena', TTS_VOICE_2: 'Vivian' }).name).toBe('requesty · openai/gpt-4o-mini-tts · nova')
-    expect(() => loadEnv({ ...base, TTS_PROVIDER: 'requesty', REQUESTY_API_KEY: 'k', REQUESTY_TTS_VOICE: 'Serena' })).toThrow(/REQUESTY_TTS_VOICE/)
+    expect(() => createTts({ ...env, REQUESTY_TTS_VOICE: 'Serena' })).toThrow(/unknown voice "Serena"/)
+    const de = { ...env, REQUESTY_TTS_MODEL: 'deepinfra/ResembleAI/chatterbox-multilingual', REQUESTY_TTS_LANGUAGE: 'de' }
+    expect(createTts(de).name).toBe('requesty · deepinfra/ResembleAI/chatterbox-multilingual · de')
     expect(() => createLlm({ ...env, LLM_MODEL: '' })).toThrow(/requires LLM_MODEL/)
   })
 })
@@ -73,7 +75,7 @@ describe('requesty tts', () => {
   it('defaults to nova and splits long scripts below the 4096-char limit', async () => {
     const { calls, fetchFn } = recorder(pcmSecond)
     const text = Array.from({ length: 120 }, (_, i) => `Das ist der ausführliche Testsatz Nummer ${i}.`).join(' ')
-    const out = await createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model: 'm', fit: false, fetchFn }).synthesize(text)
+    const out = await createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model: 'openai/m', fit: false, fetchFn }).synthesize(text)
     expect(calls.length).toBeGreaterThan(1)
     for (const c of calls) {
       expect(String(c.body.input).length).toBeLessThanOrEqual(3500)
@@ -85,7 +87,7 @@ describe('requesty tts', () => {
   it('every chunk ends on a sentence boundary', async () => {
     const { calls, fetchFn } = recorder(pcmSecond)
     const text = Array.from({ length: 200 }, (_, i) => `Satz ${i}, mit Komma; und Doppelpunkt: Ende.`).join(' ')
-    await createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model: 'm', fit: false, fetchFn }).synthesize(text)
+    await createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model: 'openai/m', fit: false, fetchFn }).synthesize(text)
     expect(calls.length).toBeGreaterThan(1)
     for (const c of calls) expect(String(c.body.input)).toMatch(/^Satz \d+,[\s\S]*Ende\.$/)
     expect(calls.map((c) => c.body.input).join(' ')).toBe(text)
@@ -97,9 +99,58 @@ describe('requesty tts', () => {
   })
   it('surfaces HTTP errors', async () => {
     const { fetchFn } = recorder(() => new Response('balance exhausted', { status: 402 }))
-    await expect(createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model: 'm', fit: false, fetchFn }).synthesize('x')).rejects.toThrow(/402: balance/)
+    await expect(createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model: 'openai/m', fit: false, fetchFn }).synthesize('x')).rejects.toThrow(/402: balance/)
   })
   it('pcmToWav yields a valid header', () => {
     expect(wavDurationSec(pcmToWav(Buffer.alloc(48_001), 24_000))).toBe(1)
+  })
+})
+
+describe('requesty tts · non-OpenAI models (chatterbox-multilingual)', () => {
+  const model = 'deepinfra/ResembleAI/chatterbox-multilingual'
+  /** Streamed-style WAV: 1 s, data size left as 0xFFFFFFFF */
+  const streamedWav = () => {
+    const w = silentWav(1, 24_000)
+    w.writeUInt32LE(0xffffffff, 40)
+    w.writeUInt32LE(0xffffffff, 4)
+    return new Response(w, { status: 200 })
+  }
+
+  it('sends wav + language + voice, no speed/instructions, 300-char whole-sentence chunks', async () => {
+    const { calls, fetchFn } = recorder(streamedWav)
+    const text = Array.from({ length: 20 }, (_, i) => `Das ist der deutsche Testsatz Nummer ${i}.`).join(' ')
+    const tts = createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model, voice: 'voices/anna', language: 'de', instructions: 'ignored', fit: false, fetchFn })
+    const out = await tts.synthesize(text)
+    expect(calls.length).toBeGreaterThan(1)
+    for (const c of calls) {
+      expect(c.body).toEqual({ model, input: expect.any(String), response_format: 'wav', voice: 'voices/anna', language: 'de' })
+      expect(String(c.body.input).length).toBeLessThanOrEqual(300)
+      expect(String(c.body.input)).toMatch(/\.$/)
+    }
+    expect(out.durationSec).toBe(calls.length)
+  })
+  it('omits voice/language when empty', async () => {
+    const { calls, fetchFn } = recorder(streamedWav)
+    await createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model, fit: false, fetchFn }).synthesize('Hallo.')
+    expect(calls[0]!.body).toEqual({ model, input: 'Hallo.', response_format: 'wav' })
+  })
+  it('renders once per text, applies length_scale as local time-stretch', async () => {
+    const { calls, fetchFn } = recorder(streamedWav)
+    const scales: number[] = []
+    const stretchFn = async (wav: Buffer, scale: number) => (scales.push(scale), wav)
+    const tts = createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model, lengthScale: 1.3, fit: false, fetchFn, stretchFn })
+    await tts.synthesize('Hallo Welt.')
+    await tts.synthesize('Hallo Welt.')
+    expect(calls).toHaveLength(1)
+    expect(scales).toEqual([1.3, 1.3])
+  })
+  it('rejects non-WAV responses with a clear error', async () => {
+    const { fetchFn } = recorder(() => new Response(Buffer.from('ID3\u0004mp3data'), { status: 200 }))
+    await expect(createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model, fit: false, fetchFn }).synthesize('x.')).rejects.toThrow(/did not return WAV/)
+  })
+  it('fixWavSizes repairs placeholder sizes', () => {
+    const w = silentWav(2, 8000)
+    w.writeUInt32LE(0xffffffff, 40)
+    expect(wavDurationSec(fixWavSizes(w))).toBe(2)
   })
 })

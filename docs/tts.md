@@ -8,7 +8,7 @@ Audio units are rendered by a `TtsClient` (`packages/api/src/providers/tts.ts`),
 | `piper` | robotic | `.piper/venv`, fast | Piper voice name, e.g. `de_DE-thorsten-high` |
 | `chatterbox` | natural | `.chatterbox/venv`, slower than real time | reference WAV (~10 s) or built-in voice |
 | `qwen` | natural | `.qwen-tts/venv` | reference WAV, `design:<description>` or preset speaker |
-| `requesty` | natural (OpenAI voices) | cloud API, paid | not used — set `REQUESTY_TTS_VOICE` instead |
+| `requesty` | natural (chatterbox-multilingual: native German) | cloud API, paid | not used — set `REQUESTY_TTS_VOICE` instead |
 
 `chatterbox` and `qwen` are local Python servers (`scripts/tts/*_server.py`) with Piper's contract:
 `POST /synthesize {text, length_scale}` → WAV, `GET /health`. The API sends the script in sentence chunks
@@ -99,17 +99,26 @@ Apply a new engine/voice to existing units: `pnpm audio:rerender` (see README).
 
 ## Requesty (cloud)
 
-Runs on any server (no GPU), e.g. production. Calls `POST {REQUESTY_BASE_URL}/audio/speech` with
-`response_format: pcm`; the API wraps the PCM in a WAV. Scripts are sent in chunks of whole sentences (target ≤3500 chars, never split mid-sentence); a single sentence over the 4096-char API limit fails with an error.
-`TTS_LENGTH_SCALE` maps to `speed = 1 / scale`; each duration-fitting re-render is a paid call (max 4 per unit).
+Runs on any server (no GPU), e.g. production. Calls `POST {REQUESTY_BASE_URL}/audio/speech`. Scripts are sent in
+chunks of whole sentences (never split mid-sentence); a single sentence over the 4096-char API limit fails.
+
+**German: use `deepinfra/ResembleAI/chatterbox-multilingual`** (native German, $1/M chars, zero retention). OpenAI models
+speak German with an English accent.
 
 ```bash
 TTS_PROVIDER=requesty
 REQUESTY_API_KEY=...
-REQUESTY_TTS_MODEL=openai/gpt-4o-mini-tts     # or openai/tts-1, openai/tts-1-hd (no instructions)
-REQUESTY_TTS_VOICE=nova                       # alloy|ash|ballad|coral|echo|fable|onyx|nova|sage|shimmer|verse
-TTS_INSTRUCTIONS=Sprich Deutsch, warm und sachlich.
+REQUESTY_TTS_MODEL=deepinfra/ResembleAI/chatterbox-multilingual
+REQUESTY_TTS_LANGUAGE=de
+REQUESTY_TTS_VOICE=              # empty = model default voice
 TTS_LENGTH_SCALE=1
 ```
 
-Test: `pnpm tts:entry --provider requesty --text "Hallo Welt"`.
+| | `openai/*` | other models (chatterbox-multilingual, …) |
+|---|---|---|
+| Request | `response_format: pcm`, `voice`, `speed`, `instructions` | `response_format: wav`, `voice` + `language` when set |
+| Chunk size | 3500 chars | 300 chars (Chatterbox generation limit) — `REQUESTY_TTS_CHUNK_CHARS` overrides |
+| Pace (`TTS_LENGTH_SCALE`) | `speed = 1/scale`; each fitting re-render is a paid call | raw render generated once and cached in memory; pace applied by local ffmpeg time-stretch (free) |
+| Voice | `alloy` … `verse` (default `nova`) | passed through as-is |
+
+`TTS_VOICE` / `TTS_VOICE_1..3` are not used by Requesty. Test: `pnpm tts:entry --provider requesty --text "Hallo Welt."`.
