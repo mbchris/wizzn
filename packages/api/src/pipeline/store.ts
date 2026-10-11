@@ -1,4 +1,4 @@
-import type { CheckReport, ImageCredit, UnitFormat, UnitStatus } from '@wizzn/shared'
+import type { CheckReport, ImageCredit, UnitFormat, UnitLogLevel, UnitStatus } from '@wizzn/shared'
 import type { BriefContext, ResearchedSource } from './prompts.js'
 
 export interface PipelineUnit {
@@ -54,4 +54,6 @@ export interface PipelineStore {
   listAssets(unitId: string): Promise<(NewAsset & { id: string; rejectedStockIds: string[] })[]>
   updateAsset(assetId: string, patch: AssetPatch): Promise<void>
   saveContent(unitId: string, contentJson: unknown): Promise<void>
+  /** Appends a line to the unit's pipeline protocol (admin live log) */
+  appendLog(unitId: string, entry: { level: UnitLogLevel; step: string | null; message: string }): Promise<void>
 }

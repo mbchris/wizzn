@@ -1,6 +1,6 @@
 import { Hono, type Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { briefBatchSchema, briefInputSchema, bulkActionSchema, type BriefBatchResultDto, rejectSchema, type BulkResultDto, replaceImageSchema, unitEditSchema, unitListQuerySchema } from '@wizzn/shared'
+import { briefBatchSchema, briefInputSchema, bulkActionSchema, type BriefBatchResultDto, rejectSchema, type BulkResultDto, replaceImageSchema, unitEditSchema, unitListQuerySchema, unitLogQuerySchema } from '@wizzn/shared'
 import { z } from 'zod'
 import { requireAdmin } from '../middleware/require-admin.js'
 import { QUEUES } from '../jobs/queues.js'
@@ -41,30 +41,54 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
       const unit = await repo.getUnit(c.req.valid('param').id)
       return unit ? c.json(unit) : c.json({ error: 'Not Found' }, 404)
     })
+    .get('/units/:id/logs', idParam, zValidator('query', unitLogQuerySchema), async (c) =>
+      c.json(await repo.listLogs(c.req.valid('param').id, c.req.valid('query').after)),
+    )
     .put('/units/:id', idParam, zValidator('json', unitEditSchema), async (c) =>
       respond(c, await repo.editUnit(c.req.valid('param').id, c.req.valid('json'))),
     )
     .post('/units/:id/approve', idParam, async (c) => respond(c, await repo.approve(c.req.valid('param').id)))
+    .post('/units/:id/lock', idParam, async (c) => {
+      const id = c.req.valid('param').id
+      const result = await repo.lock(id)
+      if (result === 'ok') await repo.addLog(id, `Gesperrt von ${c.get('user').email}`)
+      return respond(c, result)
+    })
+    .post('/units/:id/unlock', idParam, async (c) => {
+      const id = c.req.valid('param').id
+      const result = await repo.unlock(id)
+      if (result === 'ok') await repo.addLog(id, `Entsperrt und wieder veröffentlicht von ${c.get('user').email}`)
+      return respond(c, result)
+    })
     .post('/units/:id/reject', idParam, zValidator('json', rejectSchema), async (c) =>
       respond(c, await repo.reject(c.req.valid('param').id, c.req.valid('json').reason)),
     )
     .post('/units/:id/requeue', idParam, async (c) => {
       const id = c.req.valid('param').id
       const result = await repo.requeue(id)
-      if (result === 'ok') await queue.enqueueResearch(id)
+      if (result === 'ok') {
+        await repo.addLog(id, `Alles neu generieren angestoßen von ${c.get('user').email}`)
+        await queue.enqueueResearch(id)
+      }
       return respond(c, result)
     })
     // Partial regeneration: new text from the existing sources, then check and media run again
     .post('/units/:id/redraft', idParam, async (c) => {
       const id = c.req.valid('param').id
       const result = await repo.redraft(id)
-      if (result === 'ok') await queue.enqueue(QUEUES.draft, id)
+      if (result === 'ok') {
+        await repo.addLog(id, `Text neu schreiben angestoßen von ${c.get('user').email}`)
+        await queue.enqueue(QUEUES.draft, id)
+      }
       return respond(c, result)
     })
     .post('/units/:id/resume', idParam, async (c) => {
       const id = c.req.valid('param').id
       const claim = await repo.resume(id)
-      if (claim.result === 'ok') await queue.enqueue(claim.queue, id)
+      if (claim.result === 'ok') {
+        await repo.addLog(id, `Fortsetzen angestoßen von ${c.get('user').email}`)
+        await queue.enqueue(claim.queue, id)
+      }
       return respond(c, claim.result)
     })
     .post('/units/bulk', zValidator('json', bulkActionSchema), async (c) => {
@@ -79,6 +103,9 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
           result = claim.result
         } else if (action === 'delete') {
           result = await repo.deleteUnit(id)
+        } else if (action === 'lock' || action === 'unlock') {
+          result = action === 'lock' ? await repo.lock(id) : await repo.unlock(id)
+          if (result === 'ok') await repo.addLog(id, `${action === 'lock' ? 'Gesperrt' : 'Entsperrt und wieder veröffentlicht'} von ${c.get('user').email} (Mehrfachauswahl)`)
         } else {
           result = await repo.requeue(id)
           if (result === 'ok') await queue.enqueueResearch(id)

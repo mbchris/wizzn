@@ -1,7 +1,7 @@
 import { and, asc, eq, lt, ne, sql } from 'drizzle-orm'
 import { editorialSchema, type CheckReport, type UnitStatus } from '@wizzn/shared'
 import type { Db } from '../db/client.js'
-import { asset, checkReport, field, source, unit } from '../db/schema/index.js'
+import { asset, checkReport, field, source, unit, unitLog } from '../db/schema/index.js'
 import type { ResearchedSource } from './prompts.js'
 import type { NewAsset, PipelineStore, PipelineUnit } from './store.js'
 
@@ -174,6 +174,10 @@ export function createDbPipelineStore(db: Db): PipelineStore {
 
     async saveContent(unitId, contentJson) {
       await db.update(unit).set({ contentJson, updatedAt: new Date() }).where(eq(unit.id, unitId))
+    },
+
+    async appendLog(unitId, { level, step, message }) {
+      await db.insert(unitLog).values({ unitId, level, step, message: message.slice(0, 2000) })
     },
   }
 }

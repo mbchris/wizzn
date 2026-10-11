@@ -3,6 +3,13 @@ import { STUCK_AFTER_MS, canDelete, canTransition, isStuck } from '../src/unit-s
 import { FIELD_SEEDS } from '../src/fields.js'
 
 describe('canTransition', () => {
+  it('locks published units and publishes them again', () => {
+    expect(canTransition('published', 'locked')).toBe(true)
+    expect(canTransition('locked', 'published')).toBe(true)
+    expect(canTransition('locked', 'queued')).toBe(true)
+    expect(canTransition('in_review', 'locked')).toBe(false)
+    expect(canTransition('locked', 'in_review')).toBe(false)
+  })
   it('moves forward one pipeline step', () => {
     expect(canTransition('queued', 'researching')).toBe(true)
     expect(canTransition('rendering_media', 'in_review')).toBe(true)

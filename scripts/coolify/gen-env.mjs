@@ -15,13 +15,14 @@ for (let i = 2; i < process.argv.length; i++) {
   args[k] = FLAGS.has(k) ? true : process.argv[++i]
 }
 if (!args.domain) {
-  console.error('Usage: pnpm coolify:env -- --domain <base-domain> [--api host] [--admin host] [--media host] [--fresh-secrets]')
+  console.error('Usage: pnpm coolify:env -- --domain <base-domain> [--api host] [--admin host] [--media host] [--web host] [--fresh-secrets]')
   process.exit(1)
 }
 const host = (k) => args[k] ?? `${k}.${args.domain}`
 const API = `https://${host('api')}`
 const ADMIN = `https://${host('admin')}`
 const MEDIA = `https://${host('media')}`
+const WEB = `https://${host('web')}`
 
 // KEY=value per line; tolerates `export `, surrounding quotes and CRLF. Duplicate keys: the last one wins (like dotenv).
 const parse = (file) => {
@@ -62,7 +63,7 @@ const COPY = [
 const env = {
   API_PUBLIC_URL: API,
   MEDIA_PUBLIC_URL: MEDIA,
-  CORS_ORIGINS: [ADMIN, 'capacitor://localhost', 'http://localhost', 'https://localhost'].join(','),
+  CORS_ORIGINS: [ADMIN, WEB, 'capacitor://localhost', 'http://localhost', 'https://localhost'].join(','),
 }
 for (const k of SECRETS) env[k] = secret(k, k === 'BETTER_AUTH_SECRET' ? 48 : k === 'POSTGRES_PASSWORD' ? 24 : 32)
 for (const k of COPY) if (dev[k]) env[k] = dev[k]

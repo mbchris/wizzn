@@ -23,6 +23,10 @@ function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}, im
     redraft: async () => 'ok',
     deleteUnit: async () => 'ok',
     resume: async () => ({ result: 'ok', queue: 'unit.check' }),
+    lock: async () => 'ok',
+    unlock: async () => 'ok',
+    listLogs: async () => [],
+    addLog: async () => {},
     ...overrides,
   }
   const app = createApp({
@@ -40,6 +44,31 @@ describe('/api/admin', () => {
     const other = setup({ ...admin, email: 'x@y.de' })
     expect((await anon.app.request('/api/admin/units', { headers })).status).toBe(403)
     expect((await other.app.request('/api/admin/units', { headers })).status).toBe(403)
+  })
+  it('returns the unit protocol and passes the polling cursor', async () => {
+    const calls: [string, number | undefined][] = []
+    const line = { id: 8, at: '2026-10-11T10:00:00.000Z', level: 'info' as const, step: 'draft', message: 'Entwurf gestartet' }
+    const { app } = setup(admin, { listLogs: async (id, after) => (calls.push([id, after]), [line]) })
+    const res = await app.request(`/api/admin/units/${UNIT}/logs?after=7`, { headers })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual([line])
+    expect(calls).toEqual([[UNIT, 7]])
+  })
+  it('locks and unlocks units and notes it in the protocol', async () => {
+    const notes: string[] = []
+    const { app } = setup(admin, { addLog: async (_id, m) => void notes.push(m) })
+    expect((await app.request(`/api/admin/units/${UNIT}/lock`, { method: 'POST', headers })).status).toBe(200)
+    expect((await app.request(`/api/admin/units/${UNIT}/unlock`, { method: 'POST', headers })).status).toBe(200)
+    expect(notes).toEqual([expect.stringContaining('Gesperrt'), expect.stringContaining('Entsperrt')])
+    const refused = setup(admin, { lock: async () => 'invalid_state', unlock: async () => 'invalid_content' }).app
+    expect((await refused.request(`/api/admin/units/${UNIT}/lock`, { method: 'POST', headers })).status).toBe(409)
+    expect((await refused.request(`/api/admin/units/${UNIT}/unlock`, { method: 'POST', headers })).status).toBe(400)
+  })
+  it('notes a manual restart in the unit protocol', async () => {
+    const notes: string[] = []
+    const { app } = setup(admin, { addLog: async (_id, m) => void notes.push(m) })
+    await app.request(`/api/admin/units/${UNIT}/requeue`, { method: 'POST', headers })
+    expect(notes).toEqual([expect.stringContaining('Alles neu generieren')])
   })
   it('matches admin emails case-insensitively', async () => {
     expect((await setup().app.request('/api/admin/units', { headers })).status).toBe(200)

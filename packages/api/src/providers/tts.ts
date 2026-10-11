@@ -9,10 +9,24 @@ export interface TtsResult {
   voice?: string
 }
 
+export interface SynthesizeOptions {
+  /** Voice to reuse (e.g. re-voicing a unit keeps its original voice); omitted → the client picks one */
+  voice?: string
+}
+
 export interface TtsClient {
   /** Engine/voice label stored on the audio asset and shown in the admin UI */
   readonly name: string
-  synthesize(text: string): Promise<TtsResult>
+  synthesize(text: string, opts?: SynthesizeOptions): Promise<TtsResult>
+}
+
+/** Label stored as the audio asset's `generator`: engine plus the voice of this render */
+export const ttsGeneratorLabel = (tts: Pick<TtsClient, 'name'>, voice?: string): string => (voice ? `${tts.name} · ${voice}` : tts.name)
+
+/** Voice of an earlier render of the same engine, read back from the asset's `generator` label */
+export function voiceFromGenerator(tts: Pick<TtsClient, 'name'>, generator: string | null | undefined): string | undefined {
+  const prefix = `${tts.name} · `
+  return generator?.startsWith(prefix) ? generator.slice(prefix.length) || undefined : undefined
 }
 
 const WORDS_PER_MIN = 140
@@ -99,6 +113,12 @@ const REQUESTY_MAX_CHARS = 4096
 const REQUESTY_CHUNK_CHARS = 3500
 /** Chatterbox & co. generate a limited length per call (local Chatterbox uses 280) → small, sentence-aligned requests */
 const REQUESTY_OTHER_CHUNK_CHARS = 300
+/**
+ * Voice-design models (e.g. Qwen3-TTS-VoiceDesign) invent a new speaker from the description on every request, so
+ * each chunk would sound like a different person. They get the whole script in one request; only if the provider
+ * rejects the length is it halved (at sentence boundaries) — as few seams as possible.
+ */
+const isVoiceDesignModel = (model: string): boolean => /voice-?design/i.test(model)
 /** OpenAI `pcm` output: raw 16-bit signed LE, mono, 24 kHz */
 const REQUESTY_PCM_RATE = 24_000
 
@@ -133,14 +153,15 @@ export function createRequestyTts({ baseUrl, apiKey, model, voice = '', language
   const openai = model.startsWith('openai/')
   const v = openai ? voice.trim().toLowerCase() || 'nova' : voice.trim()
   if (openai && !(REQUESTY_VOICES as readonly string[]).includes(v)) throw new Error(`Requesty TTS: unknown voice "${voice}" for ${model} (one of ${REQUESTY_VOICES.join(', ')})`)
-  const chunkChars = maxChunkChars ?? (openai ? REQUESTY_CHUNK_CHARS : REQUESTY_OTHER_CHUNK_CHARS)
+  const design = !openai && isVoiceDesignModel(model)
+  const chunkChars = maxChunkChars ?? (openai ? REQUESTY_CHUNK_CHARS : design ? Number.POSITIVE_INFINITY : REQUESTY_OTHER_CHUNK_CHARS)
 
   const post = async (body: Record<string, unknown>): Promise<Buffer> => {
     const res = await fetchFn(url, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` }, body: JSON.stringify(body) })
-    if (!res.ok) throw new Error(`Requesty TTS HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`)
+    if (!res.ok) throw new RequestyHttpError(res.status, `Requesty TTS HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`)
     return Buffer.from(await res.arrayBuffer())
   }
-  const chunks = (text: string): string[] => splitIntoSentenceChunks(text, chunkChars, REQUESTY_MAX_CHARS)
+  const chunks = (text: string): string[] => splitIntoSentenceChunks(text, chunkChars, design ? Number.POSITIVE_INFINITY : REQUESTY_MAX_CHARS)
 
   if (openai) {
     const render: Render = async (text, scale) => {
@@ -157,12 +178,21 @@ export function createRequestyTts({ baseUrl, apiKey, model, voice = '', language
     let p = raw.get(text)
     if (!p) {
       p = (async () => {
-        const parts: Buffer[] = []
-        for (const chunk of chunks(text)) {
-          const wav = await post({ model, input: chunk, response_format: 'wav', ...(v && { voice: v }), ...(language && { language }) })
-          if (wav.length < 12 || wav.toString('ascii', 0, 4) !== 'RIFF') throw new Error(`Requesty TTS: ${model} did not return WAV (got ${wav.length} bytes starting "${wav.toString('latin1', 0, 4)}")`)
-          parts.push(fixWavSizes(wav))
+        const renderChunk = async (chunk: string): Promise<Buffer> => {
+          try {
+            const wav = await post({ model, input: chunk, response_format: 'wav', ...(v && { voice: v }), ...(language && { language }) })
+            if (wav.length < 12 || wav.toString('ascii', 0, 4) !== 'RIFF') throw new Error(`Requesty TTS: ${model} did not return WAV (got ${wav.length} bytes starting "${wav.toString('latin1', 0, 4)}")`)
+            return fixWavSizes(wav)
+          } catch (err) {
+            // Voice design: a too-long input is halved rather than chunked small, so the speaker changes as rarely as possible
+            const halves = design && err instanceof RequestyHttpError && LENGTH_REJECTED.has(err.status) ? splitInHalf(chunk) : null
+            if (!halves) throw err
+            console.warn(`tts: ${model} rejected ${chunk.length} chars (HTTP ${(err as RequestyHttpError).status}) → splitting in two`)
+            return concatWav([await renderChunk(halves[0]), await renderChunk(halves[1])])
+          }
         }
+        const parts: Buffer[] = []
+        for (const chunk of chunks(text)) parts.push(await renderChunk(chunk))
         return concatWav(parts)
       })()
       p.catch(() => raw.delete(text))
@@ -179,6 +209,28 @@ export function createRequestyTts({ baseUrl, apiKey, model, voice = '', language
     return stretched ?? wav
   }
   return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: `requesty · ${model}${v ? ` · ${v}` : ''}${language ? ` · ${language}` : ''}` }
+}
+
+class RequestyHttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message)
+  }
+}
+/** Statuses a provider uses for "input too long" */
+const LENGTH_REJECTED = new Set([400, 413, 422])
+
+/** Two halves of roughly equal length, cut at a sentence boundary; null for a single sentence */
+export function splitInHalf(text: string): [string, string] | null {
+  const sentences = splitIntoSentenceChunks(text, 1, Number.POSITIVE_INFINITY)
+  if (sentences.length < 2) return null
+  let left = 0
+  let at = 0
+  while (at < sentences.length - 1 && left + sentences[at]!.length < text.length / 2) left += sentences[at++]!.length + 1
+  const cut = Math.max(1, at)
+  return [sentences.slice(0, cut).join(' '), sentences.slice(cut).join(' ')]
 }
 
 /** Streamed WAVs may carry placeholder sizes (0 / 0xFFFFFFFF): rewrite RIFF + data sizes from the actual length */
@@ -226,9 +278,9 @@ export function pcmToWav(pcm: Buffer, sampleRate: number): Buffer {
 /** Single render, no 3–5 min duration fitting (debugging / ad-hoc text) */
 function renderOnce(renderWav: Render, lengthScale: number, pick: VoicePicker = () => undefined): Omit<TtsClient, 'name'> {
   return {
-    async synthesize(raw) {
+    async synthesize(raw, opts) {
       const text = speakable(raw)
-      const voice = pick()
+      const voice = opts?.voice ?? pick()
       const audio = await renderWav(text, clampScale(lengthScale), voice)
       return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)), ...(voice && { voice }) }
     },
@@ -306,10 +358,10 @@ function dataChunk(wav: Buffer): { start: number; end: number } {
  */
 function fitToWindow(renderWav: Render, lengthScale: number, pick: VoicePicker = () => undefined): Omit<TtsClient, 'name'> {
   return {
-    async synthesize(raw) {
+    async synthesize(raw, opts) {
       const text = speakable(raw)
-      // Same voice for every re-render of this unit
-      const voice = pick()
+      // Same voice for every chunk and re-render of this unit; re-voicing passes the unit's original voice
+      const voice = opts?.voice ?? pick()
       const render = async (t: string, scale: number): Promise<TtsResult> => {
         const audio = await renderWav(t, scale, voice)
         return { audio, contentType: 'audio/wav', durationSec: Math.floor(wavDurationSec(audio)), ...(voice && { voice }) }

@@ -1,6 +1,6 @@
 import type { QueueName } from './jobs/queues.js'
 import type { ClaimResult } from './pipeline/recover.js'
-import type { BriefInput, FieldDto, InterestsInput, MeDto, UnitDetailDto, UnitEdit, UnitListQuery, UnitSummaryDto } from '@wizzn/shared'
+import type { BriefInput, FieldDto, InterestsInput, MeDto, UnitDetailDto, UnitEdit, UnitListQuery, UnitLogDto, UnitSummaryDto } from '@wizzn/shared'
 
 export interface SessionUser {
   id: string
@@ -36,6 +36,10 @@ export interface AdminRepo {
   editUnit(id: string, edit: UnitEdit): Promise<AdminActionResult>
   approve(id: string): Promise<AdminActionResult>
   reject(id: string, reason: string): Promise<AdminActionResult>
+  /** published → locked: hidden from feed/search/saved lists; completions, XP and streaks are untouched */
+  lock(id: string): Promise<AdminActionResult>
+  /** locked → published again (content must match unitContentSchema) */
+  unlock(id: string): Promise<AdminActionResult>
   /** Moves failed/rejected/in_review/published/stuck units back to queued; caller enqueues research */
   requeue(id: string): Promise<AdminActionResult>
   /** Keeps sources, re-runs draft → check → media; caller enqueues the draft queue */
@@ -44,6 +48,10 @@ export interface AdminRepo {
   deleteUnit(id: string): Promise<AdminActionResult>
   /** Puts a stuck unit back before its interrupted step; caller enqueues the returned queue */
   resume(id: string): Promise<ClaimResult>
+  /** Pipeline protocol, oldest first; `after` returns only newer lines (polling) */
+  listLogs(id: string, after?: number): Promise<UnitLogDto[]>
+  /** Admin-side protocol line, e.g. a manual restart */
+  addLog(id: string, message: string): Promise<void>
 }
 
 export interface JobQueue {

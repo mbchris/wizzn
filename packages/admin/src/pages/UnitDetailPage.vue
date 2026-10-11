@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
-import { formatLicense, type ReplaceImageMode, type UnitDetailDto } from '@wizzn/shared'
+import { formatLicense, type ReplaceImageMode, type UnitDetailDto, type UnitLogDto, type UnitStatus } from '@wizzn/shared'
 import { api, ApiError, errorMessage, replaceImage, revoiceAudio } from 'src/api'
 import UnitPreview from 'components/UnitPreview.vue'
 import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
@@ -27,18 +27,40 @@ function imageOrigin(img: Pick<UnitDetailDto['assets'][number], 'credit' | 'gene
 }
 /** Editable AI prompt per image asset; seeded from the stored prompt */
 const prompts = ref<Record<string, string>>({})
+/** Display name per image asset: written units start with the cover ("Titelbild"), then "Bild 1", "Bild 2" … */
+const imageLabels = computed<Record<string, string>>(() => {
+  const written = unit.value?.format === 'written'
+  return Object.fromEntries(images.value.map((img, i) => [img.id, written && i === 0 ? 'Titelbild' : `Bild ${written ? i : i + 1}`]))
+})
+const imageLabel = (id: string): string => imageLabels.value[id] ?? 'Bild'
 /** Asset shown large in the preview dialog */
 const zoomId = ref<string | null>(null)
-const zoomed = computed(() => images.value.find((a) => a.id === zoomId.value) ?? null)
+const zoomIndex = computed(() => images.value.findIndex((a) => a.id === zoomId.value))
+const zoomed = computed(() => images.value[zoomIndex.value] ?? null)
+function zoomStep(delta: number): void {
+  const n = images.value.length
+  if (n && zoomIndex.value >= 0) zoomId.value = images.value[(zoomIndex.value + delta + n) % n]!.id
+}
+/** ← / → flip through the images while the large view is open (not while typing a prompt) */
+function onZoomKey(e: KeyboardEvent): void {
+  if (!zoomed.value || (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA)$/.test(e.target.tagName))) return
+  if (e.key === 'ArrowLeft') zoomStep(-1)
+  if (e.key === 'ArrowRight') zoomStep(1)
+}
 const mediaBusy = computed(() => busy.value || Object.values(swapping.value).some(Boolean))
 /** Unsaved edits would be overwritten by load(), and re-voicing reads the saved script */
 const dirty = computed(() => !!unit.value && (title.value !== (unit.value.title ?? '') || json.value !== JSON.stringify(unit.value.contentJson, null, 2)))
 const fmtSec = (s: number | null): string => (s === null ? '–' : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`)
 const reviewable = computed(() => unit.value?.status === 'in_review')
+/** Single media assets can be recreated in review and after publishing (API: MEDIA_EDITABLE) */
+const locked = computed(() => unit.value?.status === 'locked')
+const mediaEditable = computed(() => unit.value?.status === 'in_review' || unit.value?.status === 'published' || locked.value)
+const isPublished = computed(() => unit.value?.status === 'published')
 const stuck = computed(() => !!unit.value?.stuck)
 /** A stuck draft can be fixed by hand and then resumed (check → media → review) */
 const draftEditable = computed(() => stuck.value && unit.value?.status === 'drafting')
-const editable = computed(() => reviewable.value || draftEditable.value)
+/** Locked units are edited while hidden from the feed (API: editUnit) */
+const editable = computed(() => reviewable.value || draftEditable.value || locked.value)
 /** Issue #4: source tiers and the derived trust level */
 const TIER_LABEL: Record<number, string> = { 1: 'Stufe 1 · kuratiert', 2: 'Stufe 2 · Wikipedia', 3: 'Stufe 3 · Studie', 4: 'Stufe 4 · Web' }
 const TIER_COLOR: Record<number, string> = { 1: 'positive', 2: 'primary', 3: 'teal', 4: 'orange' }
@@ -76,14 +98,19 @@ async function act(label: string, fn: () => Promise<unknown>): Promise<void> {
 }
 
 /** Media actions reload the unit, so unsaved JSON/title edits would be lost: ask first */
-function confirmDiscard(): Promise<boolean> {
-  if (!dirty.value) return Promise.resolve(true)
+function ask(title: string, message: string, ok: string, color: string): Promise<boolean> {
   return new Promise((resolve) => {
-    $q.dialog({ title: 'Ungespeicherte Änderungen', message: 'Titel/Inhalt wurden geändert, aber nicht gespeichert. Verwerfen und fortfahren?', ok: { label: 'Verwerfen', color: 'negative' }, cancel: { label: 'Abbrechen', flat: true } })
-      .onOk(() => resolve(true))
-      .onCancel(() => resolve(false))
-      .onDismiss(() => resolve(false))
+    let answered = false
+    $q.dialog({ title, message, ok: { label: ok, color }, cancel: { label: 'Abbrechen', flat: true } })
+      .onOk(() => ((answered = true), resolve(true)))
+      .onDismiss(() => !answered && resolve(false))
   })
+}
+/** Published units: a swapped asset replaces the live one immediately */
+async function confirmDiscard(what = 'Medien'): Promise<boolean> {
+  if (dirty.value && !(await ask('Ungespeicherte Änderungen', 'Titel/Inhalt wurden geändert, aber nicht gespeichert. Verwerfen und fortfahren?', 'Verwerfen', 'negative'))) return false
+  if (isPublished.value && !(await ask(`${what} neu erstellen`, `Der Wissenshappen ist veröffentlicht – das neue Ergebnis ersetzt ${what} sofort im Feed, ohne erneute Freigabe.`, 'Neu erstellen', 'primary'))) return false
+  return true
 }
 
 async function swapOne(assetId: string, mode: ReplaceImageMode): Promise<boolean> {
@@ -102,14 +129,14 @@ async function swapOne(assetId: string, mode: ReplaceImageMode): Promise<boolean
 }
 
 async function swap(assetId: string, mode: ReplaceImageMode): Promise<void> {
-  if (!(await confirmDiscard())) return
-  await swapOne(assetId, mode)
+  if (!(await confirmDiscard(imageLabel(assetId)))) return
+  if (await swapOne(assetId, mode)) $q.notify({ type: 'positive', message: `${imageLabel(assetId)} neu erstellt` })
   await load()
 }
 
 /** Sequential so the provider is not hammered and every failure is reported */
 async function regenerateAllImages(): Promise<void> {
-  if (!(await confirmDiscard())) return
+  if (!(await confirmDiscard('alle Bilder'))) return
   let ok = 0
   for (const img of images.value) if (await swapOne(img.id, 'generated')) ok++
   await load()
@@ -132,13 +159,13 @@ async function revoiceOne(): Promise<boolean> {
 }
 
 async function revoice(): Promise<void> {
-  if (!(await confirmDiscard())) return
+  if (!(await confirmDiscard('das Audio'))) return
   if (await revoiceOne()) $q.notify({ type: 'positive', message: 'Audio neu vertont' })
   await load()
 }
 
 async function regenerateAllMedia(): Promise<void> {
-  if (!(await confirmDiscard())) return
+  if (!(await confirmDiscard('alle Medien'))) return
   const voiced = audio.value ? await revoiceOne() : false
   let ok = 0
   for (const img of images.value) if (await swapOne(img.id, 'generated')) ok++
@@ -148,8 +175,20 @@ async function regenerateAllMedia(): Promise<void> {
 
 const save = () => act('Gespeichert', () => api(`/api/admin/units/${props.id}`, { method: 'PUT', body: { title: title.value, contentJson: previewContent.value } }))
 const approve = () => act('Veröffentlicht', () => api(`/api/admin/units/${props.id}/approve`, { method: 'POST' }))
-const REGENERATABLE = ['in_review', 'failed', 'rejected', 'published'] as const
+const REGENERATABLE = ['in_review', 'failed', 'rejected', 'published', 'locked'] as const
 const canRegenerate = computed(() => !!unit.value && (stuck.value || (REGENERATABLE as readonly string[]).includes(unit.value.status)))
+function lock(): void {
+  $q.dialog({
+    title: 'Sperren',
+    message: 'Der Wissenshappen verschwindet aus Feed, Suche und Merklisten, bleibt aber in den Statistiken der Nutzer (abgeschlossen, XP, Serien). Danach kannst du Text und Medien bearbeiten und ihn wieder entsperren.',
+    ok: { label: 'Sperren', color: 'purple-7' },
+    cancel: { label: 'Abbrechen', flat: true },
+  }).onOk(() => void act('Gesperrt', () => api(`/api/admin/units/${props.id}/lock`, { method: 'POST' })))
+}
+async function unlock(): Promise<void> {
+  if (dirty.value && !(await ask('Ungespeicherte Änderungen', 'Titel/Inhalt wurden geändert, aber nicht gespeichert. Ohne diese Änderungen wieder veröffentlichen?', 'Ohne Änderungen veröffentlichen', 'primary'))) return
+  await act('Wieder veröffentlicht', () => api(`/api/admin/units/${props.id}/unlock`, { method: 'POST' }))
+}
 const resume = () => act('Wird fortgesetzt', () => api(`/api/admin/units/${props.id}/resume`, { method: 'POST' }))
 const doRequeue = () => act('Neu in der Pipeline', () => api(`/api/admin/units/${props.id}/requeue`, { method: 'POST' }))
 const doRedraft = () => act('Text wird neu geschrieben', () => api(`/api/admin/units/${props.id}/redraft`, { method: 'POST' }))
@@ -177,14 +216,69 @@ function reject(): void {
   })
 }
 
-onMounted(load)
+/** Pipeline still running (or waiting): show the live protocol and keep polling */
+const WORKING: readonly UnitStatus[] = ['queued', 'researching', 'drafting', 'checking', 'rendering_media']
+const inProgress = computed(() => !!unit.value && WORKING.includes(unit.value.status) && !stuck.value)
+/** The protocol stays visible for unfinished units: running, stuck or failed */
+const showLog = computed(() => !!unit.value && (inProgress.value || stuck.value || unit.value.status === 'failed'))
+const logs = ref<UnitLogDto[]>([])
+const logBox = ref<HTMLElement | null>(null)
+const LOG_COLOR: Record<UnitLogDto['level'], string> = { info: 'text-grey-9', warn: 'text-orange-9', error: 'text-negative' }
+const STEP_ICON: Record<string, string> = { research: 'travel_explore', draft: 'edit_note', check: 'fact_check', media: 'perm_media' }
+const fmtTime = (iso: string): string => new Date(iso).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+
+async function loadLogs(): Promise<void> {
+  const after = logs.value.at(-1)?.id
+  try {
+    const fresh = await api<UnitLogDto[]>(`/api/admin/units/${props.id}/logs${after !== undefined ? `?after=${after}` : ''}`)
+    if (!fresh.length) return
+    const box = logBox.value
+    const atBottom = !box || box.scrollHeight - box.scrollTop - box.clientHeight < 24
+    logs.value = [...logs.value, ...fresh].slice(-1000)
+    // Follow the tail unless the reader scrolled up
+    if (atBottom) void nextTick(() => logBox.value && (logBox.value.scrollTop = logBox.value.scrollHeight))
+  } catch {
+    // Polling retries on the next tick
+  }
+}
+
+let poll: ReturnType<typeof setInterval> | undefined
+function stopPolling(): void {
+  clearInterval(poll)
+  poll = undefined
+}
+async function tick(): Promise<void> {
+  await loadLogs()
+  // Unsaved edits are only possible on stuck drafts, which are not polled
+  if (!dirty.value) await load().catch(() => {})
+}
+watch(
+  inProgress,
+  (running) => {
+    if (running && !poll) poll = setInterval(() => void tick(), 2000)
+    if (!running) stopPolling()
+  },
+)
+
+onMounted(async () => {
+  await load()
+  await loadLogs()
+})
+watch(zoomed, (z, prev) => {
+  if (z && !prev) window.addEventListener('keydown', onZoomKey)
+  if (!z && prev) window.removeEventListener('keydown', onZoomKey)
+})
+onUnmounted(() => {
+  stopPolling()
+  window.removeEventListener('keydown', onZoomKey)
+})
 </script>
 
 <template>
   <q-page padding>
     <div v-if="unit" class="row q-col-gutter-lg">
       <div class="col-auto">
-        <UnitPreview :title="title" :content="previewContent" :assets="unit.assets" />
+        <UnitPreview :title="title" :content="previewContent" :assets="unit.assets" :labels="imageLabels" @zoom="(id) => (zoomId = id)" />
       </div>
       <div class="col column q-gutter-md">
         <div class="row items-center q-gutter-sm">
@@ -195,7 +289,13 @@ onMounted(load)
           <q-btn v-if="stuck" color="primary" icon="play_arrow" label="Fortsetzen" :disable="busy" @click="resume">
             <q-tooltip>Den unterbrochenen Schritt erneut ausführen{{ draftEditable ? ' – ein vollständiger Entwurf (auch bearbeitet) wird geprüft und vertont/bebildert' : '' }}</q-tooltip>
           </q-btn>
-          <q-btn color="positive" icon="done" label="Freigeben" :disable="!reviewable || busy" @click="approve" />
+          <q-btn v-if="locked" color="positive" icon="lock_open" label="Entsperren" :disable="busy" @click="unlock">
+            <q-tooltip>Wieder veröffentlichen – gespeicherte Änderungen gehen live</q-tooltip>
+          </q-btn>
+          <q-btn v-else color="positive" icon="done" label="Freigeben" :disable="!reviewable || busy" @click="approve" />
+          <q-btn v-if="isPublished" flat color="purple-7" icon="lock" label="Sperren" :disable="busy" @click="lock">
+            <q-tooltip>Aus dem Feed nehmen, um ihn zu bearbeiten</q-tooltip>
+          </q-btn>
           <q-btn color="negative" flat icon="block" label="Ablehnen" :disable="!(reviewable || stuck) || busy" @click="reject" />
           <q-btn-dropdown flat icon="replay" label="Neu generieren" :disable="busy || !canRegenerate">
             <q-list>
@@ -217,11 +317,34 @@ onMounted(load)
           </q-btn-dropdown>
         </div>
         <q-banner v-if="unit.failureReason" class="bg-red-1 text-negative">{{ unit.failureReason }}</q-banner>
+        <q-banner v-if="locked" class="bg-purple-1">
+          <template #avatar><q-icon name="lock" color="purple-7" /></template>
+          Gesperrt: für Nutzer nicht sichtbar (Feed, Suche, Merklisten), zählt aber weiter in ihren Statistiken. Text und Medien
+          können bearbeitet bzw. einzeln neu erstellt werden – speichern, dann „Entsperren“.
+        </q-banner>
         <q-banner v-if="stuck" class="bg-orange-1">
           Der Pipeline-Job dieses Wissenshappens ist abgebrochen (z. B. Worker-Neustart). Der Worker setzt hängende Einträge
           automatisch fort; du kannst ihn auch selbst fortsetzen, neu generieren oder ablehnen (Löschen über die Liste).
           <template v-if="draftEditable"> Der Entwurf kann unten bearbeitet werden – speichern, dann „Fortsetzen“. Freigeben ist erst nach Prüfung und Medien möglich.</template>
         </q-banner>
+
+        <q-card v-if="showLog" flat bordered>
+          <q-card-section class="row items-center q-pb-sm">
+            <q-spinner-dots v-if="inProgress" color="primary" size="sm" class="q-mr-sm" />
+            <q-icon v-else name="receipt_long" size="sm" class="q-mr-sm" />
+            <div class="text-subtitle1">Erstellungsprotokoll</div>
+            <q-space />
+            <div class="text-caption text-grey-7">{{ inProgress ? `live · ${STATUS_LABEL[unit.status]}` : STATUS_LABEL[unit.status] }}</div>
+          </q-card-section>
+          <div ref="logBox" class="unit-log q-px-md q-pb-md">
+            <div v-if="!logs.length" class="text-grey-7">{{ unit.status === 'queued' ? 'Wartet auf einen freien Worker …' : 'Noch keine Einträge.' }}</div>
+            <div v-for="l in logs" :key="l.id" class="row no-wrap items-start q-gutter-x-sm" :class="LOG_COLOR[l.level]">
+              <span class="text-grey-6">{{ fmtTime(l.at) }}</span>
+              <q-icon :name="l.level === 'error' ? 'error' : l.level === 'warn' ? 'warning' : (l.step && STEP_ICON[l.step]) || 'person'" size="14px" class="q-mt-xs" />
+              <span class="col">{{ l.message }}</span>
+            </div>
+          </div>
+        </q-card>
 
         <q-card v-if="unit.checkReport" flat bordered>
           <q-card-section class="row items-center">
@@ -265,17 +388,23 @@ onMounted(load)
               <q-item-section>Audio</q-item-section>
               <q-item-section side>{{ audio.generator ?? 'unbekannt' }}</q-item-section>
             </q-item>
-            <q-item v-for="(img, i) in images" :key="'o' + img.id">
+            <q-item v-for="img in images" :key="'o' + img.id" clickable @click="zoomId = img.id">
               <q-item-section avatar><q-icon :name="img.credit ? 'photo_library' : 'auto_fix_high'" /></q-item-section>
-              <q-item-section>{{ unit.format === 'written' && i === 0 ? 'Titelbild' : `Bild ${unit.format === 'written' ? i : i + 1}` }}</q-item-section>
+              <q-item-section>
+                <div class="row items-center no-wrap q-gutter-x-sm">
+                  <q-img :src="img.url" width="28px" ratio="1" class="rounded-borders" />
+                  <span>{{ imageLabel(img.id) }}</span>
+                </div>
+              </q-item-section>
               <q-item-section side>{{ imageOrigin(img) }}</q-item-section>
             </q-item>
           </q-list>
         </q-card>
 
-        <q-card v-if="reviewable && (images.length || audio)" flat bordered>
+        <q-card v-if="mediaEditable && (images.length || audio)" flat bordered>
           <q-card-section class="row items-center q-gutter-sm">
             <div class="text-subtitle1">Medien</div>
+            <q-badge v-if="isPublished" outline color="orange" label="live – Änderungen sofort im Feed" />
             <q-space />
             <q-btn v-if="images.length" flat dense color="primary" icon="image" label="Alle Bilder neu (KI)" :disable="mediaBusy" @click="regenerateAllImages" />
             <q-btn v-if="audio && images.length" flat dense color="primary" icon="auto_awesome" label="Alle Medien neu" :disable="mediaBusy" @click="regenerateAllMedia" />
@@ -292,15 +421,16 @@ onMounted(load)
                 <q-btn flat dense color="primary" icon="record_voice_over" label="Neu vertonen" :loading="swapping[audio.id]" :disable="mediaBusy" @click="revoice" />
               </q-item-section>
             </q-item>
-            <q-item v-for="(img, i) in images" :key="img.id" class="items-start">
+            <q-item v-for="img in images" :key="img.id" class="items-start">
               <q-item-section avatar>
                 <q-img :src="img.url" width="96px" ratio="1" class="rounded-borders cursor-pointer" @click="zoomId = img.id">
-                  <q-tooltip>Vorschau</q-tooltip>
+                  <div class="absolute-bottom text-caption text-center q-pa-none">{{ imageLabel(img.id) }}</div>
+                  <q-tooltip>Groß anzeigen</q-tooltip>
                 </q-img>
               </q-item-section>
               <q-item-section>
                 <q-item-label>
-                  {{ unit.format === 'written' && i === 0 ? 'Titelbild' : `Bild ${unit.format === 'written' ? i : i + 1}` }} ·
+                  <span class="text-weight-medium">{{ imageLabel(img.id) }}</span> ·
                   {{ imageOrigin(img) }}
                 </q-item-label>
                 <q-item-label v-if="img.stockQuery" caption>Stock-Suche: {{ img.stockQuery }}</q-item-label>
@@ -317,18 +447,28 @@ onMounted(load)
         </q-card>
 
         <q-dialog :model-value="!!zoomed" @update:model-value="(v) => !v && (zoomId = null)">
-          <q-card v-if="zoomed" style="width: 640px; max-width: 92vw">
-            <q-img :src="zoomed.url" ratio="1" fit="contain" />
+          <q-card v-if="zoomed" style="width: 900px; max-width: 94vw">
+            <q-card-section class="row items-center q-py-sm">
+              <div class="text-h6">{{ imageLabel(zoomed.id) }}</div>
+              <div class="text-caption text-grey-7 q-ml-sm">{{ zoomIndex + 1 }} / {{ images.length }}</div>
+              <q-space />
+              <q-btn v-if="images.length > 1" flat round dense icon="chevron_left" @click="zoomStep(-1)"><q-tooltip>Vorheriges Bild (←)</q-tooltip></q-btn>
+              <q-btn v-if="images.length > 1" flat round dense icon="chevron_right" @click="zoomStep(1)"><q-tooltip>Nächstes Bild (→)</q-tooltip></q-btn>
+              <q-btn v-close-popup flat round dense icon="close" />
+            </q-card-section>
+            <a :href="zoomed.url" target="_blank" class="block bg-grey-2">
+              <q-img :src="zoomed.url" fit="contain" style="max-height: 70vh" />
+            </a>
             <q-card-section class="q-gutter-sm">
               <div class="text-caption text-grey-7">
                 {{ zoomed.credit ? `${imageOrigin(zoomed)} · ${zoomed.credit.creator ?? 'Unbekannt'}` : imageOrigin(zoomed) }}
               </div>
-              <q-input v-model="prompts[zoomed.id]" dense outlined autogrow label="KI-Prompt (Motiv)" />
+              <q-input v-if="mediaEditable" v-model="prompts[zoomed.id]" dense outlined autogrow label="KI-Prompt (Motiv)" />
+              <div v-else-if="zoomed.prompt" class="text-body2">Motiv: {{ zoomed.prompt }}</div>
             </q-card-section>
-            <q-card-actions align="right">
+            <q-card-actions v-if="mediaEditable" align="right">
               <q-btn flat color="primary" icon="photo_library" label="Nächstes Stockbild" :loading="swapping[zoomed.id]" :disable="mediaBusy" @click="swap(zoomed.id, 'next-stock')" />
               <q-btn color="primary" icon="auto_fix_high" label="KI-Bild generieren" :loading="swapping[zoomed.id]" :disable="mediaBusy" @click="swap(zoomed.id, 'generated')" />
-              <q-btn v-close-popup flat label="Schließen" />
             </q-card-actions>
           </q-card>
         </q-dialog>
@@ -361,3 +501,13 @@ onMounted(load)
     <div v-else class="flex flex-center q-pa-xl"><q-spinner size="lg" color="primary" /></div>
   </q-page>
 </template>
+
+<style scoped>
+.unit-log {
+  max-height: 320px;
+  overflow-y: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+}
+</style>

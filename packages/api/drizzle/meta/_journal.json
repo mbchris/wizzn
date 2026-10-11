@@ -78,6 +78,20 @@
       "when": 1791715555214,
       "tag": "0010_knowledge_stream",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791732934914,
+      "tag": "0011_unit_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791746407256,
+      "tag": "0012_unit_locked",
+      "breakpoints": true
     }
   ]
 }

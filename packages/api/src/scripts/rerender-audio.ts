@@ -15,6 +15,7 @@ import { loadEnv } from '../env.js'
 import { createProviders } from '../providers/index.js'
 import { extFor } from '../providers/media-store.js'
 import { wavToMp3 } from '../providers/transcode.js'
+import { ttsGeneratorLabel, voiceFromGenerator } from '../providers/tts.js'
 import { createDb } from '../db/client.js'
 import { asset, unit } from '../db/schema/index.js'
 
@@ -27,7 +28,7 @@ const { db, pool } = createDb(env.DATABASE_URL)
 const { tts, media } = createProviders(env)
 
 const rows = await db
-  .select({ unitId: unit.id, title: unit.title, status: unit.status, contentJson: unit.contentJson, assetId: asset.id, path: asset.path })
+  .select({ unitId: unit.id, title: unit.title, status: unit.status, contentJson: unit.contentJson, assetId: asset.id, path: asset.path, generator: asset.generator })
   .from(unit)
   .innerJoin(asset, and(eq(asset.unitId, unit.id), eq(asset.kind, 'audio')))
   .where(ids.length ? and(eq(unit.format, 'audio'), inArray(unit.id, ids)) : eq(unit.format, 'audio'))
@@ -41,7 +42,9 @@ for (const [i, row] of rows.entries()) {
   if (!content?.script) { console.warn(`${label} — no script, skipped`); continue }
   if (dryRun) { console.log(label); continue }
   try {
-    const speech = await tts.synthesize(content.script)
+    // Keep the unit's voice when the engine is unchanged
+    const voice = voiceFromGenerator(tts, row.generator)
+    const speech = await tts.synthesize(content.script, voice ? { voice } : undefined)
     const mp3 = await wavToMp3(speech.audio)
     const path = mp3 ? await media.put(row.unitId, mp3, 'mp3') : await media.put(row.unitId, speech.audio, extFor(speech.contentType))
     const durationSec = speech.durationSec
@@ -51,7 +54,7 @@ for (const [i, row] of rows.entries()) {
     const check = audioUnitSchema.safeParse(next)
     if (!check.success) throw new Error(`content invalid after re-render: ${check.error.issues.map((x) => x.message).join('; ')}`)
     await db.transaction(async (tx) => {
-      await tx.update(asset).set({ path, durationSec }).where(eq(asset.id, row.assetId))
+      await tx.update(asset).set({ path, durationSec, generator: ttsGeneratorLabel(tts, speech.voice ?? voice) }).where(eq(asset.id, row.assetId))
       await tx.update(unit).set({ contentJson: next, updatedAt: new Date() }).where(eq(unit.id, row.unitId))
     })
     if (path !== row.path) await unlink(join(env.MEDIA_DIR, row.path)).catch(() => {})

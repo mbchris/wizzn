@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { ImageCredit } from '@wizzn/shared'
+import type { ImageCredit, UnitStatus } from '@wizzn/shared'
 import type { ImageDeps } from '../../src/pipeline/images.js'
 import { createStockChain } from '../../src/providers/stock-images/chain.js'
 import { createImageReplacer, type AudioDeps } from '../../src/pipeline/replace-image.js'
@@ -16,7 +16,7 @@ function cand(id: string): StockCandidate {
   return { provider: 'openverse', providerId: id, title: `Bild ${id}`, tags: [], imageUrl: `https://img.test/${id}.jpg`, width: 1200, height: 900, mime: 'image/jpeg', credit: credit(id) }
 }
 
-function setup(candidates: StockCandidate[] = [], status: 'in_review' | 'published' = 'in_review', stock?: ImageDeps['stock']) {
+function setup(candidates: StockCandidate[] = [], status: UnitStatus = 'in_review', stock?: ImageDeps['stock']) {
   const store = new FakeStore()
   store.add('u1', 'written', status)
   store.add('u2', 'written', 'in_review')
@@ -46,9 +46,11 @@ function setup(candidates: StockCandidate[] = [], status: 'in_review' | 'publish
 }
 
 describe('createImageReplacer', () => {
-  it('requires the unit to be in_review', async () => {
-    const { replacer } = setup([cand('n')], 'published')
-    expect(await replacer.replace('u1', 'u1-asset-0', 'next-stock')).toEqual({ ok: false, error: 'invalid_state' })
+  it('requires the unit to be in_review or published', async () => {
+    expect(await setup([cand('n')], 'rejected').replacer.replace('u1', 'u1-asset-0', 'next-stock')).toEqual({ ok: false, error: 'invalid_state' })
+    expect(await setup([cand('n')], 'drafting').replacer.replace('u1', 'u1-asset-0', 'generated')).toEqual({ ok: false, error: 'invalid_state' })
+    expect(await setup([cand('n')], 'published').replacer.replace('u1', 'u1-asset-0', 'next-stock')).toMatchObject({ ok: true })
+    expect(await setup([cand('n')], 'locked').replacer.replace('u1', 'u1-asset-0', 'next-stock')).toMatchObject({ ok: true })
   })
   it('returns not_found for assets of another unit, audio assets and unknown ids', async () => {
     const { replacer } = setup([cand('n')])
@@ -144,7 +146,7 @@ describe('revoice', () => {
     images: [{ imageId: 'a1-asset-1', showAtSec: 100 }],
     sources: [{ url: 'https://q.test', title: 'Q', publisher: 'P' }],
   })
-  function audioSetup(newDuration: number, status: 'in_review' | 'published' = 'in_review') {
+  function audioSetup(newDuration: number, status: UnitStatus = 'in_review') {
     const t = setup()
     t.store.add('a1', 'audio', status)
     void t.store.replaceAssets('a1', [{ kind: 'audio', path: 'a1/old.mp3', durationSec: 200 }, { kind: 'image', path: 'a1/i.png', origin: 'generated', prompt: 'p' }])
@@ -167,8 +169,20 @@ describe('revoice', () => {
     expect(await replacer.revoice('a1', 'a1-asset-0')).toEqual({ ok: false, error: 'invalid_content' })
     expect(store.units.get('a1')!.contentJson).toEqual(content(200))
   })
-  it('requires in_review and an audio asset of the unit', async () => {
-    expect(await audioSetup(240, 'published').replacer.revoice('a1', 'a1-asset-0')).toEqual({ ok: false, error: 'invalid_state' })
+  it('re-voices with the voice of the current recording', async () => {
+    const t = audioSetup(240)
+    t.store.assets.get('a1')![0]!.generator = 'fake-tts · design:Anna'
+    const synthesize = vi.fn(async (_t: string, _o?: { voice?: string }) => ({ audio: Buffer.from('wav'), contentType: 'audio/wav' as const, durationSec: 240, voice: _o?.voice }))
+    const audio: AudioDeps = { tts: { name: 'fake-tts', synthesize }, put: async (u, _d, ext) => `${u}/voice.${ext}`, transcode: async () => Buffer.from('mp3') }
+    const replacer = createImageReplacer({ store: t.store, image: {} as ImageDeps, audio, mediaUrl: (p) => `https://media/${p}` })
+    const res = await replacer.revoice('a1', 'a1-asset-0')
+    expect(synthesize).toHaveBeenCalledWith('Neues Skript', { voice: 'design:Anna' })
+    expect(res).toMatchObject({ ok: true, asset: { generator: 'fake-tts · design:Anna' } })
+    expect(t.store.assets.get('a1')![0]).toMatchObject({ generator: 'fake-tts · design:Anna' })
+  })
+  it('requires in_review/published and an audio asset of the unit', async () => {
+    expect(await audioSetup(240, 'rejected').replacer.revoice('a1', 'a1-asset-0')).toEqual({ ok: false, error: 'invalid_state' })
+    expect(await audioSetup(240, 'published').replacer.revoice('a1', 'a1-asset-0')).toMatchObject({ ok: true })
     expect(await audioSetup(240).replacer.revoice('a1', 'a1-asset-1')).toEqual({ ok: false, error: 'not_found' })
   })
 })

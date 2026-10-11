@@ -102,6 +102,28 @@ describe('media step stock images', () => {
     expect(content.slides.flatMap((s) => (s.imageId ? [s.imageId] : []))).toEqual(assets.slice(1).map((a) => a.id))
   })
 
+  it('writes a live protocol for every step', async () => {
+    const store = new FakeStore()
+    store.add('l1', 'audio')
+    await runAll('l1', deps(store))
+    await new Promise((r) => setTimeout(r, 0))
+    const lines = store.logs.filter((l) => l.unitId === 'l1')
+    for (const step of ['research', 'draft', 'check', 'media']) {
+      expect(lines.some((l) => l.step === step && l.message.endsWith('gestartet'))).toBe(true)
+      expect(lines.some((l) => l.step === step && /fertig \(/.test(l.message))).toBe(true)
+    }
+    expect(lines.some((l) => l.message.startsWith('Audio fertig'))).toBe(true)
+    expect(lines.some((l) => /^Bild 1: KI/.test(l.message))).toBe(true)
+  })
+
+  it('logs a failing step as error', async () => {
+    const store = new FakeStore()
+    store.add('l2', 'written')
+    await runAll('l2', deps(store, { research: [] }))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(store.logs.some((l) => l.unitId === 'l2' && l.level === 'error' && l.step === 'research')).toBe(true)
+  })
+
   it('generates images for an audio unit when stock is disabled and keeps the audio asset', async () => {
     const store = new FakeStore()
     store.add('a2', 'audio')

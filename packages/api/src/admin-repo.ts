@@ -1,7 +1,7 @@
-import { and, desc, eq, type SQL } from 'drizzle-orm'
-import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, unitContentSchema, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
+import { and, asc, desc, eq, gt, type SQL } from 'drizzle-orm'
+import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, unitContentSchema, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitLogDto, type UnitSummaryDto } from '@wizzn/shared'
 import type { Db } from './db/client.js'
-import { completionEvent, contentBrief, feedImpression, source, unit } from './db/schema/index.js'
+import { completionEvent, contentBrief, feedImpression, source, unit, unitLog } from './db/schema/index.js'
 import { claimResume, isUnitStuck, stillStuck, stuckIds } from './pipeline/recover.js'
 import type { AdminActionResult, AdminRepo } from './types.js'
 
@@ -36,7 +36,7 @@ function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'fail
 }
 
 /** Units whose text may be re-drafted from their existing sources (issue: partial regeneration) */
-const REDRAFTABLE: readonly UnitStatus[] = ['in_review', 'published', 'failed', 'rejected']
+const REDRAFTABLE: readonly UnitStatus[] = ['in_review', 'published', 'locked', 'failed', 'rejected']
 
 /** onPublished: knowledge-graph linking; failures are logged and never undo the publish */
 export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPublished?: (unitId: string) => Promise<void>): AdminRepo {
@@ -113,10 +113,15 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
         const saved = await db.update(unit).set({ title: edit.title, contentJson: edit.contentJson }).where(stillStuck(id, 'drafting')).returning({ id: unit.id })
         return saved.length ? 'ok' : 'invalid_state'
       }
-      if (row.status !== 'in_review') return 'invalid_state'
+      // Locked units are edited while hidden from the feed
+      if (row.status !== 'in_review' && row.status !== 'locked') return 'invalid_state'
       if (!unitContentSchema.safeParse(edit.contentJson).success) return 'invalid_content'
-      await db.update(unit).set({ title: edit.title, contentJson: edit.contentJson, updatedAt: new Date() }).where(eq(unit.id, id))
-      return 'ok'
+      const saved = await db
+        .update(unit)
+        .set({ title: edit.title, contentJson: edit.contentJson, updatedAt: new Date() })
+        .where(and(eq(unit.id, id), eq(unit.status, row.status)))
+        .returning({ id: unit.id })
+      return saved.length ? 'ok' : 'invalid_state'
     },
 
     async approve(id) {
@@ -130,6 +135,21 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
     },
 
     reject: (id, reason) => move(id, 'rejected', { failureReason: reason }),
+
+    // publishedAt stays: the unit keeps its place in "new" lists and user history
+    lock: (id) => move(id, 'locked'),
+
+    async unlock(id) {
+      const row = await db.query.unit.findFirst({ where: eq(unit.id, id), columns: { contentJson: true, status: true } })
+      if (!row) return 'not_found'
+      if (row.status !== 'locked') return 'invalid_state'
+      // Edits made while locked must still render in the app
+      if (!unitContentSchema.safeParse(row.contentJson).success) return 'invalid_content'
+      const result = await move(id, 'published')
+      // Title/content may have changed while locked → refresh the knowledge-graph links
+      if (result === 'ok' && onPublished) await onPublished(id).catch((e: unknown) => console.error(`[links] ${id}:`, e))
+      return result
+    },
 
     // Clearing publishedAt keeps a regenerated unit consistent until it is approved again
     requeue: (id) => move(id, 'queued', { failureReason: null, publishedAt: null }),
@@ -166,6 +186,21 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
     },
 
     resume: (id) => claimResume(db, id),
+
+    async listLogs(id, after): Promise<UnitLogDto[]> {
+      // Newest 500 lines, returned oldest first
+      const rows = await db
+        .select()
+        .from(unitLog)
+        .where(after !== undefined ? and(eq(unitLog.unitId, id), gt(unitLog.id, after)) : eq(unitLog.unitId, id))
+        .orderBy(desc(unitLog.id))
+        .limit(500)
+      return rows.reverse().map((r) => ({ id: r.id, at: r.at.toISOString(), level: r.level, step: r.step, message: r.message }))
+    },
+
+    async addLog(id, message) {
+      await db.insert(unitLog).values({ unitId: id, level: 'info', step: null, message })
+    },
   }
 }
 

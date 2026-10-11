@@ -1,4 +1,4 @@
-import { canTransition, type CheckReport, type UnitFormat, type UnitStatus } from '@wizzn/shared'
+import { canTransition, type CheckReport, type UnitFormat, type UnitLogLevel, type UnitStatus } from '@wizzn/shared'
 import type { ResearchedSource } from '../../src/pipeline/prompts.js'
 import type { AssetPatch, NewAsset, PipelineStore, PipelineUnit } from '../../src/pipeline/store.js'
 
@@ -8,6 +8,7 @@ export class FakeStore implements PipelineStore {
   assets = new Map<string, (NewAsset & { id: string; rejectedStockIds: string[] })[]>()
   checks = new Map<string, CheckReport>()
   pairs = new Map<string, string>()
+  logs: { unitId: string; level: UnitLogLevel; step: string | null; message: string }[] = []
 
   add(id: string, format: UnitFormat, status: UnitStatus = 'queued'): void {
     this.units.set(id, {
@@ -75,5 +76,8 @@ export class FakeStore implements PipelineStore {
   }
   async saveContent(id: string, c: unknown) {
     this.units.get(id)!.contentJson = c
+  }
+  async appendLog(unitId: string, e: { level: UnitLogLevel; step: string | null; message: string }) {
+    this.logs.push({ unitId, ...e })
   }
 }

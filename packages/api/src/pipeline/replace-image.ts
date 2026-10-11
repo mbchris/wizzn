@@ -2,7 +2,7 @@ import { audioUnitSchema, type ReplaceImageMode, type UnitDetailDto } from '@wiz
 import { resolveImage, resolveStockImage, type ImageDeps, type ResolvedImage } from './images.js'
 import { creditStockKey as creditKey } from '../providers/stock-images/types.js'
 import { extFor } from '../providers/media-store.js'
-import type { TtsClient } from '../providers/tts.js'
+import { ttsGeneratorLabel, voiceFromGenerator, type TtsClient } from '../providers/tts.js'
 import { wavToMp3 } from '../providers/transcode.js'
 import type { PipelineStore } from './store.js'
 
@@ -27,7 +27,10 @@ export interface AudioDeps {
   transcode?: (wav: Buffer) => Promise<Buffer | null>
 }
 
-/** Admin media swaps during review: next stock candidate, a fresh AI image, or new speech. Asset ids stay stable. */
+/** Single media assets can be swapped in review, while locked, and after publishing (changes go live directly) */
+const MEDIA_EDITABLE: readonly string[] = ['in_review', 'published', 'locked']
+
+/** Admin media swaps: next stock candidate, a fresh AI image, or new speech. Asset ids stay stable. */
 export function createImageReplacer(deps: { store: PipelineStore; image: ImageDeps; audio?: AudioDeps; mediaUrl: (p: string) => string }): ImageReplacer {
   const { store, image, mediaUrl } = deps
   return {
@@ -35,7 +38,7 @@ export function createImageReplacer(deps: { store: PipelineStore; image: ImageDe
       const unit = await store.getUnit(unitId)
       const asset = await store.getAsset(assetId)
       if (!unit || !asset || asset.unitId !== unitId || asset.kind !== 'image') return { ok: false, error: 'not_found' }
-      if (unit.status !== 'in_review') return { ok: false, error: 'invalid_state' }
+      if (!MEDIA_EDITABLE.includes(unit.status)) return { ok: false, error: 'invalid_state' }
 
       const currentKey = asset.credit ? creditKey(asset.credit) : null
       let resolved: ResolvedImage
@@ -68,11 +71,14 @@ export function createImageReplacer(deps: { store: PipelineStore; image: ImageDe
       const unit = await store.getUnit(unitId)
       const asset = await store.getAsset(assetId)
       if (!deps.audio || !unit || !asset || asset.unitId !== unitId || asset.kind !== 'audio') return { ok: false, error: 'not_found' }
-      if (unit.status !== 'in_review') return { ok: false, error: 'invalid_state' }
+      if (!MEDIA_EDITABLE.includes(unit.status)) return { ok: false, error: 'invalid_state' }
       const content = audioUnitSchema.safeParse(unit.contentJson)
       if (!content.success || content.data.audioId !== assetId) return { ok: false, error: 'invalid_content' }
 
-      const speech = await deps.audio.tts.synthesize(content.data.script)
+      // Same voice as the unit's current recording, so re-voicing never swaps the speaker
+      const voice = voiceFromGenerator(deps.audio.tts, asset.generator)
+      const speech = voice ? await deps.audio.tts.synthesize(content.data.script, { voice }) : await deps.audio.tts.synthesize(content.data.script)
+      const generator = ttsGeneratorLabel(deps.audio.tts, speech.voice ?? voice)
       const mp3 = await (deps.audio.transcode ?? wavToMp3)(speech.audio)
       const path = mp3 ? await deps.audio.put(unitId, mp3, 'mp3') : await deps.audio.put(unitId, speech.audio, extFor(speech.contentType))
       // Images keep their relative position in the new, possibly longer or shorter, recording
@@ -81,9 +87,9 @@ export function createImageReplacer(deps: { store: PipelineStore; image: ImageDe
       const next = audioUnitSchema.safeParse({ ...content.data, durationSec: speech.durationSec, images })
       if (!next.success) return { ok: false, error: 'invalid_content' }
 
-      await store.updateAsset(assetId, { path, origin: 'generated', credit: null, stockQuery: null, durationSec: speech.durationSec, generator: deps.audio.tts.name })
+      await store.updateAsset(assetId, { path, origin: 'generated', credit: null, stockQuery: null, durationSec: speech.durationSec, generator })
       await store.saveContent(unitId, next.data)
-      return { ok: true, asset: { id: assetId, kind: 'audio', url: mediaUrl(path), durationSec: speech.durationSec, origin: 'generated', credit: null, stockQuery: null, prompt: null, generator: deps.audio.tts.name } }
+      return { ok: true, asset: { id: assetId, kind: 'audio', url: mediaUrl(path), durationSec: speech.durationSec, origin: 'generated', credit: null, stockQuery: null, prompt: null, generator } }
     },
   }
 }

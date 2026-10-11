@@ -6,6 +6,8 @@ export const UNIT_STATUSES = [
   'rendering_media',
   'in_review',
   'published',
+  /** Taken out of the feed after publishing for editing; users' completions/XP stay */
+  'locked',
   'rejected',
   'failed',
 ] as const
@@ -19,7 +21,9 @@ export function canTransition(from: UnitStatus, to: UnitStatus): boolean {
   if (from === 'in_review') return to === 'published' || to === 'rejected' || to === 'queued'
   if (from === 'failed' || from === 'rejected') return to === 'queued'
   // Published units can be regenerated; they leave the feed until re-approved
-  if (from === 'published') return to === 'rejected' || to === 'queued'
+  if (from === 'published') return to === 'rejected' || to === 'queued' || to === 'locked'
+  // Locked: edited/swapped while hidden, then published again (or regenerated / rejected)
+  if (from === 'locked') return to === 'published' || to === 'queued' || to === 'rejected'
   if (i >= 0) return to === 'failed' || PIPELINE[i + 1] === to
   return false
 }

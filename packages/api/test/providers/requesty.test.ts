@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { loadEnv } from '../../src/env.js'
 import { createLlm, createTts } from '../../src/providers/index.js'
@@ -152,5 +152,54 @@ describe('requesty tts · non-OpenAI models (chatterbox-multilingual)', () => {
     const w = silentWav(2, 8000)
     w.writeUInt32LE(0xffffffff, 40)
     expect(wavDurationSec(fixWavSizes(w))).toBe(2)
+  })
+})
+
+describe('requesty tts · voice-design models (one speaker per unit)', () => {
+  const model = 'deepinfra/Qwen/Qwen3-TTS-VoiceDesign'
+  const text = Array.from({ length: 40 }, (_, i) => `Das ist der deutsche Testsatz Nummer ${i}.`).join(' ')
+  const wav = () => new Response(silentWav(1, 24_000), { status: 200 })
+
+  it('sends the whole script in one request, so the designed voice cannot change mid-recording', async () => {
+    const { calls, fetchFn } = recorder(wav)
+    await createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model, voice: 'Warme Frauenstimme', fit: false, fetchFn }).synthesize(text)
+    expect(calls).toHaveLength(1)
+    expect(calls[0]!.body).toMatchObject({ input: text, voice: 'Warme Frauenstimme' })
+  })
+  it('halves at sentence boundaries only when the provider rejects the length', async () => {
+    const limit = text.length / 2 + 50
+    const { calls, fetchFn } = recorder((body) => (String(body.input).length > limit ? new Response('too long', { status: 400 }) : wav()))
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const out = await createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model, voice: 'Warme Frauenstimme', fit: false, fetchFn }).synthesize(text)
+    warn.mockRestore()
+    const ok = calls.filter((c) => String(c.body.input).length <= limit)
+    expect(ok).toHaveLength(2)
+    expect(ok.map((c) => c.body.input).join(' ')).toBe(text)
+    expect(ok.every((c) => /\.$/.test(String(c.body.input)))).toBe(true)
+    expect(out.durationSec).toBe(2)
+  })
+  it('does not retry other errors', async () => {
+    const { calls, fetchFn } = recorder(() => new Response('nope', { status: 401 }))
+    await expect(createRequestyTts({ baseUrl: 'http://r/v1', apiKey: 'k', model, fit: false, fetchFn }).synthesize(text)).rejects.toThrow(/401/)
+    expect(calls).toHaveLength(1)
+  })
+})
+
+describe('voice pinning', () => {
+  it('reuses a given voice instead of picking one', async () => {
+    const { createQwenTts } = await import('../../src/providers/tts.js')
+    const sent: unknown[] = []
+    const fetchFn = (async (_u: string, init: RequestInit) => (sent.push(JSON.parse(String(init.body)).voice), new Response(silentWav(2)))) as unknown as typeof fetch
+    const tts = createQwenTts('http://tts/synthesize', fetchFn, 1, 20, false, false, ['design:A', 'design:B'])
+    for (let i = 0; i < 5; i++) expect((await tts.synthesize('Ein Satz. Noch einer.', { voice: 'design:B' })).voice).toBe('design:B')
+    expect(new Set(sent)).toEqual(new Set(['design:B']))
+  })
+  it('round-trips the voice through the asset generator label', async () => {
+    const { ttsGeneratorLabel, voiceFromGenerator } = await import('../../src/providers/tts.js')
+    const tts = { name: 'qwen3-tts' }
+    expect(voiceFromGenerator(tts, ttsGeneratorLabel(tts, 'design:Warme Stimme · ruhig'))).toBe('design:Warme Stimme · ruhig')
+    expect(voiceFromGenerator(tts, ttsGeneratorLabel(tts))).toBeUndefined()
+    expect(voiceFromGenerator(tts, 'piper · x')).toBeUndefined()
+    expect(voiceFromGenerator(tts, null)).toBeUndefined()
   })
 })

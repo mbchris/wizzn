@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm'
-import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, real, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { UNIT_STATUSES, type ImageCredit, type Level, type SourceTier } from '@wizzn/shared'
+import { bigserial, boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, real, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { UNIT_LOG_LEVELS, UNIT_STATUSES, type ImageCredit, type Level, type SourceTier } from '@wizzn/shared'
 
 export const unitFormat = pgEnum('unit_format', ['audio', 'written'])
 export const unitStatus = pgEnum('unit_status', UNIT_STATUSES)
@@ -105,6 +105,22 @@ export const checkReport = pgTable('check_report', {
   passed: boolean('passed').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+
+export const unitLogLevel = pgEnum('unit_log_level', UNIT_LOG_LEVELS)
+
+/** Pipeline progress per unit, written by the worker and polled by the admin UI */
+export const unitLog = pgTable(
+  'unit_log',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    unitId: uuid('unit_id').notNull().references(() => unit.id, { onDelete: 'cascade' }),
+    at: timestamp('at').notNull().defaultNow(),
+    level: unitLogLevel('level').notNull().default('info'),
+    step: text('step'),
+    message: text('message').notNull(),
+  },
+  (t) => [index('unit_log_unit_idx').on(t.unitId, t.id)],
+)
 
 export const unitLinkKind = pgEnum('unit_link_kind', ['series', 'related'])
 

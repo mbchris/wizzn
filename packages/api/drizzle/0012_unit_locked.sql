@@ -1,0 +1,1 @@
+ALTER TYPE "public"."unit_status" ADD VALUE 'locked' BEFORE 'rejected';

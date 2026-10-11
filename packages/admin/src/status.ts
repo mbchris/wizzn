@@ -8,6 +8,7 @@ export const STATUS_LABEL: Record<UnitStatus, string> = {
   rendering_media: 'Medien',
   in_review: 'Zur Freigabe',
   published: 'Veröffentlicht',
+  locked: 'Gesperrt',
   rejected: 'Abgelehnt',
   failed: 'Fehler',
 }
@@ -20,6 +21,7 @@ export const STATUS_COLOR: Record<UnitStatus, string> = {
   rendering_media: 'blue-8',
   in_review: 'orange',
   published: 'positive',
+  locked: 'purple-7',
   rejected: 'grey-8',
   failed: 'negative',
 }

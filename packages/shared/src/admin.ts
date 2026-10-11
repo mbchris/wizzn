@@ -25,7 +25,7 @@ export const briefInputSchema = z.object({
 export type BriefInput = z.infer<typeof briefInputSchema>
 
 export const bulkActionSchema = z.object({
-  action: z.enum(['regenerate', 'resume', 'delete']),
+  action: z.enum(['regenerate', 'resume', 'delete', 'lock', 'unlock']),
   ids: z.array(z.string().uuid()).min(1).max(200),
 })
 export type BulkActionInput = z.infer<typeof bulkActionSchema>
@@ -87,3 +87,15 @@ export interface UnitDetailDto extends UnitSummaryDto {
 /** `prompt` (generated mode only) overrides the stored AI prompt and is saved on the asset */
 export const replaceImageSchema = z.object({ mode: z.enum(['next-stock', 'generated']), prompt: z.string().trim().min(3).max(1000).optional() })
 export type ReplaceImageMode = z.infer<typeof replaceImageSchema>['mode']
+
+export const UNIT_LOG_LEVELS = ['info', 'warn', 'error'] as const
+export type UnitLogLevel = (typeof UNIT_LOG_LEVELS)[number]
+/** One line of the pipeline protocol shown live in the admin unit view */
+export interface UnitLogDto {
+  id: number
+  at: string
+  level: UnitLogLevel
+  step: string | null
+  message: string
+}
+export const unitLogQuerySchema = z.object({ after: z.coerce.number().int().min(0).optional() })
