@@ -71,6 +71,13 @@
       "when": 1791640300000,
       "tag": "0009_asset_generator",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791715555214,
+      "tag": "0010_knowledge_stream",
+      "breakpoints": true
     }
   ]
 }

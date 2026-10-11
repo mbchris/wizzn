@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm'
-import { boolean, index, integer, jsonb, pgEnum, pgTable, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core'
-import { UNIT_STATUSES, type ImageCredit, type SourceTier } from '@wizzn/shared'
+import { boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, real, smallint, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { UNIT_STATUSES, type ImageCredit, type Level, type SourceTier } from '@wizzn/shared'
 
 export const unitFormat = pgEnum('unit_format', ['audio', 'written'])
 export const unitStatus = pgEnum('unit_status', UNIT_STATUSES)
@@ -33,6 +33,11 @@ export const contentBrief = pgTable('content_brief', {
   // null → each variant becomes a written + audio pair
   format: unitFormat('format'),
   count: integer('count').notNull().default(1),
+  /** Depth 1–5 within a series (knowledge stream) */
+  level: smallint('level').$type<Level>().notNull().default(1),
+  series: text('series'),
+  /** Level 4: field the unit bridges to */
+  crossFieldId: uuid('cross_field_id').references(() => field.id),
   createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
@@ -48,6 +53,9 @@ export const unit = pgTable(
     /** Written + audio units on the same topic; the feed shows only one of them */
     pairId: uuid('pair_id'),
     status: unitStatus('status').notNull().default('queued'),
+    /** Copied from the brief for feed queries */
+    level: smallint('level').$type<Level>().notNull().default(1),
+    series: text('series'),
     title: text('title'),
     contentJson: jsonb('content_json'),
     promptVersion: text('prompt_version'),
@@ -57,7 +65,7 @@ export const unit = pgTable(
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at').notNull().defaultNow(),
   },
-  (t) => [index('unit_feed_idx').on(t.status, t.fieldId, t.format), index('unit_pair_idx').on(t.pairId)],
+  (t) => [index('unit_feed_idx').on(t.status, t.fieldId, t.format), index('unit_pair_idx').on(t.pairId), index('unit_series_idx').on(t.series, t.level)],
 )
 
 export const source = pgTable('source', {
@@ -97,6 +105,20 @@ export const checkReport = pgTable('check_report', {
   passed: boolean('passed').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+
+export const unitLinkKind = pgEnum('unit_link_kind', ['series', 'related'])
+
+/** Knowledge graph edge; stored in both directions */
+export const unitLink = pgTable(
+  'unit_link',
+  {
+    fromUnitId: uuid('from_unit_id').notNull().references(() => unit.id, { onDelete: 'cascade' }),
+    toUnitId: uuid('to_unit_id').notNull().references(() => unit.id, { onDelete: 'cascade' }),
+    kind: unitLinkKind('kind').notNull(),
+    score: real('score').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.fromUnitId, t.toUnitId] })],
+)
 
 export const fieldRelations = relations(field, ({ many }) => ({ themes: many(theme) }))
 export const themeRelations = relations(theme, ({ one }) => ({ field: one(field, { fields: [theme.fieldId], references: [field.id] }) }))
