@@ -75,6 +75,8 @@ async function logout(): Promise<void> {
         <div class="wz-streak-line">Streak: <b>{{ streakDays }} {{ streakDays === 1 ? 'Tag' : 'Tage' }}</b> 🔥</div>
       </header>
 
+      <q-btn unelevated rounded no-caps class="wz-glass full-width q-mt-sm" color="white" text-color="white" :icon="pIcon('saved_grid')" label="Mein Gehirn – gespeicherte Wissenshappen" @click="router.push('/saved')" />
+
       <DopamineShield :done="week.done" :goal="week.goal" :size="190" class="q-my-md" />
 
       <section class="wz-hud">
