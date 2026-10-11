@@ -32,6 +32,8 @@ function add(list: FeedUnitDto[], at = units.value.length): void {
   const fresh = list.filter((u) => !known.has(u.id))
   units.value.splice(at, 0, ...fresh)
   vault.seed(fresh)
+  // Chrome re-snaps to the previously snapped element (the end card) when content is inserted above it
+  if (active.value === 0 && fresh.length) void nextTick(() => scroller.value?.scrollTo({ top: 0 }))
 }
 
 async function start(id: string): Promise<void> {
