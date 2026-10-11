@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
-import type { BriefBatchResultDto, EditorialStyle, FieldDto, StoryArc } from '@wizzn/shared'
+import { LEVELS, levelLabel, type BriefBatchResultDto, type EditorialStyle, type FieldDto, type Level, type StoryArc } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
 
 const $q = useQuasar()
@@ -29,9 +29,15 @@ const arcOptions: { label: string; value: StoryArc }[] = [
   { label: 'Das Monster besiegen', value: 'overcoming_the_monster' },
   { label: 'Wiedergeburt', value: 'rebirth' },
 ]
+// Knowledge stream: depth 1–5 inside a series; L4 bridges to another field
+const level = ref<Level>(1)
+const series = ref('')
+const crossFieldId = ref<string | null>(null)
+const levelOptions = LEVELS.map((l) => ({ label: levelLabel(l), value: l }))
 const saving = ref(false)
 
 const fieldOptions = computed(() => fields.value.map((f) => ({ label: f.nameDe, value: f.id })))
+const crossFieldOptions = computed(() => fieldOptions.value.filter((f) => f.value !== fieldId.value))
 const themeOptions = computed(() => fields.value.find((f) => f.id === fieldId.value)?.themes.map((t) => ({ label: t.nameDe, value: t.id })) ?? [])
 watch(fieldId, () => (themeId.value = null))
 
@@ -44,7 +50,8 @@ async function submit(): Promise<void> {
   saving.value = true
   try {
     // briefInputSchema requires a format: one brief per format, so each variant yields slides and audio
-    const base = { fieldId: fieldId.value, themeId: themeId.value, topic: topic.value, context: context.value, style: style.value, storyArc: storyArc.value, count: count.value }
+    const base = { fieldId: fieldId.value, themeId: themeId.value, topic: topic.value, context: context.value, style: style.value, storyArc: storyArc.value, count: count.value,
+      level: level.value, series: series.value.trim().toLowerCase() || null, crossFieldId: level.value === 4 ? crossFieldId.value : null }
     const res = await api<BriefBatchResultDto>('/api/admin/briefs/batch', {
       method: 'POST',
       body: { briefs: [{ ...base, format: 'written' }, { ...base, format: 'audio' }] },
@@ -74,6 +81,11 @@ async function submit(): Promise<void> {
           <div class="row q-col-gutter-md">
             <q-select v-model="style" class="col-6" :options="styleOptions" emit-value map-options outlined clearable label="Stil" hint="Leer = zufällig je Variante" />
             <q-select v-model="storyArc" class="col-6" :options="arcOptions" emit-value map-options outlined clearable label="Erzählbogen" hint="Leer = zufällig je Variante" />
+          </div>
+          <div class="row q-col-gutter-md">
+            <q-select v-model="level" class="col-4" :options="levelOptions" emit-value map-options outlined label="Wissensstufe" />
+            <q-input v-model="series" class="col-4" outlined label="Serie (optional)" hint="z. B. veg-protein – verknüpft alle Stufen" :rules="[(v) => !v || /^[a-z0-9][a-z0-9-]{1,59}$/i.test(v.trim()) || '2–60 Zeichen a–z, 0–9, -']" />
+            <q-select v-model="crossFieldId" class="col-4" :options="crossFieldOptions" emit-value map-options outlined clearable label="Querbereich" hint="Nur Stufe 4" :disable="level !== 4" />
           </div>
           <div class="row items-center q-col-gutter-md">
             <div class="col">
