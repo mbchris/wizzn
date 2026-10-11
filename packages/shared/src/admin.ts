@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { unitFormatSchema, type ImageCredit } from './content.js'
 import { UNIT_STATUSES, type UnitStatus } from './unit-status.js'
 import { EDITORIAL_STYLES, STORY_ARCS, type CheckReport, type SourceTier } from './pipeline.js'
+import { levelSchema, seriesSchema } from './levels.js'
 
 export const briefInputSchema = z.object({
   fieldId: z.string().uuid(),
@@ -15,6 +16,11 @@ export const briefInputSchema = z.object({
   format: unitFormatSchema.nullable().default(null),
   // Each unit is generated independently from the same brief
   count: z.number().int().min(1).max(10).default(1),
+  /** Depth 1–5 within the series (spec: knowledge stream) */
+  level: levelSchema.default(1),
+  series: seriesSchema.nullable().default(null),
+  /** Level 4 only: the field the unit bridges to */
+  crossFieldId: z.string().uuid().nullable().default(null),
 })
 export type BriefInput = z.infer<typeof briefInputSchema>
 

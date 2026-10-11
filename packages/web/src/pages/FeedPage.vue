@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import type { AudioUnit, FeedUnitDto, WrittenUnit } from '@wizzn/shared'
+import { Notify } from 'quasar'
+import type { FeedbackVote, FeedUnitDto } from '@wizzn/shared'
 import { api, ApiError } from 'src/api'
 import { usePlatform } from 'src/composables/usePlatform'
 import { useProgress } from 'src/composables/useProgress'
 import { useFeedFilter } from 'src/composables/useFeedFilter'
 import { useVault } from 'src/composables/useVault'
 import { useHaptics } from 'src/composables/useHaptics'
-import { fieldEmoji } from 'src/utils/fields'
-import AudioUnitView from 'components/AudioUnitView.vue'
-import WrittenUnitView from 'components/WrittenUnitView.vue'
+import UnitCard from 'components/UnitCard.vue'
 import AccountSheet from 'components/AccountSheet.vue'
 import StreamTopBar from 'components/StreamTopBar.vue'
 
@@ -58,8 +57,6 @@ watch(lastRewards, (r) => {
   setTimeout(() => (accountOpen.value = true), 1200)
 })
 
-const isWritten = (u: FeedUnitDto): u is FeedUnitDto & { content: WrittenUnit } => u.content.format === 'written'
-const asAudio = (u: FeedUnitDto) => u as FeedUnitDto & { content: AudioUnit }
 /** Only the active card and its neighbours mount their content (keeps the WebView light) */
 const mounted = (i: number): boolean => Math.abs(i - active.value) <= 1
 
@@ -74,6 +71,7 @@ async function loadMore(): Promise<void> {
     const known = new Set(units.value.map((u) => u.id))
     const first = units.value.length === 0
     units.value.push(...page.units.filter((u) => !known.has(u.id)))
+    vault.seed(page.units)
     // Chrome re-snaps to the previously snapped element (the end card) when content is inserted above it
     if (first && units.value.length) {
       await nextTick()
@@ -127,33 +125,34 @@ watch(active, (n, o) => {
   if (n !== o) haptics.snap()
 })
 
-/* Double-tap "Save to Brain" (LAYOUT.md §3) */
-interface Brain { key: number; unit: string; x: number; y: number }
-const brains = ref<Brain[]>([])
-let lastTap = { t: 0, x: 0, y: 0 }
-let brainKey = 0
-
-function onTap(e: PointerEvent, unitId: string): void {
-  if (e.pointerType === 'mouse' && e.button !== 0) return
-  if ((e.target as HTMLElement).closest('button, a, [role="slider"], audio')) return
-  const now = performance.now()
-  const near = Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 40
-  if (now - lastTap.t < 320 && near) {
-    lastTap = { t: 0, x: 0, y: 0 }
-    const box = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const b = { key: ++brainKey, unit: unitId, x: e.clientX - box.left, y: e.clientY - box.top }
-    brains.value.push(b)
-    setTimeout(() => (brains.value = brains.value.filter((x) => x.key !== b.key)), 900)
-    vault.save(unitId)
-    haptics.light()
-    return
-  }
-  lastTap = { t: now, x: e.clientX, y: e.clientY }
+/* Knowledge stream: "mehr davon" pulls linked units in right behind the current card, "weniger davon" skips its series */
+function scrollToCard(i: number): void {
+  const el = scroller.value
+  el?.scrollTo({ top: i * el.clientHeight, behavior: 'smooth' })
 }
 
-function toggleSave(unitId: string): void {
-  vault.toggle(unitId)
-  haptics.light()
+async function onVote(unit: FeedUnitDto, vote: FeedbackVote): Promise<void> {
+  const at = units.value.findIndex((u) => u.id === unit.id)
+  if (at < 0) return
+  try {
+    const { next } = await api.feedback(unit.id, vote)
+    if (vote === 1) {
+      const known = new Set(units.value.map((u) => u.id))
+      const fresh = next.filter((u) => !known.has(u.id))
+      units.value.splice(at + 1, 0, ...fresh)
+      vault.seed(fresh)
+    } else if (unit.series) {
+      units.value = units.value.filter((u, i) => i <= at || u.series !== unit.series)
+    }
+    Notify.create({ message: vote === 1 ? 'Mehr davon ✨' : 'Weniger davon – verstanden', color: vote === 1 ? 'positive' : 'grey-8', position: 'top', timeout: 1200 })
+  } catch (e) {
+    console.warn('feedback failed', e)
+    Notify.create({ message: 'Feedback konnte nicht gespeichert werden.', color: 'negative', position: 'top', timeout: 1800 })
+    return
+  }
+  await nextTick()
+  const pos = visibleUnits.value.findIndex((u) => u.id === unit.id)
+  if (pos >= 0) scrollToCard(pos + 1)
 }
 
 function reset(): void {
@@ -205,43 +204,18 @@ onUnmounted(() => observer?.disconnect())
   <div class="wz-stream">
     <StreamTopBar />
     <div ref="scroller" class="wz-feed" @scroll.passive="trackScroll">
-      <article
+      <UnitCard
         v-for="(u, i) in visibleUnits"
         :key="u.id"
-        :data-index="i"
-        class="wz-card"
-        :class="[`wz-field-${u.field.slug}`, { 'is-active': i === active }]"
-        @pointerup="onTap($event, u.id)"
-      >
-        <div class="wz-card-inner">
-          <div class="wz-card-head">
-            <span class="wz-tag">
-              <span aria-hidden="true">{{ fieldEmoji(u.field.slug) }}</span>{{ u.field.nameDe }}
-              <template v-if="u.discovery"><span class="wz-dot">•</span>Entdecken</template>
-            </span>
-            <button
-              type="button"
-              class="wz-icon-btn wz-save"
-              :class="{ saved: vault.isSaved(u.id) }"
-              :aria-pressed="vault.isSaved(u.id)"
-              aria-label="Im Gehirn speichern"
-              @click="toggleSave(u.id)"
-            >
-              <q-icon :name="vault.isSaved(u.id) ? pIcon('bookmark_filled') : pIcon('bookmark')" size="24px" />
-            </button>
-          </div>
-          <h2 class="wz-title wz-unit-title" :class="{ compact: isWritten(u) }">{{ u.title }}</h2>
-          <div class="wz-unit-body">
-            <template v-if="mounted(i)">
-              <WrittenUnitView v-if="isWritten(u)" :unit="u" :active="pageActive && i === active" />
-              <AudioUnitView v-else :unit="asAudio(u)" :active="pageActive && i === active" :preload="i === active + 1" />
-            </template>
-          </div>
-        </div>
-        <span v-for="b in brains.filter((x) => x.unit === u.id)" :key="b.key" class="wz-brain" :style="{ left: `${b.x}px`, top: `${b.y}px` }" aria-hidden="true">🧠</span>
-      </article>
+        :unit="u"
+        :index="i"
+        :active="pageActive && i === active"
+        :mount-content="mounted(i)"
+        :preload="i === active + 1"
+        @vote="onVote(u, $event)"
+      />
 
-      <section class="wz-card wz-end">
+      <section class="wz-end">
         <div class="wz-end-inner">
           <template v-if="capReached">
             <div class="wz-end-emoji">🌙</div>
@@ -278,38 +252,8 @@ onUnmounted(() => observer?.disconnect())
 .wz-stream { position: relative; height: 100%; }
 .wz-feed { height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; overscroll-behavior: contain; scrollbar-width: none; }
 .wz-feed::-webkit-scrollbar { display: none; }
-
-.wz-card {
-  height: 100%;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-  position: relative;
-  overflow: hidden;
-  touch-action: manipulation;
-  user-select: none;
-  -webkit-user-select: none;
-  /* Category tone + a soft glow from the top, like a lit stage */
-  background:
-    radial-gradient(120% 55% at 50% 0%, color-mix(in srgb, var(--wz-glow) 20%, transparent), transparent 65%),
-    radial-gradient(90% 40% at 50% 100%, color-mix(in srgb, var(--wz-b) 10%, transparent), transparent 70%),
-    var(--wz-field-bg);
-}
-.wz-card-inner { height: 100%; display: flex; flex-direction: column; padding: calc(var(--wz-topbar-h) + var(--wz-safe-top) + 10px) 20px 14px; }
-/* Card-snap bounce: incoming unit overshoots ~4px, then settles (spring-like cubic-bezier) */
-.wz-card.is-active .wz-card-inner { animation: wz-snap 0.55s cubic-bezier(0.25, 1.4, 0.45, 1); }
-@keyframes wz-snap { 0% { transform: translateY(14px); opacity: 0.6; } 60% { transform: translateY(-4px); opacity: 1; } 100% { transform: translateY(0); } }
-
-.wz-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 -10px 4px 0; }
-.wz-dot { opacity: 0.6; margin: 0 2px; }
-.wz-save { color: rgba(255, 255, 255, 0.85); }
-.wz-save.saved { color: var(--wz-glow); filter: drop-shadow(0 0 6px var(--wz-glow)); }
-.wz-unit-title { margin: 0 0 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.wz-unit-title.compact { font-size: 18px; font-weight: 700; color: rgba(255, 255, 255, 0.82); -webkit-line-clamp: 2; }
-.wz-unit-body { flex: 1; min-height: 0; }
-
-.wz-brain { position: absolute; z-index: 5; font-size: 84px; line-height: 1; pointer-events: none; transform: translate(-50%, -50%); filter: drop-shadow(0 0 18px #ff2d95) drop-shadow(0 0 30px #60efff); animation: wz-brain 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) forwards; }
-@keyframes wz-brain { 0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; } 25% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; } 60% { transform: translate(-50%, -60%) scale(1); opacity: 1; } 100% { transform: translate(-50%, -130%) scale(0.9); opacity: 0; } }
-
+/* End card shares the snap behaviour of UnitCard */
+.wz-end { height: 100%; scroll-snap-align: start; scroll-snap-stop: always; position: relative; overflow: hidden; }
 .wz-end { background: var(--wz-bg); }
 .wz-end-inner { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 32px; }
 .wz-end-inner p { margin: 0; color: var(--wz-muted); max-width: 320px; }

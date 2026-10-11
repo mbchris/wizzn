@@ -1,4 +1,4 @@
-import { date, index, integer, pgTable, primaryKey, text, time, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import { date, index, integer, pgTable, primaryKey, smallint, text, time, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { unitFormat, field, theme, unit } from './content.js'
 import { user } from './auth.js'
 
@@ -87,3 +87,26 @@ export const entitlement = pgTable('entitlement', {
   source: text('source').notNull().default('revenuecat'),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
+
+/** "Mehr davon" (+1) / "Weniger davon" (-1); re-voting overwrites */
+export const unitFeedback = pgTable(
+  'unit_feedback',
+  {
+    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    unitId: uuid('unit_id').notNull().references(() => unit.id, { onDelete: 'cascade' }),
+    vote: smallint('vote').$type<1 | -1>().notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.unitId] }), index('feedback_user_created_idx').on(t.userId, t.createdAt)],
+)
+
+/** Bookmarks ("Mein Gehirn") */
+export const savedUnit = pgTable(
+  'saved_unit',
+  {
+    userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
+    unitId: uuid('unit_id').notNull().references(() => unit.id, { onDelete: 'cascade' }),
+    savedAt: timestamp('saved_at').notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.unitId] }), index('saved_user_at_idx').on(t.userId, t.savedAt)],
+)

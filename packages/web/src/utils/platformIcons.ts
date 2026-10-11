@@ -39,4 +39,10 @@ export const ICON_MAP: Record<string, IconDefinition> = {
   share: { android: 'ios_share', ios: 'ion-ios-share' },
   add: { android: 'add', ios: 'ion-ios-add' },
   close: { android: 'close', ios: 'ion-ios-close' },
+  // Knowledge stream: more/less feedback (CLAUDE.md voting icons), search, saved grid, level badge
+  more_like: { android: 'thumb_up', ios: 'ion-ios-thumbs-up' },
+  less_like: { android: 'thumb_down', ios: 'ion-ios-thumbs-down' },
+  search: { android: 'search', ios: 'ion-ios-search' },
+  saved_grid: { android: 'collections_bookmark', ios: 'ion-ios-bookmarks' },
+  level: { android: 'stairs', ios: 'ion-ios-trending-up' },
 }

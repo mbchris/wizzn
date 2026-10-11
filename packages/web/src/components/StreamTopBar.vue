@@ -51,6 +51,9 @@ onMounted(() => void loadFields().catch((e: unknown) => console.warn('fields loa
         {{ f.nameDe }}
       </button>
     </div>
+    <button type="button" class="wz-icon-btn" aria-label="Mein Gehirn – gespeicherte Wissenshappen" @click="router.push('/saved')">
+      <q-icon :name="pIcon('saved_grid')" size="22px" />
+    </button>
     <button type="button" class="wz-icon-btn" aria-label="Interessen &amp; Einstellungen" @click="router.push('/onboarding')">
       <q-icon :name="pIcon('gear')" size="22px" />
     </button>

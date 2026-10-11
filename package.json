@@ -35,7 +35,8 @@
     "tts:entry": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api tts:entry",
     "tts:server": "./scripts/tts/run-server.sh",
     "tts:voice": "./scripts/tts/run-server.sh qwen --export-ref",
-    "audio:rerender": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api audio:rerender"
+    "audio:rerender": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api audio:rerender",
+    "links:backfill": "pnpm --filter @wizzn/shared build && pnpm --filter @wizzn/api links:backfill"
   },
   "devDependencies": {
     "typescript": "^5.8.3"

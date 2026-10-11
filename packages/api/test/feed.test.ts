@@ -29,7 +29,8 @@ function fakeFeed(prefs: Partial<FeedPrefs> = {}) {
     getPrefs: async () => ({ fieldIds: ['A'], themeIds: [], formats: ['written'], timezone: 'Europe/Berlin', ...prefs }),
     getCandidates: async () => [{ id: 'u1', fieldId: 'A' }, { id: 'u2', fieldId: 'B' }],
     loadUnits: async (ids) =>
-      new Map(ids.map((id) => [id, { id, title: id, format: 'written' as const, field: { id: 'A', slug: 'finance', nameDe: 'Finanzen', adviceDisclaimer: true }, content: written, media: {}, credits: {} }])),
+      new Map(ids.map((id) => [id, { id, title: id, format: 'written' as const, field: { id: 'A', slug: 'finance', nameDe: 'Finanzen', adviceDisclaimer: true }, content: written, media: {}, credits: {}, level: 1 as const, series: null, saved: false }])),
+    getSignals: async () => [],
     recordImpressions: async (_u, ids) => void impressions.push(...ids),
     getPublishedContent: async (id) => (id === LONG ? longWritten : [UNIT, UNIT2].includes(id) ? written : null),
   }
@@ -63,6 +64,24 @@ describe('GET /api/feed', () => {
     const body = (await res.json()) as { units: unknown[]; cap: { reached: boolean; limit: number | null } }
     expect(body.units).toHaveLength(2)
     expect(body.cap).toMatchObject({ reached: false, limit: null })
+  })
+})
+
+describe('GET /api/feed: knowledge stream ranking', () => {
+  it('drops units of a strongly disliked series and hides locked levels', async () => {
+    const f = fakeFeed()
+    f.repo.getCandidates = async () => [
+      { id: 'keto1', fieldId: 'A', themeId: 'keto', series: 'keto', level: 1 },
+      { id: 'veg1', fieldId: 'A', themeId: 'veg', series: 'veg', level: 1 },
+      { id: 'veg3', fieldId: 'A', themeId: 'veg', series: 'veg', level: 3 },
+      { id: 'veg2', fieldId: 'A', themeId: 'veg', series: 'veg', level: 2 },
+    ]
+    f.repo.getSignals = async () => [
+      { vote: -1, fieldId: 'A', themeId: 'keto', series: 'keto', level: 1, at: new Date() },
+      { vote: 1, fieldId: 'A', themeId: 'veg', series: 'veg', level: 1, at: new Date() },
+    ]
+    const body = (await (await app(f.repo).request('/api/feed', { headers })).json()) as { units: { id: string }[] }
+    expect(body.units.map((u) => u.id)).toEqual(['veg1', 'veg2'])
   })
 })
 

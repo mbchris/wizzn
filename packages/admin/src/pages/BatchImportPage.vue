@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
-import { parseBatchFile, type BriefBatchResultDto, type FieldDto } from '@wizzn/shared'
+import { levelLabel, parseBatchFile, type BriefBatchResultDto, type FieldDto } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
 
 const $q = useQuasar()
@@ -27,6 +27,7 @@ const columns = [
   { name: 'nr', label: '#', field: (r: (typeof rows.value)[number]) => r.index + 1, align: 'left' as const },
   { name: 'field', label: 'Bereich / Thema', field: (r: (typeof rows.value)[number]) => [r.job?.field, r.job?.theme].filter(Boolean).join(' / '), align: 'left' as const },
   { name: 'topic', label: 'Kernidee', field: (r: (typeof rows.value)[number]) => r.job?.topic ?? '–', align: 'left' as const },
+  { name: 'level', label: 'Stufe / Serie', field: (r: (typeof rows.value)[number]) => (r.job ? [levelLabel(r.job.level), r.job.series].filter(Boolean).join(' · ') : ''), align: 'left' as const },
   { name: 'format', label: 'Format', field: (r: (typeof rows.value)[number]) => r.job?.format ?? '', align: 'left' as const },
   { name: 'count', label: 'Varianten', field: (r: (typeof rows.value)[number]) => r.job?.count ?? '', align: 'right' as const },
   { name: 'status', label: 'Status', field: () => '', align: 'left' as const },

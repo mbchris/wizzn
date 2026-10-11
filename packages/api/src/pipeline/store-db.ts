@@ -1,7 +1,7 @@
-import { and, eq, ne, sql } from 'drizzle-orm'
+import { and, asc, eq, lt, ne, sql } from 'drizzle-orm'
 import { editorialSchema, type CheckReport, type UnitStatus } from '@wizzn/shared'
 import type { Db } from '../db/client.js'
-import { asset, checkReport, source, unit } from '../db/schema/index.js'
+import { asset, checkReport, field, source, unit } from '../db/schema/index.js'
 import type { ResearchedSource } from './prompts.js'
 import type { NewAsset, PipelineStore, PipelineUnit } from './store.js'
 
@@ -29,6 +29,15 @@ export function createDbPipelineStore(db: Db): PipelineStore {
         with: { brief: { with: { field: true, theme: true } } },
       })
       if (!row) return null
+      const crossField = row.brief.crossFieldId ? await db.query.field.findFirst({ where: eq(field.id, row.brief.crossFieldId), columns: { nameDe: true } }) : undefined
+      const prior = row.brief.series
+        ? await db
+            .select({ title: unit.title })
+            .from(unit)
+            .where(and(eq(unit.series, row.brief.series), lt(unit.level, row.brief.level), eq(unit.status, 'published'), eq(unit.format, 'written')))
+            .orderBy(asc(unit.level))
+            .limit(6)
+        : []
       return {
         id: row.id,
         format: row.format,
@@ -43,6 +52,10 @@ export function createDbPipelineStore(db: Db): PipelineStore {
           adviceDisclaimer: row.brief.field.adviceDisclaimer,
           style: editorialSchema.shape.style.safeParse(row.brief.style).data ?? null,
           arc: editorialSchema.shape.arc.safeParse(row.brief.storyArc).data ?? null,
+          level: row.brief.level,
+          series: row.brief.series,
+          crossFieldName: crossField?.nameDe ?? null,
+          seriesPrior: prior.flatMap((p) => (p.title ? [p.title] : [])),
         },
       }
     },

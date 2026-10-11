@@ -1,4 +1,4 @@
-import type { CompletionInput, CompletionResult, FeedResponse, FieldDto, InterestsInput, MeDto, PremiumDto, ProgressDto } from '@wizzn/shared'
+import type { CompletionInput, CompletionResult, FeedbackResult, FeedbackVote, FeedResponse, FeedUnitDto, FieldDto, InterestsInput, MeDto, PremiumDto, ProgressDto, SearchResponse, TilePage } from '@wizzn/shared'
 
 const TOKEN_KEY = 'wizzn.token'
 
@@ -30,7 +30,7 @@ function writeToken(token: string | null): void {
 
 let memoryToken: string | null = readToken()
 
-async function request<T>(path: string, method: 'GET' | 'POST' | 'PUT' = 'GET', body?: unknown): Promise<T> {
+async function request<T>(path: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: unknown): Promise<T> {
   const headers: Record<string, string> = {}
   if (body !== undefined) headers['content-type'] = 'application/json'
   if (memoryToken) headers.authorization = `Bearer ${memoryToken}`
@@ -89,4 +89,14 @@ export const api = {
   complete: (unitId: string, input: CompletionInput) => request<CompletionResult>(`/api/units/${unitId}/complete`, 'POST', input),
   progress: () => request<ProgressDto>('/api/me/progress'),
   refreshSubscription: () => request<PremiumDto>('/api/me/subscription/refresh', 'POST', {}),
+  // Knowledge stream
+  unit: (id: string) => request<FeedUnitDto>(`/api/units/${id}`),
+  next: (id: string, limit = 3, exclude: string[] = []) =>
+    request<FeedUnitDto[]>(`/api/units/${id}/next?limit=${limit}${exclude.length ? `&exclude=${exclude.slice(-60).join(',')}` : ''}`),
+  feedback: (id: string, vote: FeedbackVote) => request<FeedbackResult>(`/api/units/${id}/feedback`, 'POST', { vote }),
+  saved: (cursor?: string | null) => request<TilePage>(`/api/me/saved${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`),
+  save: (id: string) => request<{ saved: boolean }>(`/api/me/saved/${id}`, 'PUT', {}),
+  unsave: (id: string) => request<{ saved: boolean }>(`/api/me/saved/${id}`, 'DELETE'),
+  search: (q: string, cursor?: string | null) =>
+    request<SearchResponse>(`/api/search?q=${encodeURIComponent(q)}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`),
 }

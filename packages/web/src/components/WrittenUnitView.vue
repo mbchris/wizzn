@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { readingMinutes, writtenMinDwellSec, writtenPageCount, type FeedUnitDto, type WrittenUnit } from '@wizzn/shared'
 import { useCompletion, useDwell } from 'src/composables/useCompletion'
 import { usePlatform } from 'src/composables/usePlatform'
@@ -8,6 +8,8 @@ import ImageCredit from 'components/ImageCredit.vue'
 import CompleteButton from 'components/CompleteButton.vue'
 
 const props = defineProps<{ unit: FeedUnitDto & { content: WrittenUnit }; active: boolean }>()
+/** Knowledge stream: swipe feedback only starts at the deck edges (cover / last slide) */
+const emit = defineEmits<{ edges: [{ first: boolean; last: boolean }] }>()
 const { pIcon } = usePlatform()
 const track = ref<HTMLElement | null>(null)
 const index = ref(0)
@@ -20,6 +22,9 @@ const minDwell = computed(() => writtenMinDwellSec(props.unit.content))
 const minutes = computed(() => readingMinutes(props.unit.content))
 const pct = computed(() => Math.round(((index.value + 1) / pages.value) * 100))
 const onLast = computed(() => index.value === pages.value - 1)
+const reportEdges = (): void => emit('edges', { first: index.value === 0, last: onLast.value })
+watch([index, pages], reportEdges)
+onMounted(reportEdges)
 const { completed, report } = useCompletion(props.unit.id)
 const dwell = useDwell(() => props.active)
 onUnmounted(dwell.stop)

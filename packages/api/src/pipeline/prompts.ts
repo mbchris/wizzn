@@ -1,9 +1,9 @@
 import type { ChatMessage } from '../providers/llm.js'
 import type { ResearchCandidate } from '../providers/research/types.js'
-import { AUDIO_SCRIPT_WORDS, WRITTEN_HOOK_MAX_WORDS, WRITTEN_SLIDE_WORDS, WRITTEN_WORDS, type Editorial, type EditorialStyle, type SourceTier, type StoryArc } from '@wizzn/shared'
+import { AUDIO_SCRIPT_WORDS, WRITTEN_HOOK_MAX_WORDS, WRITTEN_SLIDE_WORDS, WRITTEN_WORDS, type Editorial, type EditorialStyle, type Level, type SourceTier, type StoryArc, LEVEL_META, MAX_LEVEL } from '@wizzn/shared'
 
 /** Stored on every unit; bump when prompts change so units can be regenerated selectively. */
-export const PROMPT_VERSION = '2026-10-12.2'
+export const PROMPT_VERSION = '2026-10-13.1'
 
 export interface BriefContext {
   /** Key into the curated source registry */
@@ -16,6 +16,13 @@ export interface BriefContext {
   /** Explicit choice from the editor; null/undefined → picked at random per unit */
   style?: EditorialStyle | null
   arc?: StoryArc | null
+  /** Knowledge-stream depth; missing → 1 */
+  level?: Level
+  series?: string | null
+  /** Level 4: name of the field to bridge to */
+  crossFieldName?: string | null
+  /** Titles of published lower-level units of the same series (assumed known) */
+  seriesPrior?: string[]
 }
 
 export interface ResearchedSource {
@@ -75,8 +82,19 @@ ${parts}`
 const IMAGE_MOTIF_RULE =
   'imagePrompt/prompt beschreibt auf Englisch ein Illustrationsmotiv (Symbol, Szene oder Schaubild, das die Kernidee zeigt), niemals ein Foto: keine Begriffe wie photo, realistic, camera; keine echten oder berühmten Personen.'
 
+/** Depth guidance for the knowledge stream: content deepens from L1 (overview) to L5 (expert). */
+export function levelBlock(b: BriefContext): string {
+  const level = b.level ?? 1
+  const meta = LEVEL_META[level]
+  const lines = [`Wissensstufe: ${level} von ${MAX_LEVEL} – ${meta.name}. ${meta.guide}`]
+  if (level === 4 && b.crossFieldName) lines.push(`Schlage die Brücke zum Bereich „${b.crossFieldName}“.`)
+  if (b.seriesPrior?.length) lines.push(`Bereits bekannt aus früheren Stufen (nicht wiederholen, darauf aufbauen): ${b.seriesPrior.map((t) => `„${t}“`).join(', ')}.`)
+  else if (level > 1) lines.push('Setze Grundwissen der vorigen Stufen voraus, erkläre nur kurz nötige Begriffe.')
+  return lines.join('\n')
+}
+
 const topicLine = (b: BriefContext): string =>
-  `Bereich: ${b.fieldName}${b.themeName ? ` / Thema: ${b.themeName}` : ''}\nAufhänger: ${b.topic}${b.context ? `\nKontext vom Redakteur: ${b.context}` : ''}`
+  `Bereich: ${b.fieldName}${b.themeName ? ` / Thema: ${b.themeName}` : ''}\nAufhänger: ${b.topic}${b.context ? `\nKontext vom Redakteur: ${b.context}` : ''}\n${levelBlock(b)}`
 
 export const searchQuery = (b: BriefContext): string => [b.topic, b.themeName, b.fieldName].filter(Boolean).join(' ')
 

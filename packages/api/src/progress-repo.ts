@@ -15,7 +15,7 @@ import {
   type StreakState,
 } from '@wizzn/shared'
 import type { Db } from './db/client.js'
-import { completionEvent, entitlement, field, streak, unit, user, userBadge, userInterest, userProfile, xpLedger } from './db/schema/index.js'
+import { completionEvent, entitlement, field, savedUnit, streak, unit, unitFeedback, user, userBadge, userInterest, userProfile, xpLedger } from './db/schema/index.js'
 
 type Tx = Parameters<Parameters<Db['transaction']>[0]>[0]
 type Conn = Db | Tx
@@ -181,6 +181,10 @@ export function createProgressRepo(db: Db): ProgressRepo {
 
     async transferUserData(from, to) {
       return db.transaction(async (tx) => {
+        // Bookmarks are merged in every case: nobody should lose what they saved before signing in
+        await tx.execute(
+          sql`insert into ${savedUnit} (user_id, unit_id, saved_at) select ${to}, unit_id, saved_at from ${savedUnit} where user_id = ${from} on conflict do nothing`,
+        )
         const [targetHasProgress] = await tx.select({ id: completionEvent.id }).from(completionEvent).where(eq(completionEvent.userId, to)).limit(1)
         if (targetHasProgress) return 'kept_target'
         // Target is a fresh account: it takes over everything the anonymous user built up
@@ -195,6 +199,8 @@ export function createProgressRepo(db: Db): ProgressRepo {
         await tx.update(xpLedger).set({ userId: to }).where(eq(xpLedger.userId, from))
         await tx.update(userBadge).set({ userId: to }).where(eq(userBadge.userId, from))
         await tx.update(completionEvent).set({ userId: to }).where(eq(completionEvent.userId, from))
+        await tx.delete(unitFeedback).where(eq(unitFeedback.userId, to))
+        await tx.update(unitFeedback).set({ userId: to }).where(eq(unitFeedback.userId, from))
         // A purchase made while anonymous stays with the person
         const [target] = await tx.select().from(entitlement).where(eq(entitlement.userId, to))
         const [source] = await tx.select().from(entitlement).where(and(eq(entitlement.userId, from), gt(entitlement.activeUntil, target?.activeUntil ?? new Date(0))))

@@ -5,7 +5,7 @@ Migrations + idempotent seed run on every `api` start.
 
 ## Automated (in the repo)
 - `docker-compose.yml` is Coolify-ready: no `.env.api` file needed, every setting is a `${VAR}` Coolify can manage, required vars fail fast (`:?`), worker healthcheck disabled (it has no HTTP port), SearXNG secret from env.
-- `pnpm coolify:env -- --domain <base-domain>` → `setup-out/coolify.env` (gitignored): copies credentials from the root `.env`, generates `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET` / `SEARXNG_SECRET` (stable on reruns), derives URLs + CORS, warns about dev-only values.
+- `pnpm coolify:env -- --domain <base-domain>` → `setup-out/coolify.env` (gitignored): deleted and rebuilt on every run from the root `.env`, with keys set in `.env.production` (gitignored) taking priority, derives URLs + CORS, warns about dev-only values and `.env` keys it doesn't copy. `POSTGRES_PASSWORD` / `BETTER_AUTH_SECRET` / `SEARXNG_SECRET` are generated once and carried over on reruns; `--fresh-secrets` regenerates them (breaks an existing DB volume + logs everyone out).
 
 ## Checklist
 

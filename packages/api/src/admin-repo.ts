@@ -38,7 +38,8 @@ function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'fail
 /** Units whose text may be re-drafted from their existing sources (issue: partial regeneration) */
 const REDRAFTABLE: readonly UnitStatus[] = ['in_review', 'published', 'failed', 'rejected']
 
-export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): AdminRepo {
+/** onPublished: knowledge-graph linking; failures are logged and never undo the publish */
+export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPublished?: (unitId: string) => Promise<void>): AdminRepo {
   async function move(id: string, to: UnitStatus, extra: Partial<typeof unit.$inferInsert> = {}): Promise<AdminActionResult> {
     const row = await db.query.unit.findFirst({ where: eq(unit.id, id), columns: { id: true, status: true, updatedAt: true } })
     if (!row) return 'not_found'
@@ -62,7 +63,7 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
           .insert(unit)
           .values(
             Array.from({ length: input.count }, () => {
-              const base = { briefId: brief.id, fieldId: input.fieldId, themeId: input.themeId }
+              const base = { briefId: brief.id, fieldId: input.fieldId, themeId: input.themeId, level: input.level, series: input.series }
               if (input.format) return [{ ...base, format: input.format }]
               const pairId = crypto.randomUUID()
               return [{ ...base, format: 'written' as const, pairId }, { ...base, format: 'audio' as const, pairId }]
@@ -123,7 +124,9 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
       if (!row) return 'not_found'
       // Never publish content the app cannot render
       if (!unitContentSchema.safeParse(row.contentJson).success) return 'invalid_content'
-      return move(id, 'published', { publishedAt: new Date() })
+      const result = await move(id, 'published', { publishedAt: new Date() })
+      if (result === 'ok' && onPublished) await onPublished(id).catch((e: unknown) => console.error(`[links] ${id}:`, e))
+      return result
     },
 
     reject: (id, reason) => move(id, 'rejected', { failureReason: reason }),

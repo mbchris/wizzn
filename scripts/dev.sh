@@ -42,7 +42,8 @@ if ! grep -qE '^ADMIN_EMAILS=.+' "$ENV_FILE"; then
   c_warn "ADMIN_EMAILS is empty in $ENV_FILE — the admin app will answer 'Forbidden'."
 fi
 # Keys in the template but not in .env (template grew since .env was created)
-MISSING_KEYS="$(comm -23 \
+MISSING_KEYS=""
+[[ -f .env.template ]] && MISSING_KEYS="$(comm -23 \
   <(grep -oE '^[A-Za-z_][A-Za-z0-9_]*=' .env.template | tr -d = | sort -u) \
   <(grep -oE '^[A-Za-z_][A-Za-z0-9_]*=' "$ENV_FILE" | tr -d = | sort -u))"
 if [[ -n "$MISSING_KEYS" ]]; then
@@ -139,6 +140,8 @@ elif [[ "$TTS_PROVIDER" == "chatterbox" || "$TTS_PROVIDER" == "qwen" ]]; then
     for _ in $(seq 1 1200); do cb_ok && break; kill -0 "$PIPER_PID" 2>/dev/null || break; sleep 1; done
     cb_ok || { c_err "$TTS_PROVIDER did not start — see $LOG"; exit 1; }
   fi
+elif [[ "$TTS_PROVIDER" == "requesty" ]]; then
+  c_info "TTS via Requesty (cloud) — no local TTS server needed"
 else
   c_warn "TTS_PROVIDER=${TTS_PROVIDER:-silent} — audio units are silent. Set TTS_PROVIDER=chatterbox|qwen|piper in $ENV_FILE for real speech."
 fi
@@ -164,6 +167,7 @@ fi
 # 5. LLM: Ollama (default) or gemini-cli
 LLM_PROVIDER="$(grep -E '^LLM_PROVIDER=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
 LLM_PROVIDER="${LLM_PROVIDER:-openai}"
+LLM_BASE_URL="$(grep -E '^LLM_BASE_URL=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
 OLLAMA_PID=""
 if [[ "$LLM_PROVIDER" == "gemini-cli" ]]; then
   GEMINI_BIN="$(grep -E '^GEMINI_CLI_BIN=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
@@ -172,6 +176,8 @@ if [[ "$LLM_PROVIDER" == "gemini-cli" ]]; then
   else
     c_warn "gemini-cli not installed — the worker's AI steps will fail (npm i -g @google/gemini-cli, then run 'gemini' once to log in)."
   fi
+elif [[ -n "$LLM_BASE_URL" && ! "$LLM_BASE_URL" =~ (localhost|127\.0\.0\.1|:11434) ]]; then
+  c_info "LLM via remote API ${LLM_BASE_URL} (${MODEL}) — no local Ollama needed"
 elif command -v ollama >/dev/null 2>&1; then
   if ! curl -sf http://localhost:11434/api/tags >/dev/null; then
     c_info "Starting Ollama"

@@ -1,7 +1,7 @@
 import { aliasedTable, and, desc, eq, gt, inArray, notExists, or, sql } from 'drizzle-orm'
-import { IMPRESSION_COOLDOWN_DAYS, unitContentSchema, type FeedCandidate, type ImageCredit, type FeedUnitDto, type UnitContent, type UnitFormat } from '@wizzn/shared'
+import { IMPRESSION_COOLDOWN_DAYS, unitContentSchema, type FeedbackSignal, type FeedCandidate, type ImageCredit, type FeedUnitDto, type UnitContent, type UnitFormat } from '@wizzn/shared'
 import type { Db } from './db/client.js'
-import { asset, completionEvent, feedImpression, field, unit, userInterest, userProfile } from './db/schema/index.js'
+import { asset, completionEvent, feedImpression, field, savedUnit, unit, unitFeedback, userInterest, userProfile } from './db/schema/index.js'
 
 export interface FeedPrefs {
   fieldIds: string[]
@@ -18,7 +18,10 @@ export interface FeedRepo {
    * Only the user's opted-in formats; of each written/audio pair only one variant is returned (random if both are opted in).
    */
   getCandidates(userId: string, themeIds: string[], formats: UnitFormat[]): Promise<FeedCandidate[]>
-  loadUnits(ids: string[]): Promise<Map<string, Omit<FeedUnitDto, 'discovery'>>>
+  /** With a userId, `saved` reflects that user's bookmarks */
+  loadUnits(ids: string[], userId?: string): Promise<Map<string, Omit<FeedUnitDto, 'discovery'>>>
+  /** Latest "mehr/weniger davon" votes (newest first, max 200) for ranking */
+  getSignals(userId: string): Promise<FeedbackSignal[]>
   recordImpressions(userId: string, unitIds: string[]): Promise<void>
   getPublishedContent(unitId: string): Promise<UnitContent | null>
 }
@@ -65,7 +68,7 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
       const sibling = aliasedTable(unit, 'sibling')
       const sameTopic = or(eq(sibling.id, unit.id), and(sql`${unit.pairId} is not null`, eq(sibling.pairId, unit.pairId)))
       const rows = await db
-        .select({ id: unit.id, pairId: unit.pairId, fieldId: unit.fieldId, themeId: unit.themeId })
+        .select({ id: unit.id, pairId: unit.pairId, fieldId: unit.fieldId, themeId: unit.themeId, series: unit.series, level: unit.level })
         .from(unit)
         .where(
           and(
@@ -89,18 +92,19 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
         )
         .orderBy(desc(unit.publishedAt))
         .limit(500)
-      // Chosen themes first within each field; other themes of the field follow
-      const preferred = new Set(themeIds)
-      return pickOnePerPair(rows, Math.random)
-        .sort((a, b) => Number(preferred.has(b.themeId ?? '')) - Number(preferred.has(a.themeId ?? '')))
-        .map(({ id, fieldId }) => ({ id, fieldId }))
+      // Ranking (chosen themes, affinity, level gating) happens in rankCandidates
+      void themeIds
+      return pickOnePerPair(rows, Math.random).map(({ id, fieldId, themeId, series, level }) => ({ id, fieldId, themeId, series, level }))
     },
 
-    async loadUnits(ids) {
+    async loadUnits(ids, userId) {
       const out = new Map<string, Omit<FeedUnitDto, 'discovery'>>()
       if (!ids.length) return out
+      const saved = new Set(
+        userId ? (await db.select({ id: savedUnit.unitId }).from(savedUnit).where(and(eq(savedUnit.userId, userId), inArray(savedUnit.unitId, ids)))).map((r) => r.id) : [],
+      )
       const rows = await db
-        .select({ id: unit.id, title: unit.title, format: unit.format, content: unit.contentJson, field })
+        .select({ id: unit.id, title: unit.title, format: unit.format, content: unit.contentJson, level: unit.level, series: unit.series, field })
         .from(unit)
         .innerJoin(field, eq(field.id, unit.fieldId))
         .where(inArray(unit.id, ids))
@@ -118,9 +122,23 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
           content: content.data,
           media,
           credits: creditsFor(own),
+          level: r.level,
+          series: r.series,
+          saved: saved.has(r.id),
         })
       }
       return out
+    },
+
+    async getSignals(userId) {
+      const rows = await db
+        .select({ vote: unitFeedback.vote, at: unitFeedback.createdAt, fieldId: unit.fieldId, themeId: unit.themeId, series: unit.series, level: unit.level })
+        .from(unitFeedback)
+        .innerJoin(unit, eq(unit.id, unitFeedback.unitId))
+        .where(eq(unitFeedback.userId, userId))
+        .orderBy(desc(unitFeedback.createdAt))
+        .limit(200)
+      return rows
     },
 
     async recordImpressions(userId, unitIds) {
