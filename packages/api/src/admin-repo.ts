@@ -62,7 +62,7 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string): Adm
           .insert(unit)
           .values(
             Array.from({ length: input.count }, () => {
-              const base = { briefId: brief.id, fieldId: input.fieldId, themeId: input.themeId }
+              const base = { briefId: brief.id, fieldId: input.fieldId, themeId: input.themeId, level: input.level, series: input.series }
               if (input.format) return [{ ...base, format: input.format }]
               const pairId = crypto.randomUUID()
               return [{ ...base, format: 'written' as const, pairId }, { ...base, format: 'audio' as const, pairId }]
