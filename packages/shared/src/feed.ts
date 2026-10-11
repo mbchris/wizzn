@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { wordCount, type ImageCredit, type UnitContent, type UnitFormat, type WrittenUnit } from './content.js'
 import type { CompletionRewardsDto, DailyCapDto } from './gamification.js'
+import { MAX_LEVEL, type Level } from './levels.js'
 
 export const FEED_PAGE_SIZE = 10
 /** Spec §6: units served in the last 14 days are not shown again */
@@ -43,6 +44,52 @@ export interface FeedUnitDto {
   credits: Record<string, ImageCredit>
   /** true when the unit comes from a field the user did not select */
   discovery: boolean
+  /** Depth within its series (1 for units without series) */
+  level: Level
+  series: string | null
+  /** Bookmarked by the current user */
+  saved: boolean
+}
+
+/** Grid tile for search results and saved units; never paired with a total count */
+export interface UnitTileDto {
+  id: string
+  title: string
+  format: UnitFormat
+  field: { slug: string; nameDe: string }
+  level: Level
+  /** Cover / first image URL */
+  image: string | null
+}
+
+export interface TilePage {
+  items: UnitTileDto[]
+  /** Opaque; null when there is nothing more to show */
+  cursor: string | null
+}
+
+export interface SearchTopicDto {
+  fieldId: string
+  fieldSlug: string
+  themeId: string | null
+  nameDe: string
+}
+
+export interface SearchResponse extends TilePage {
+  topics: SearchTopicDto[]
+}
+
+export const SEARCH_PAGE_SIZE = 12
+/** Search never reveals catalogue size: at most this many pages per query */
+export const SEARCH_MAX_PAGES = 5
+export const SAVED_PAGE_SIZE = 18
+export const searchQuerySchema = z.object({ q: z.string().trim().max(80).default(''), cursor: z.string().max(200).optional() })
+
+export const feedbackInputSchema = z.object({ vote: z.union([z.literal(1), z.literal(-1)]) })
+export type FeedbackVote = z.infer<typeof feedbackInputSchema>['vote']
+export interface FeedbackResult {
+  /** Units to show right after the voted one ("mehr davon"); empty for -1 */
+  next: FeedUnitDto[]
 }
 
 export interface FeedResponse {
@@ -80,6 +127,75 @@ export function isCompletion(content: UnitContent, input: CompletionInput): Comp
 export interface FeedCandidate {
   id: string
   fieldId: string
+  themeId?: string | null
+  series?: string | null
+  level?: Level
+}
+
+/* ---------- More / less feedback → affinity ---------- */
+
+export interface FeedbackSignal {
+  vote: FeedbackVote
+  fieldId: string
+  themeId: string | null
+  series: string | null
+  level: Level
+  at: Date
+}
+
+export interface Affinity {
+  series: Record<string, number>
+  theme: Record<string, number>
+  field: Record<string, number>
+  /** Highest level the user may see per series */
+  unlocked: Record<string, Level>
+}
+
+export const AFFINITY_WEIGHTS = { series: 3, theme: 2, field: 1 } as const
+/** Votes older than this count half */
+export const AFFINITY_DECAY_DAYS = 14
+/** Candidates scoring at or below this are not served */
+export const AFFINITY_DROP_SCORE = -4
+export const EMPTY_AFFINITY: Affinity = { series: {}, theme: {}, field: {}, unlocked: {} }
+
+export function buildAffinity(signals: FeedbackSignal[], now: Date): Affinity {
+  const a: Affinity = { series: {}, theme: {}, field: {}, unlocked: {} }
+  const add = (m: Record<string, number>, k: string | null, w: number) => {
+    if (k) m[k] = (m[k] ?? 0) + w
+  }
+  for (const s of signals) {
+    const decay = now.getTime() - s.at.getTime() > AFFINITY_DECAY_DAYS * 86_400_000 ? 0.5 : 1
+    add(a.series, s.series, s.vote * AFFINITY_WEIGHTS.series * decay)
+    add(a.theme, s.themeId, s.vote * AFFINITY_WEIGHTS.theme * decay)
+    add(a.field, s.fieldId, s.vote * AFFINITY_WEIGHTS.field * decay)
+    if (s.series && s.vote === 1) a.unlocked[s.series] = Math.min(MAX_LEVEL, Math.max(unlockedLevel(a, s.series), s.level + 1)) as Level
+  }
+  return a
+}
+
+/** Level 1 is always open; "mehr davon" on level n opens n + 1 */
+export const unlockedLevel = (a: Affinity, series: string): Level => a.unlocked[series] ?? 1
+
+export function scoreCandidate(c: FeedCandidate, a: Affinity, preferredThemes: ReadonlySet<string> = new Set()): number {
+  return (
+    (c.series ? (a.series[c.series] ?? 0) : 0) +
+    (c.themeId ? (a.theme[c.themeId] ?? 0) + (preferredThemes.has(c.themeId) ? 1 : 0) : 0) +
+    (a.field[c.fieldId] ?? 0)
+  )
+}
+
+/**
+ * Applies level gating and affinity before orderFeed: locked levels and strongly disliked units are dropped,
+ * the rest is stably sorted by score (input order = recency breaks ties).
+ */
+export function rankCandidates(candidates: FeedCandidate[], a: Affinity, preferredThemeIds: string[] = []): FeedCandidate[] {
+  const preferred = new Set(preferredThemeIds)
+  return candidates
+    .filter((c) => !c.series || (c.level ?? 1) <= unlockedLevel(a, c.series))
+    .map((c, i) => ({ c, i, score: scoreCandidate(c, a, preferred) }))
+    .filter((x) => x.score > AFFINITY_DROP_SCORE)
+    .sort((x, y) => y.score - x.score || x.i - y.i)
+    .map((x) => x.c)
 }
 
 /**

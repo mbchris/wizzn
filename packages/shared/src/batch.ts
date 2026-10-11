@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { FieldDto } from './api.js'
 import { briefInputSchema, type BriefInput } from './admin.js'
 import { EDITORIAL_STYLES, STORY_ARCS } from './pipeline.js'
+import { levelSchema, seriesSchema } from './levels.js'
 
 /** Max briefs per batch request (each brief can still spawn up to 10 units). */
 export const BATCH_MAX_JOBS = 100
@@ -19,6 +20,10 @@ export const batchJobSchema = z.object({
   style: z.enum(EDITORIAL_STYLES).nullish(),
   storyArc: z.enum(STORY_ARCS).nullish(),
   count: z.number().int().min(1).max(10).default(1),
+  level: levelSchema.default(1),
+  series: seriesSchema.nullish(),
+  /** Slug or German name of the field a level-4 unit bridges to */
+  crossField: z.string().nullish(),
 })
 export type BatchJob = z.infer<typeof batchJobSchema>
 
@@ -66,6 +71,8 @@ export function parseBatchFile(text: string, fields: FieldDto[]): { rows: BatchR
     if (!field) errors.push(`Unbekannter Bereich „${job.field}“`)
     const theme = job.theme && field ? field.themes.find((t) => matches(t, job.theme as string)) : undefined
     if (job.theme && field && !theme) errors.push(`Unbekanntes Thema „${job.theme}“ in ${field.nameDe}`)
+    const crossField = job.crossField ? fields.find((f) => matches(f, job.crossField as string)) : undefined
+    if (job.crossField && !crossField) errors.push(`Unbekannter Querbereich „${job.crossField}“`)
     if (errors.length || !field) return { index, job, briefs: [], errors }
     // "both" is ONE brief with format null: the API then creates linked written/audio pairs (pairId),
     // so the feed shows only one variant per topic and completing either counts for both
@@ -79,6 +86,9 @@ export function parseBatchFile(text: string, fields: FieldDto[]): { rows: BatchR
         storyArc: job.storyArc ?? null,
         format: job.format === 'both' ? null : job.format,
         count: job.count,
+        level: job.level,
+        series: job.series ?? null,
+        crossFieldId: crossField?.id ?? null,
       },
     ]
     return { index, job, briefs, errors }
