@@ -90,6 +90,82 @@ export function createQwenTts(baseUrl: string, fetchFn: typeof fetch = fetch, le
   return { ...createChatterboxTts(baseUrl, fetchFn, lengthScale, maxChunkChars, fit, noCache, voices), name: 'qwen3-tts' }
 }
 
+/** Voices accepted by Requesty's /audio/speech (OpenAI voice set) */
+export const REQUESTY_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse'] as const
+/** Hard API limit per request */
+const REQUESTY_MAX_CHARS = 4096
+/** Soft target per request; whole sentences only, a chunk may grow up to REQUESTY_MAX_CHARS for one long sentence */
+const REQUESTY_CHUNK_CHARS = 3500
+/** OpenAI `pcm` output: raw 16-bit signed LE, mono, 24 kHz */
+const REQUESTY_PCM_RATE = 24_000
+
+export interface RequestyTtsConfig {
+  /** Router base incl. /v1, e.g. https://router.requesty.ai/v1 */
+  baseUrl: string
+  apiKey: string
+  /** e.g. openai/gpt-4o-mini-tts, openai/tts-1-hd */
+  model: string
+  /** Fixed OpenAI voice (default `nova`) */
+  voice?: string
+  /** gpt-4o-mini-tts only: tone/accent/pacing steering */
+  instructions?: string
+  lengthScale?: number
+  fit?: boolean
+  maxChunkChars?: number
+  fetchFn?: typeof fetch
+}
+
+/**
+ * Requesty router (`POST /audio/speech`, OpenAI-compatible). Requests raw PCM and wraps it in a WAV header ourselves
+ * (OpenAI's streamed WAV carries placeholder sizes). `length_scale` maps to `speed = 1 / scale`; every re-render of the
+ * 3–5 min fitting is a paid API call (max 4 per unit).
+ */
+export function createRequestyTts({ baseUrl, apiKey, model, voice = 'nova', instructions = '', lengthScale = 1, fit = true, maxChunkChars = REQUESTY_CHUNK_CHARS, fetchFn = fetch }: RequestyTtsConfig): TtsClient {
+  const url = `${baseUrl.replace(/\/$/, '')}/audio/speech`
+  const v = voice.trim().toLowerCase()
+  if (!(REQUESTY_VOICES as readonly string[]).includes(v)) throw new Error(`Requesty TTS: unknown voice "${voice}" (one of ${REQUESTY_VOICES.join(', ')})`)
+  const render: Render = async (text, scale) => {
+    const speed = Math.min(4, Math.max(0.25, 1 / scale))
+    const parts: Buffer[] = []
+    for (const chunk of splitIntoSentenceChunks(text, maxChunkChars, REQUESTY_MAX_CHARS)) {
+      const res = await fetchFn(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model, input: chunk, voice: v, response_format: 'pcm', speed, ...(instructions && { instructions }) }),
+      })
+      if (!res.ok) throw new Error(`Requesty TTS HTTP ${res.status}: ${(await res.text()).slice(0, 300)}`)
+      parts.push(Buffer.from(await res.arrayBuffer()))
+    }
+    return pcmToWav(Buffer.concat(parts), REQUESTY_PCM_RATE)
+  }
+  return { ...(fit ? fitToWindow(render, lengthScale) : renderOnce(render, lengthScale)), name: `requesty · ${model} · ${v}` }
+}
+
+/**
+ * Packs whole sentences (ending in . ! ? …, or a line break) into chunks of ≤ softMax chars. Never breaks inside a
+ * sentence: a single sentence longer than softMax gets its own chunk; one longer than hardMax is an error.
+ */
+export function splitIntoSentenceChunks(text: string, softMax: number, hardMax = softMax): string[] {
+  const sentences = text.split(/(?<=[.!?…]["'“”»«)\]]*)\s+|\n+/).map((s) => s.trim()).filter(Boolean)
+  const chunks: string[] = []
+  for (const sentence of sentences) {
+    if (sentence.length > hardMax) throw new Error(`TTS: sentence of ${sentence.length} chars exceeds the ${hardMax}-char request limit — split it in the script: "${sentence.slice(0, 80)}…"`)
+    const last = chunks[chunks.length - 1]
+    if (last && last.length + 1 + sentence.length <= softMax) chunks[chunks.length - 1] = `${last} ${sentence}`
+    else chunks.push(sentence)
+  }
+  return chunks
+}
+
+/** Wraps raw 16-bit mono PCM in a WAV header */
+export function pcmToWav(pcm: Buffer, sampleRate: number): Buffer {
+  const data = pcm.length % 2 ? pcm.subarray(0, pcm.length - 1) : pcm
+  const wav = silentWav(0, sampleRate)
+  wav.writeUInt32LE(36 + data.length, 4)
+  wav.writeUInt32LE(data.length, 40)
+  return Buffer.concat([wav, data])
+}
+
 /** Single render, no 3–5 min duration fitting (debugging / ad-hoc text) */
 function renderOnce(renderWav: Render, lengthScale: number, pick: VoicePicker = () => undefined): Omit<TtsClient, 'name'> {
   return {

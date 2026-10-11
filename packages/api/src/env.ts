@@ -14,8 +14,9 @@ export const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
   CORS_ORIGINS: csv.default(''),
-  // openai = Ollama or any OpenAI-compatible endpoint; gemini-cli = local `gemini` binary (headless)
-  LLM_PROVIDER: z.enum(['openai', 'gemini-cli']).default('openai'),
+  // openai = Ollama or any OpenAI-compatible endpoint; gemini-cli = local `gemini` binary (headless);
+  // requesty = Requesty router (REQUESTY_API_KEY, LLM_MODEL as provider/model, e.g. google/gemini-2.5-flash)
+  LLM_PROVIDER: z.enum(['openai', 'gemini-cli', 'requesty']).default('openai'),
   LLM_BASE_URL: z.string().url().default('http://localhost:11434/v1'),
   // gemini-cli: empty = the CLI's default model
   LLM_MODEL: z.string().default(''),
@@ -23,6 +24,15 @@ export const envSchema = z.object({
   GEMINI_CLI_TIMEOUT_MS: z.coerce.number().int().positive().default(300_000),
   LLM_API_KEY: z.string().default(''),
   SEARCH_URL: z.string().url(),
+  /** Requesty router (https://docs.requesty.ai) — used by LLM_PROVIDER=requesty and TTS_PROVIDER=requesty */
+  REQUESTY_API_KEY: z.string().default(''),
+  REQUESTY_BASE_URL: z.string().url().default('https://router.requesty.ai/v1'),
+  /** Speech model for TTS_PROVIDER=requesty (only OpenAI TTS models are routed) */
+  REQUESTY_TTS_MODEL: z.string().default('openai/gpt-4o-mini-tts'),
+  /** Voice for TTS_PROVIDER=requesty (OpenAI voice set); TTS_VOICE / TTS_VOICE_1..3 are not used by Requesty */
+  REQUESTY_TTS_VOICE: z.enum(['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer', 'verse']).default('nova'),
+  /** Optional voice steering (tone, accent, pacing); gpt-4o-mini-tts only */
+  TTS_INSTRUCTIONS: z.string().default(''),
   TTS_URL: z.string().url().default('http://localhost:5100/synthesize'),
   /** Fixed voice; when empty, each audio unit picks one of TTS_VOICE_1..3 at random */
   TTS_VOICE: z.string().default(''),
@@ -30,7 +40,7 @@ export const envSchema = z.object({
   TTS_VOICE_2: z.string().default(''),
   TTS_VOICE_3: z.string().default(''),
   TTS_LENGTH_SCALE: z.coerce.number().min(0.5).max(2).default(1.2),
-  TTS_PROVIDER: z.enum(['silent', 'piper', 'chatterbox', 'qwen']).default('silent'),
+  TTS_PROVIDER: z.enum(['silent', 'piper', 'chatterbox', 'qwen', 'requesty']).default('silent'),
   IMAGE_PROVIDER: z.enum(['placeholder', 'api']).default('placeholder'),
   IMAGE_BASE_URL: z.string().url().optional(),
   IMAGE_MODEL: z.string().optional(),
@@ -72,6 +82,9 @@ export const envSchema = z.object({
   /** ImageRouter b64_ephemeral: no 30-day retention at the provider */
   IMAGE_EPHEMERAL: bool(true),
 }).superRefine((env, ctx) => {
+  if ((env.LLM_PROVIDER === 'requesty' || env.TTS_PROVIDER === 'requesty') && !env.REQUESTY_API_KEY.trim()) {
+    ctx.addIssue({ code: 'custom', path: ['REQUESTY_API_KEY'], message: 'required when LLM_PROVIDER or TTS_PROVIDER is requesty' })
+  }
   if (env.STOCK_IMAGE_PROVIDERS.includes('commons') && !env.STOCK_USER_AGENT.trim()) {
     ctx.addIssue({ code: 'custom', path: ['STOCK_USER_AGENT'], message: 'required when STOCK_IMAGE_PROVIDERS includes commons' })
   }

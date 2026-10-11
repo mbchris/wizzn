@@ -95,9 +95,19 @@ Verhaltensänderung → "rebirth", Selbstversuch/Perspektivwechsel → "voyage_a
 ### Prompt 2 – Batch anfordern (pro Lauf anpassen)
 
 ````text
-Erstelle {{ANZAHL}} Aufträge für Bereich "{{FIELD}}"{{, Thema "THEME"}}.
-Schwerpunkt: {{z. B. „häufige Irrtümer“, „neue Studien seit 2025“, „Einsteiger“}}.
+Erstelle {{ANZAHL}} Aufträge für die Bereiche {{COMBINATIONS}} (besthened jeweils aus {$field, $theme} )
+Schwerpunkt: {{z. B. "häufige Irrtümer“, "neue Studien seit 2023“, ", "ambitionierter Einsteiger"}}.
 Recherchiere zuerst, dann gib die JSON-Datei aus.
+
+
+{{ANZAHL}}  = 50
+{{COMBINATIONS}} = {nutrition, protein}, {nutrition, vegan}, {nutrition, vegetarian}, {nutrition, keto},
+{funfacts, vip}, {funfacts, nature}, {funfacts, pun},
+{partnership, seduction}, {partnership, needs}, {partnership, love}, {partnership, balance},
+{finance, investments}, {finance, tax-optimization}, {finance, budget},
+{sports, routine}, {sports, workout-types}, {sports, strength}, {sports, cardio},
+{psychology, behaviour-patterns}, {psychology, neurodivergence}, {psychology, developmental}, {psychology, social}
+
 ````
 
 Variante gemischt: `Erstelle 20 Aufträge, verteilt auf alle Bereiche (je 4), nur Themen, die gerade aktuell diskutiert werden.`

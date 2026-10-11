@@ -65,6 +65,8 @@ pnpm dev:worker     # pipeline worker
 pnpm dev:admin      # admin http://localhost:9100 → "Konto anlegen" with an ADMIN_EMAILS address
 ```
 LLM alternative: `npm i -g @google/gemini-cli`, run `gemini` once to log in, then `.env`: `LLM_PROVIDER=gemini-cli`, `LLM_MODEL=gemini-2.5-flash` (empty = CLI default). All LLM steps go through it; no Ollama needed.
+
+LLM via Requesty router: `.env`: `LLM_PROVIDER=requesty`, `REQUESTY_API_KEY=…`, `LLM_MODEL=google/gemini-2.5-flash` (any Requesty `provider/model`). Same key enables `TTS_PROVIDER=requesty` (see [docs/tts.md](docs/tts.md)).
 Check the LLM setup: `pnpm llm:check [topic]` prints the active backend and a mini sample unit (no DB writes).
 Defaults: `TTS_PROVIDER=silent` (silent WAV of realistic length; natural German: `chatterbox` or `qwen`, see [docs/tts.md](docs/tts.md)), `IMAGE_PROVIDER=placeholder` (SVG).
 

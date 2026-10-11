@@ -13,7 +13,7 @@ import { createStockChain } from './stock-images/chain.js'
 import { createCommonsClient } from './stock-images/commons.js'
 import { createOpenverseClient } from './stock-images/openverse.js'
 import type { StockImageClient } from './stock-images/types.js'
-import { createChatterboxTts, createQwenTts, createPiperTts, createSilentTts, type TtsClient } from './tts.js'
+import { createChatterboxTts, createQwenTts, createPiperTts, createRequestyTts, createSilentTts, type TtsClient } from './tts.js'
 
 export function createProviders(env: Env) {
   const search = createSearxngClient(env.SEARCH_URL)
@@ -32,6 +32,10 @@ export function createProviders(env: Env) {
 export function createLlm(env: Env): LlmClient {
   if (env.LLM_PROVIDER === 'gemini-cli')
     return createGeminiCliClient({ model: env.LLM_MODEL, bin: env.GEMINI_CLI_BIN, timeoutMs: env.GEMINI_CLI_TIMEOUT_MS })
+  if (env.LLM_PROVIDER === 'requesty') {
+    if (!env.LLM_MODEL) throw new Error('LLM_PROVIDER=requesty requires LLM_MODEL (provider/model, e.g. google/gemini-2.5-flash)')
+    return createLlmClient({ baseUrl: env.REQUESTY_BASE_URL, model: env.LLM_MODEL, apiKey: env.REQUESTY_API_KEY })
+  }
   if (!env.LLM_MODEL) throw new Error('LLM_PROVIDER=openai requires LLM_MODEL')
   return createLlmClient({ baseUrl: env.LLM_BASE_URL, model: env.LLM_MODEL, apiKey: env.LLM_API_KEY })
 }
@@ -51,6 +55,8 @@ export function createTts(env: Env, { fit = true, noCache = false }: { fit?: boo
   }
   if (env.TTS_PROVIDER === 'chatterbox') return createChatterboxTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit, noCache)
   if (env.TTS_PROVIDER === 'qwen') return createQwenTts(env.TTS_URL, fetch, env.TTS_LENGTH_SCALE, undefined, fit, noCache, env.TTS_VOICE ? [] : voices)
+  if (env.TTS_PROVIDER === 'requesty')
+    return createRequestyTts({ baseUrl: env.REQUESTY_BASE_URL, apiKey: env.REQUESTY_API_KEY, model: env.REQUESTY_TTS_MODEL, voice: env.REQUESTY_TTS_VOICE, instructions: env.TTS_INSTRUCTIONS, lengthScale: env.TTS_LENGTH_SCALE, fit })
   return createSilentTts()
 }
 

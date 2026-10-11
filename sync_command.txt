@@ -1,0 +1,13 @@
+SSH_KEY=~/.ssh/<your-key> 
+
+pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  <coolify-app-uuid>
+
+
+api-xc9yilrbgjyu4ckrtjlbcrae-20261010T181721
+postgres-xc9yilrbgjyu4ckrtjlbcrae-20261010T181721
+
+pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  postgres-xc9yilrbgjyu4ckrtjlbcrae-20261010T181721
+pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  api-xc9yilrbgjyu4ckrtjlbcrae-20261010T181721
+
+
+SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 bash scripts/coolify/push-delta.sh chris@apps.emailanschneiders.de xc9yilrbgjyu4ckrtjlbcrae --dry-run

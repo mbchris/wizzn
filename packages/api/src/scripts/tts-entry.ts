@@ -5,7 +5,7 @@
  *   pnpm --filter @wizzn/api tts:entry --text "Some script…" [outDir]
  *   pnpm --filter @wizzn/api tts:entry            (no args → TTS_DEBUG_TEXT from .env)
  *   add --fit to apply the pipeline's 3–5 min duration fitting (default: one render at TTS_LENGTH_SCALE)
- *   add --provider <silent|piper|chatterbox|qwen> and/or --url <http://…/synthesize> to override TTS_PROVIDER / TTS_URL,
+ *   add --provider <silent|piper|chatterbox|qwen|requesty> and/or --url <http://…/synthesize> to override TTS_PROVIDER / TTS_URL,
  *   e.g. to A/B two engines running on different ports (see `pnpm tts:server`)
  *
  * Writes <outDir>/<id>.raw.wav (straight from the TTS provider) and <id>.mp3 (what the pipeline stores),
@@ -45,7 +45,7 @@ if (!inlineText && !unitId) {
 }
 
 const env = loadEnv()
-const PROVIDERS = ['silent', 'piper', 'chatterbox', 'qwen'] as const
+const PROVIDERS = ['silent', 'piper', 'chatterbox', 'qwen', 'requesty'] as const
 if (providerOpt && !(PROVIDERS as readonly string[]).includes(providerOpt)) {
   console.error(`--provider must be one of ${PROVIDERS.join(', ')}`)
   process.exit(1)
@@ -88,7 +88,7 @@ function serverLogFile(): string {
 
 const info = await serverInfo()
 console.log('── TTS settings')
-console.log(`  provider      ${env.TTS_PROVIDER} @ ${env.TTS_URL}`)
+console.log(`  provider      ${env.TTS_PROVIDER} @ ${env.TTS_PROVIDER === 'requesty' ? `${env.REQUESTY_BASE_URL} · ${env.REQUESTY_TTS_MODEL}` : env.TTS_URL}`)
 console.log(`  voice         ${env.TTS_VOICE || [env.TTS_VOICE_1, env.TTS_VOICE_2, env.TTS_VOICE_3].filter(Boolean).join(' | ') || '(server default)'}`)
 console.log(`  length_scale  ${env.TTS_LENGTH_SCALE}${fit ? '  (3–5 min fitting on: may re-render)' : '  (single render)'}`)
 if (env.TTS_PROVIDER === 'chatterbox' || env.TTS_PROVIDER === 'qwen') {

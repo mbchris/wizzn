@@ -8,6 +8,7 @@ Audio units are rendered by a `TtsClient` (`packages/api/src/providers/tts.ts`),
 | `piper` | robotic | `.piper/venv`, fast | Piper voice name, e.g. `de_DE-thorsten-high` |
 | `chatterbox` | natural | `.chatterbox/venv`, slower than real time | reference WAV (~10 s) or built-in voice |
 | `qwen` | natural | `.qwen-tts/venv` | reference WAV, `design:<description>` or preset speaker |
+| `requesty` | natural (OpenAI voices) | cloud API, paid | not used — set `REQUESTY_TTS_VOICE` instead |
 
 `chatterbox` and `qwen` are local Python servers (`scripts/tts/*_server.py`) with Piper's contract:
 `POST /synthesize {text, length_scale}` → WAV, `GET /health`. The API sends the script in sentence chunks
@@ -95,3 +96,20 @@ Apply a new engine/voice to existing units: `pnpm audio:rerender` (see README).
 | `pnpm tts:voice <out.wav> --voice "design:…"` | Qwen: render a designed reference voice to a file and exit |
 | `pnpm tts:entry …` | Render one unit / text to `tts-debug/`, options `--fit`, `--provider`, `--url` |
 | `pnpm audio:rerender` | Re-render stored audio units with current settings |
+
+## Requesty (cloud)
+
+Runs on any server (no GPU), e.g. production. Calls `POST {REQUESTY_BASE_URL}/audio/speech` with
+`response_format: pcm`; the API wraps the PCM in a WAV. Scripts are sent in chunks of whole sentences (target ≤3500 chars, never split mid-sentence); a single sentence over the 4096-char API limit fails with an error.
+`TTS_LENGTH_SCALE` maps to `speed = 1 / scale`; each duration-fitting re-render is a paid call (max 4 per unit).
+
+```bash
+TTS_PROVIDER=requesty
+REQUESTY_API_KEY=...
+REQUESTY_TTS_MODEL=openai/gpt-4o-mini-tts     # or openai/tts-1, openai/tts-1-hd (no instructions)
+REQUESTY_TTS_VOICE=nova                       # alloy|ash|ballad|coral|echo|fable|onyx|nova|sage|shimmer|verse
+TTS_INSTRUCTIONS=Sprich Deutsch, warm und sachlich.
+TTS_LENGTH_SCALE=1
+```
+
+Test: `pnpm tts:entry --provider requesty --text "Hallo Welt"`.

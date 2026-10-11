@@ -14,7 +14,9 @@ const env = loadEnv()
 const backend =
   env.LLM_PROVIDER === 'gemini-cli'
     ? `gemini-cli · bin ${env.GEMINI_CLI_BIN} · model ${env.LLM_MODEL || '(CLI default)'}`
-    : `openai-compatible · ${env.LLM_BASE_URL} · model ${env.LLM_MODEL}`
+    : env.LLM_PROVIDER === 'requesty'
+      ? `requesty · ${env.REQUESTY_BASE_URL} · model ${env.LLM_MODEL}`
+      : `openai-compatible · ${env.LLM_BASE_URL} · model ${env.LLM_MODEL}`
 console.log(`LLM: ${backend}`)
 console.log(`Topic: ${topic}\n`)
 
