@@ -9,7 +9,10 @@
       "format": "both",
       "style": null,
       "storyArc": "overcoming_the_monster",
-      "count": 1
+      "count": 1,
+      "level": 1,
+      "series": null,
+      "crossField": null
     },
     {
       "field": "sports",
@@ -19,7 +22,75 @@
       "format": "written",
       "style": "friendly",
       "storyArc": "rebirth",
-      "count": 2
+      "count": 2,
+      "level": 1,
+      "series": null,
+      "crossField": null
+    },
+    {
+      "field": "nutrition",
+      "theme": "vegetarian",
+      "format": "both",
+      "style": null,
+      "storyArc": null,
+      "count": 1,
+      "series": "veg-protein",
+      "crossField": null,
+      "level": 1,
+      "topic": "Vegetarisches Protein: Was es wirklich kann – und wo die Lücken sind",
+      "context": "Zielgruppe: Einsteiger, die weniger Fleisch essen wollen. Blickwinkel: Pflanzliche und vegetarische Quellen decken den Bedarf, wenn man kombiniert. Kernfakten mit Quelle (DGE-Referenzwerte, Jahr, URL) aus der Recherche ergänzen. Vermeiden: Mangel-Panik, Produktempfehlungen."
+    },
+    {
+      "field": "nutrition",
+      "theme": "vegetarian",
+      "format": "both",
+      "style": null,
+      "storyArc": null,
+      "count": 1,
+      "series": "veg-protein",
+      "crossField": null,
+      "level": 2,
+      "topic": "Linsen: das unterschätzte Proteinwunder im Vorratsschrank",
+      "context": "Setzt voraus: „Vegetarisches Protein: Was es wirklich kann“. Fokus nur auf Linsen: Proteingehalt, Sorten, Ballaststoffe, Kombination mit Getreide. Kernfakten mit Quelle ergänzen."
+    },
+    {
+      "field": "nutrition",
+      "theme": "vegetarian",
+      "format": "both",
+      "style": null,
+      "storyArc": null,
+      "count": 1,
+      "series": "veg-protein",
+      "crossField": null,
+      "level": 3,
+      "topic": "Drei Proteinrezepte mit Linsen und Hüttenkäse in 10 Minuten",
+      "context": "Setzt voraus: Stufe 1 und „Linsen“. Konkrete, alltagstaugliche Rezepte mit Mengen und Proteinanteil pro Portion; keine Spezialzutaten."
+    },
+    {
+      "field": "nutrition",
+      "theme": "vegetarian",
+      "format": "both",
+      "style": null,
+      "storyArc": null,
+      "count": 1,
+      "series": "veg-protein",
+      "crossField": "sports",
+      "level": 4,
+      "topic": "Wann vegetarisches Protein in deine Sport-Routine gehört",
+      "context": "Setzt voraus: Stufen 1–3 der Serie. Brücke zu Sport: Proteinverteilung über den Tag, Timing rund ums Training, Bedarf bei Kraft- vs. Ausdauersport. Quellen aus Ernährung und Sportwissenschaft."
+    },
+    {
+      "field": "nutrition",
+      "theme": "vegetarian",
+      "format": "both",
+      "style": null,
+      "storyArc": null,
+      "count": 1,
+      "series": "veg-protein",
+      "crossField": null,
+      "level": 5,
+      "topic": "Leucin-Schwelle und Proteinqualität: warum nicht jedes Gramm gleich zählt",
+      "context": "Für Fortgeschrittene, setzt die Serie voraus. Mechanismus Muskelproteinsynthese, PDCAAS/DIAAS, Studienlage und offene Fragen. Nur belegte Zahlen."
     }
   ]
 }
