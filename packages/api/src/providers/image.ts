@@ -47,6 +47,8 @@ export const IMAGE_STYLES: Record<string, string> = {
   sports: `${ILLUSTRATION_STYLES.caricature} Mood: dynamic, energetic, motion lines; punchy saturated colors.`,
   nutrition: `${ILLUSTRATION_STYLES.memphis} Mood: bright, fresh, joyful; vibrant greens and warm tones.`,
   psychology: `${ILLUSTRATION_STYLES.cartoon} Mood: calm, reflective, empathetic; muted palette with one warm accent.`,
+  funfacts: `${ILLUSTRATION_STYLES.cartoon} Mood: playful, curious, surprising; bright candy colors.`,
+  work: `${ILLUSTRATION_STYLES.editorial} Mood: focused, capable, collegial; cool blues with a warm orange accent.`,
 }
 
 /** Unknown categories: schematic explainer, the most neutral genre for knowledge content. */

@@ -71,4 +71,15 @@ export const FIELD_SEEDS: readonly FieldSeed[] = [
       { slug: 'social', nameDe: 'Sozialpsychologie' },
     ],
   },
+  {
+    slug: 'work',
+    nameDe: 'Arbeit & Beruf',
+    adviceDisclaimer: false,
+    themes: [
+      { slug: 'career', nameDe: 'Karriere' },
+      { slug: 'leadership', nameDe: 'Führung' },
+      { slug: 'productivity', nameDe: 'Produktivität' },
+      { slug: 'labour-law', nameDe: 'Arbeitsrecht' },
+    ],
+  },
 ]

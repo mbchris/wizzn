@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { FIELD_SEEDS } from '@wizzn/shared'
 import { createCuratedProvider } from '../../src/providers/research/curated.js'
 import { hostMatches, SOURCE_REGISTRY } from '../../src/pipeline/source-registry.js'
 import type { SearchClient } from '../../src/providers/search.js'
@@ -26,7 +27,7 @@ describe('hostMatches', () => {
 
 describe('source registry', () => {
   it('covers every seeded field; scholarly only where research exists', () => {
-    expect(Object.keys(SOURCE_REGISTRY).sort()).toEqual(['finance', 'nutrition', 'partnership', 'psychology', 'sports'])
+    expect(Object.keys(SOURCE_REGISTRY).sort()).toEqual(FIELD_SEEDS.map((f) => f.slug).sort())
     expect(SOURCE_REGISTRY.nutrition!.scholarly).toBe(true)
     expect(SOURCE_REGISTRY.finance!.scholarly).toBe(false)
   })
