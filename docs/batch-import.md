@@ -38,11 +38,13 @@ Viele Aufträge auf einmal anlegen: Redaktion → **Batch-Import** (`/briefs/imp
 | `level` | nein | Wissensstufe 1–5 (Standard 1), siehe unten |
 | `series` | nein | Serien-Schlüssel, 2–60 Zeichen `a–z 0–9 -` (z. B. `veg-protein`); verknüpft alle Stufen eines Themas, sonst `null` |
 | `crossField` | nein | Nur Stufe 4: Slug/Name des Bereichs, zu dem die Brücke geschlagen wird, sonst `null` |
+| `after` | nein | `ref` (Happen-ID) aus einem Kontext-Export: Der Auftrag setzt diesen Happen auf einer höheren Stufe fort, siehe unten |
 
 - Max. 100 Jobs pro Datei. Ein reines Array `[ … ]` und ein umschließender ```` ```json ````-Block werden akzeptiert.
 - Import ist alles-oder-nichts: fehlerhafte Zeilen sperren den Button, bis sie korrigiert sind.
 - Alte Dateien ohne `level`/`series` bleiben gültig (Stufe 1, keine Serie).
-- API: `POST /api/admin/briefs/batch` mit `{ "briefs": BriefInput[] }` (bereits aufgelöste IDs).
+- Einträge mit `published` (aus einem Kontext-Export) werden angezeigt und übersprungen, nie erneut importiert.
+- API: `POST /api/admin/briefs/batch` mit `{ "briefs": BriefInput[], "seriesAssignments": [{ "unitId", "series" }] }` (bereits aufgelöste IDs).
 
 ## Wissensstufen & Serien
 
@@ -57,6 +59,69 @@ Inhalte starten einfach und werden detaillierter, sobald Nutzer „Mehr davon“
 | 5 | Expertenwissen | Mechanismen, Studienlage, Nuancen, Grenzen | Leucin-Schwelle, PDCAAS, aktuelle Studien |
 
 Faustregel pro Serie: 1× Stufe 1, 2–3× Stufe 2, 1–2× Stufe 3, 1× Stufe 4, optional 1× Stufe 5 – alle mit demselben `series`.
+
+## Kontext-Export (nächste Stufe planen)
+
+Zweck: Gemini sieht, was Leser einer Stufe bereits wissen, und plant die nächste ohne Wiederholungen.
+
+Ablauf: Redaktion → Happen auswählen → **Kontext exportieren** → Datei `wizzn-context-JJJJMMTT-HHMM.json` mit Prompt 2d an Gemini → Antwort im Batch-Import einfügen.
+
+```json
+{
+  "version": 1,
+  "kind": "context",
+  "jobs": [
+    {
+      "ref": "19cf9713-0b11-4e08-876c-dc38a9c2d48b",
+      "field": "finance",
+      "theme": "budget",
+      "topic": "Warum ein Notgroschen zuerst kommt",
+      "context": "<ursprüngliches Briefing>",
+      "format": "both",
+      "style": null,
+      "storyArc": "quest",
+      "count": 1,
+      "level": 1,
+      "series": null,
+      "crossField": null,
+      "published": {
+        "title": "Erst der Notgroschen",
+        "hook": "…",
+        "slides": [{ "title": "Dein Sicherheitsnetz", "body": "…" }],
+        "sources": [{ "title": "…", "publisher": "Verbraucherzentrale", "url": "https://…" }]
+      }
+    }
+  ]
+}
+```
+
+| Feld | Inhalt |
+|---|---|
+| `ref` | Happen-ID; neue Aufträge verweisen darauf mit `after` |
+| `field` … `crossField` | Ursprünglicher Auftrag im Import-Format |
+| `published` | Titel, Aufhänger, Slides und Quellen des fertigen Textes; bei reinen Audio-Happen `script` statt `hook`/`slides` |
+
+- Text-/Audio-Paar: ein Eintrag mit dem geschriebenen Text.
+- Happen ohne fertigen Inhalt fehlen in der Datei.
+- Die Datei ist selbst importierbar: Alle Einträge werden übersprungen.
+
+### Aufträge mit `after`
+
+Antwort von Gemini: normale Batch-Datei, jeder neue Auftrag mit `"after": "<ref>"`, `level` und `series`.
+
+| Bezugs-Happen | Verhalten beim Import |
+|---|---|
+| hat eine Serie | Auftrag übernimmt sie; `series` darf fehlen, ein anderer Schlüssel ist ein Fehler |
+| hat keine Serie | `series` des Auftrags wird dem Bezugs-Happen zugewiesen (Pflichtfeld) |
+
+Zeilenfehler in der Vorschau:
+
+- `after` unbekannt
+- `level` nicht höher als die Stufe des Bezugs-Happens
+- Serien-Schlüssel bereits von anderen Happen belegt
+- zwei Schlüssel für denselben Happen oder ein Schlüssel für zwei Happen in einer Datei
+
+Die Vorschau listet alle Zuweisungen („Titel“ → Serie). Erst **Importieren** schreibt sie: auf den Auftrag des Bezugs-Happens und alle seine Happen (Paar, Varianten), danach werden die Verknüpfungen veröffentlichter Happen neu berechnet. Schlägt eine Zuweisung fehl, wird nichts angelegt.
 
 ## Gemini-Prompts
 
@@ -99,6 +164,17 @@ Regeln:
 - Jede Stufe hat eine eigene, in sich verständliche Kernidee – auch wer nur diesen Happen sieht, versteht ihn.
 - Stufe 4 recherchiert auch im Ziel-Bereich (Quellen beider Bereiche).
 
+KONTEXT-DATEIEN (bestehende Happen fortsetzen)
+Eine Datei mit "kind": "context" enthält bereits veröffentlichte Happen: den ursprünglichen Auftrag plus "published" (Titel, Aufhänger, Slides, Quellen).
+- "published" ist das, was der Leser schon weiß. Wiederhole davon keine Fakten, Beispiele oder Alltagsschritte.
+- Jeder neue Auftrag greift genau EINEN Punkt auf, den der bestehende Happen nur anreißt oder offen lässt, und führt ihn weiter.
+- Setze "after" auf die "ref" des Happens, den der Auftrag fortsetzt, und "level" höher als dessen "level".
+- "series": Hat der Happen eine Serie, übernimm sie unverändert. Hat er keine ("series": null), vergib einen neuen, sprechenden Schlüssel;
+  alle Aufträge zum selben Happen tragen denselben Schlüssel, verschiedene Happen bekommen verschiedene Schlüssel.
+- "field" und "theme" übernimmst du vom bestehenden Happen (Ausnahme "crossField" bei Stufe 4).
+- Nenne im "context", welche Aussagen des bestehenden Happens vorausgesetzt werden und wo der neue anknüpft.
+- Gib keine Einträge mit "published" zurück, nur die neuen Aufträge.
+
 ARBEITSWEISE
 1. Recherchiere zu jedem Thema im Web, bevor du schreibst: aktuelle Studien, Behördenzahlen, Fachartikel, Statistiken. Bevorzuge Primärquellen
    (Fachgesellschaften, Behörden wie BZgA/RKI/Destatis/Bundesbank/BaFin, peer-reviewte Studien, Wikipedia nur als Einstieg).
@@ -140,7 +216,8 @@ Antworte ausschließlich mit genau einem JSON-Codeblock, ohne Text davor oder da
       "count": 1,
       "level": 1 | 2 | 3 | 4 | 5,
       "series": "<serien-schluessel oder null>",
-      "crossField": "<slug, nur bei level 4, sonst null>"
+      "crossField": "<slug, nur bei level 4, sonst null>",
+      "after": "<ref aus einer Kontext-Datei, sonst weglassen>"
     }
   ]
 }
@@ -202,6 +279,29 @@ L1 „Vegetarisches Protein: Was es wirklich kann“ · L2 „Linsen“, „Tofu
 Für die Serie "{{SERIES}}" ({{FIELD}}/{{THEME}}) gibt es bereits diese Happen: {{TITEL_MIT_STUFEN}}.
 Ergänze {{ANZAHL}} Aufträge für die Stufen {{STUFEN}}, die darauf aufbauen und nichts wiederholen. Gleicher "series"-Schlüssel.
 ````
+
+Ohne Kontext-Datei kennt Gemini hier nur die Titel; für Aufträge ohne Wiederholungen Prompt 2d verwenden.
+
+### Prompt 2d – Nächste Stufe aus Kontext-Export
+
+Kontext-Datei anhängen oder unter dem Prompt einfügen.
+
+````text
+Die angehängte Kontext-Datei enthält {{ANZAHL_HAPPEN}} veröffentlichte Happen.
+Erstelle zu jedem Happen {{ANZAHL_PRO_HAPPEN}} Aufträge der Stufe {{STUFE}}, die ihn fortsetzen.
+Lies zuerst "published" vollständig: Was dort steht, gilt als bekannt und wird nicht wiederholt.
+Wähle pro Auftrag einen anderen Aspekt, den der Happen nur anreißt; kein Aspekt doppelt, auch nicht zwischen den Happen.
+Setze "after", "level" und "series" nach den Regeln für Kontext-Dateien.
+Recherchiere zuerst neue Fakten und Quellen zum jeweiligen Aspekt, dann gib die JSON-Datei aus.
+````
+
+| Platzhalter | Beispiel |
+|---|---|
+| `{{ANZAHL_HAPPEN}}` | `12` |
+| `{{ANZAHL_PRO_HAPPEN}}` | `2–3` (Stufe 2), `1–2` (Stufe 3) |
+| `{{STUFE}}` | `2`; für Stufe 3 die Stufen 1 und 2 der Serie gemeinsam exportieren |
+
+Richtwert: höchstens 30 Happen pro Kontext-Datei, damit die Antwort unter 100 Jobs bleibt.
 
 ### Prompt 3 – Korrektur nach Importfehlern
 
