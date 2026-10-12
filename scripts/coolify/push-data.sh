@@ -36,7 +36,7 @@ echo "→ copying media ($(du -sh "$MEDIA_DIR" | cut -f1))"
 if [ "$S3_MODE" = 1 ]; then
   use_prod_s3
   # sync = exact copy: also deletes bucket files that don't exist locally (backups keep them)
-  rclone sync "$MEDIA_DIR" "prod:$S3_BUCKET" "${RCLONE_UPLOAD_FLAGS[@]}"
+  rclone sync "$MEDIA_DIR" "prod:$S3_BUCKET" "${RCLONE_UPLOAD_FLAGS[@]}" "${RCLONE_TREE_FLAGS[@]}"
 else
   COPYFILE_DISABLE=1 tar -C "$MEDIA_DIR" -czf - . \
     | r "docker run --rm -i -v $MEDIA_VOL:/media alpine sh -c 'rm -rf /media/* && tar -xzf - -C /media && chown -R 1000:1000 /media'"

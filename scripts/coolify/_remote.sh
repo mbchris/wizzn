@@ -22,7 +22,18 @@ if [ -z "$PG" ]; then
   PG="$PGS"
 fi
 grep -qx "$PG" <<<"$NAMES" || { echo "✗ PG_CONTAINER=$PG not found on $HOST"; exit 1; }
+# Media target follows what prod actually runs (the local env file can lag behind a cutover).
+# MEDIA_TARGET=s3|volume overrides; MEDIA_DRIVER unset on prod → keep the env file's answer from _s3.sh.
+case "${MEDIA_TARGET:-}" in
+  s3) S3_MODE=1 ;;
+  volume) S3_MODE=0 ;;
+  "")
+    PROD_DRIVER="$(r "docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' $API" | sed -n 's/^MEDIA_DRIVER=//p' | tail -1)"
+    case "$PROD_DRIVER" in s3) S3_MODE=1 ;; local) S3_MODE=0 ;; esac ;;
+  *) echo "✗ MEDIA_TARGET must be s3 or volume"; exit 1 ;;
+esac
 MEDIA_VOL="$(r "docker inspect -f '{{range .Mounts}}{{if eq .Destination \"/media\"}}{{.Name}}{{end}}{{end}}' $API")"
 # After the S3 cutover the api has no /media volume; callers in S3 mode don't need it
-[ -n "$MEDIA_VOL" ] || [ "${S3_MODE:-0}" = 1 ] || { echo "✗ could not find /media volume on $API"; exit 1; }
-echo "  postgres=$PG api=$API worker=${WORKER:-none} media=$MEDIA_VOL"
+[ -n "$MEDIA_VOL" ] || [ "${S3_MODE:-0}" = 1 ] || { echo "✗ could not find /media volume on $API (prod on Garage? set MEDIA_TARGET=s3)"; exit 1; }
+[ "${S3_MODE:-0}" = 1 ] && MEDIA_DEST="bucket ${S3_BUCKET:-}" || MEDIA_DEST="volume $MEDIA_VOL"
+echo "  postgres=$PG api=$API worker=${WORKER:-none} media=$MEDIA_DEST"
