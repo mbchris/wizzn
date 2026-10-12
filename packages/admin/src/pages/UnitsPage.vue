@@ -142,6 +142,12 @@ const SKIP_LABEL: Record<BulkSkipReason, string> = {
   has_history: 'hat Nutzerverlauf',
 }
 const ACTION_TEXT: Record<BulkActionInput['action'], { title: string; message: (n: number) => string; done: string; color: string }> = {
+  approve: {
+    title: 'Freigeben',
+    message: (n) => `${n} Wissenshappen veröffentlichen? Nur Einträge „Zur Freigabe“ mit gültigem Inhalt werden freigegeben.`,
+    done: 'freigegeben',
+    color: 'positive',
+  },
   resume: {
     title: 'Fortsetzen',
     message: (n) => `${n} Wissenshappen beim unterbrochenen Schritt fortsetzen? Nur hängende Einträge werden fortgesetzt.`,
@@ -249,6 +255,7 @@ onUnmounted(() => clearInterval(timer))
       <div class="row items-center q-gutter-sm">
         <div class="text-weight-medium">{{ selected.length }} ausgewählt</div>
         <q-space />
+        <q-btn v-if="selected.some((u) => u.status === 'in_review')" flat color="positive" icon="done" label="Freigeben" :disable="busy" @click="confirmBulk('approve')" />
         <q-btn v-if="selected.some((u) => u.stuck)" flat icon="play_arrow" label="Fortsetzen" :disable="busy" @click="confirmBulk('resume')" />
         <q-btn v-if="selected.some((u) => u.status === 'published')" flat icon="lock" label="Sperren" :disable="busy" @click="confirmBulk('lock')" />
         <q-btn v-if="selected.some((u) => u.status === 'locked')" flat icon="lock_open" label="Entsperren" :disable="busy" @click="confirmBulk('unlock')" />

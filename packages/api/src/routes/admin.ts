@@ -101,6 +101,10 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
           const claim = await repo.resume(id)
           if (claim.result === 'ok') await queue.enqueue(claim.queue, id)
           result = claim.result
+        } else if (action === 'approve') {
+          // Same guard as the single approve: only in_review with renderable content
+          result = await repo.approve(id)
+          if (result === 'ok') await repo.addLog(id, `Freigegeben von ${c.get('user').email} (Mehrfachauswahl)`)
         } else if (action === 'delete') {
           result = await repo.deleteUnit(id)
         } else if (action === 'lock' || action === 'unlock') {
