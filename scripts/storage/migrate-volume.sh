@@ -25,7 +25,7 @@ envs=""
 for k in TYPE PROVIDER FORCE_PATH_STYLE ENDPOINT ACCESS_KEY_ID SECRET_ACCESS_KEY REGION; do
   var="RCLONE_CONFIG_PROD_$k"; envs+=" -e $var=$(printf %q "${!var}")"
 done
-flags="$(printf ' %q' "${RCLONE_UPLOAD_FLAGS[@]}")"
+flags="$(printf ' %q' "${RCLONE_UPLOAD_FLAGS[@]}" "${RCLONE_TREE_FLAGS[@]}")"
 r "docker run --rm -v $VOL:/media:ro$envs rclone/rclone:1 copy /media prod:$S3_BUCKET$flags --stats 30s --stats-one-line"
 
 echo "→ verifying"
