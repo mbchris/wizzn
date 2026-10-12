@@ -1,7 +1,7 @@
-import { and, asc, desc, eq, gt, type SQL } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, inArray, type SQL } from 'drizzle-orm'
 import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, unitContentSchema, type BriefInput, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitLogDto, type UnitSummaryDto } from '@wizzn/shared'
 import type { Db } from './db/client.js'
-import { completionEvent, contentBrief, feedImpression, source, unit, unitLog } from './db/schema/index.js'
+import { completionEvent, contentBrief, feedImpression, field, source, unit, unitLog } from './db/schema/index.js'
 import { claimResume, isUnitStuck, stillStuck, stuckIds } from './pipeline/recover.js'
 import type { AdminActionResult, AdminRepo } from './types.js'
 
@@ -211,6 +211,78 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
 
     async addLog(id, message) {
       await db.insert(unitLog).values({ unitId: id, level: 'info', step: null, message })
+    },
+
+    async contextUnits(ids) {
+      if (!ids.length) return []
+      const rows = await db.query.unit.findMany({ where: inArray(unit.id, ids), with: { brief: { with: { theme: true } }, field: true } })
+      const crossIds = rows.flatMap((r) => (r.brief.crossFieldId ? [r.brief.crossFieldId] : []))
+      const crossFields = crossIds.length ? await db.select({ id: field.id, slug: field.slug }).from(field).where(inArray(field.id, crossIds)) : []
+      const crossSlug = new Map(crossFields.map((f) => [f.id, f.slug]))
+      const byId = new Map(rows.map((r) => [r.id, r]))
+      // Selection order of the admin list is kept in the file
+      return ids.flatMap((id) => {
+        const r = byId.get(id)
+        if (!r) return []
+        return [
+          {
+            id: r.id,
+            pairId: r.pairId,
+            fieldSlug: r.field.slug,
+            themeSlug: r.brief.theme?.slug ?? null,
+            crossFieldSlug: (r.brief.crossFieldId && crossSlug.get(r.brief.crossFieldId)) || null,
+            brief: {
+              topic: r.brief.topic,
+              context: r.brief.context,
+              style: r.brief.style as BriefInput['style'],
+              storyArc: r.brief.storyArc as BriefInput['storyArc'],
+              format: r.brief.format,
+              count: r.brief.count,
+              level: r.brief.level,
+              series: r.brief.series,
+            },
+            title: r.title,
+            contentJson: r.contentJson,
+          },
+        ]
+      })
+    },
+
+    async batchRefs(query) {
+      const rows = query.ids.length ? await db.query.unit.findMany({ where: inArray(unit.id, query.ids), columns: { id: true, title: true, level: true, series: true }, with: { brief: { columns: { topic: true } } } }) : []
+      const used = query.series.length ? await db.selectDistinct({ series: unit.series }).from(unit).where(inArray(unit.series, query.series)) : []
+      return {
+        units: rows.map((r) => ({ id: r.id, title: r.title ?? r.brief.topic, level: r.level, series: r.series })),
+        usedSeries: used.flatMap((u) => (u.series ? [u.series] : [])),
+      }
+    },
+
+    async assignSeries(assignments) {
+      const outcome = await db.transaction(async (tx) => {
+        const targets = await tx.select({ id: unit.id, briefId: unit.briefId, series: unit.series }).from(unit).where(inArray(unit.id, assignments.map((a) => a.unitId)))
+        const seriesByBrief = new Map<string, string>()
+        for (const a of assignments) {
+          const target = targets.find((t) => t.id === a.unitId)
+          if (!target) return { result: 'not_found' as const, relink: [] }
+          const planned = seriesByBrief.get(target.briefId)
+          if ((target.series && target.series !== a.series) || (planned && planned !== a.series)) return { result: 'conflict' as const, relink: [] }
+          seriesByBrief.set(target.briefId, a.series)
+        }
+        // A series is one ladder: the key may not belong to units of any other brief, nor to two briefs of this request
+        if (new Set(seriesByBrief.values()).size !== seriesByBrief.size) return { result: 'conflict' as const, relink: [] }
+        const holders = await tx.select({ briefId: unit.briefId, series: unit.series }).from(unit).where(inArray(unit.series, [...seriesByBrief.values()]))
+        if (holders.some((h) => seriesByBrief.get(h.briefId) !== h.series)) return { result: 'conflict' as const, relink: [] }
+        const relink: string[] = []
+        for (const [briefId, series] of seriesByBrief) {
+          await tx.update(contentBrief).set({ series }).where(eq(contentBrief.id, briefId))
+          // updatedAt stays untouched so the stuck detection of working units is not reset
+          const updated = await tx.update(unit).set({ series }).where(eq(unit.briefId, briefId)).returning({ id: unit.id, status: unit.status })
+          relink.push(...updated.filter((u) => u.status === 'published').map((u) => u.id))
+        }
+        return { result: 'ok' as const, relink }
+      })
+      if (onPublished) for (const id of outcome.relink) await onPublished(id).catch((e: unknown) => console.error(`[links] ${id}:`, e))
+      return outcome.result
     },
   }
 }

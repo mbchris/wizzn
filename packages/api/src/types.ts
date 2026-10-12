@@ -1,6 +1,6 @@
 import type { QueueName } from './jobs/queues.js'
 import type { ClaimResult } from './pipeline/recover.js'
-import type { BriefInput, FieldDto, InterestsInput, MeDto, UnitDetailDto, UnitEdit, UnitListQuery, UnitLogDto, UnitSummaryDto } from '@wizzn/shared'
+import type { BatchRefQuery, BatchRefs, BriefInput, ContextUnit, FieldDto, InterestsInput, MeDto, UnitDetailDto, UnitEdit, UnitListQuery, UnitLogDto, UnitSummaryDto } from '@wizzn/shared'
 
 export interface SessionUser {
   id: string
@@ -52,6 +52,15 @@ export interface AdminRepo {
   listLogs(id: string, after?: number): Promise<UnitLogDto[]>
   /** Admin-side protocol line, e.g. a manual restart */
   addLog(id: string, message: string): Promise<void>
+  /** Units with brief and content for the context export; unknown IDs are left out */
+  contextUnits(ids: string[]): Promise<ContextUnit[]>
+  /** Units behind `after` references of a batch preview and which of the proposed series keys are taken */
+  batchRefs(query: BatchRefQuery): Promise<BatchRefs>
+  /**
+   * Sets the series on the briefs of the given units and on every unit of those briefs (pairs, variants), all or nothing.
+   * 'conflict': a unit already has another series, or the key belongs to units outside these briefs.
+   */
+  assignSeries(assignments: { unitId: string; series: string }[]): Promise<'ok' | 'not_found' | 'conflict'>
 }
 
 export interface JobQueue {

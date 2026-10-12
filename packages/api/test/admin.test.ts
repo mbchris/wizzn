@@ -27,6 +27,9 @@ function setup(user: SessionUser = admin, overrides: Partial<AdminRepo> = {}, im
     unlock: async () => 'ok',
     listLogs: async () => [],
     addLog: async () => {},
+    contextUnits: async () => [],
+    batchRefs: async () => ({ units: [], usedSeries: [] }),
+    assignSeries: async () => 'ok',
     ...overrides,
   }
   const app = createApp({
@@ -93,6 +96,44 @@ describe('/api/admin', () => {
     const res = await app.request('/api/admin/briefs/batch', { method: 'POST', headers, body: JSON.stringify({ briefs: [ok, { ...ok, topic: 'x' }] }) })
     expect(res.status).toBe(400)
     expect(enqueued).toEqual([])
+  })
+  it('assigns series to existing units before creating the briefs of a batch', async () => {
+    const order: string[] = []
+    const { app } = setup(admin, {
+      assignSeries: async (a) => (order.push(`assign ${a.map((x) => `${x.unitId}=${x.series}`).join()}`), 'ok'),
+      createBrief: async (input) => (order.push(`brief ${input.series}`), { briefId: 'b1', unitIds: ['u0'] }),
+    })
+    const body = { briefs: [{ fieldId: FIELD, topic: 'Tagesgeld', format: 'written', level: 2, series: 'notgroschen' }], seriesAssignments: [{ unitId: UNIT, series: 'notgroschen' }] }
+    const res = await app.request('/api/admin/briefs/batch', { method: 'POST', headers, body: JSON.stringify(body) })
+    expect(res.status).toBe(201)
+    expect(order).toEqual([`assign ${UNIT}=notgroschen`, 'brief notgroschen'])
+  })
+  it('creates nothing when a series assignment is refused', async () => {
+    const body = { briefs: [{ fieldId: FIELD, topic: 'Tagesgeld', format: 'written' }], seriesAssignments: [{ unitId: UNIT, series: 'notgroschen' }] }
+    for (const [result, status] of [['conflict', 409], ['not_found', 404]] as const) {
+      const { app, enqueued } = setup(admin, { assignSeries: async () => result })
+      const res = await app.request('/api/admin/briefs/batch', { method: 'POST', headers, body: JSON.stringify(body) })
+      expect(res.status).toBe(status)
+      expect(enqueued).toEqual([])
+    }
+  })
+  it('looks up the units and series keys a batch preview refers to', async () => {
+    const refs = { units: [{ id: UNIT, title: 'Notgroschen', level: 1 as const, series: null }], usedSeries: ['vergeben'] }
+    const { app } = setup(admin, { batchRefs: async (q) => (q.ids[0] === UNIT && q.series[0] === 'vergeben' ? refs : { units: [], usedSeries: [] }) })
+    const res = await app.request('/api/admin/briefs/batch/refs', { method: 'POST', headers, body: JSON.stringify({ ids: [UNIT], series: ['vergeben'] }) })
+    expect(await res.json()).toEqual(refs)
+  })
+  it('exports selected units as context jobs', async () => {
+    const sources = [{ url: 'https://bundesbank.de/a', title: 'Sparen', publisher: 'Bundesbank' }]
+    const contentJson = { format: 'written', slides: [1, 2, 3].map((n) => ({ title: `S${n}`, body: `Text ${n}` })), sources }
+    const { app } = setup(admin, {
+      contextUnits: async (ids) =>
+        ids.map((id) => ({ id, pairId: null, fieldSlug: 'finance', themeSlug: null, crossFieldSlug: null, brief: { topic: 'Notgroschen', context: '', style: null, storyArc: null, format: null, count: 1, level: 1, series: null }, title: 'Dein Notgroschen', contentJson })),
+    })
+    const res = await app.request('/api/admin/units/context', { method: 'POST', headers, body: JSON.stringify({ ids: [UNIT] }) })
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject([{ ref: UNIT, field: 'finance', format: 'both', published: { title: 'Dein Notgroschen', sources } }])
+    expect((await app.request('/api/admin/units/context', { method: 'POST', headers, body: JSON.stringify({ ids: [] }) })).status).toBe(400)
   })
   it('rejects a brief with count > 10', async () => {
     const res = await setup().app.request('/api/admin/briefs', { method: 'POST', headers, body: JSON.stringify({ fieldId: FIELD, topic: 'Notgroschen', format: 'written', count: 11 }) })

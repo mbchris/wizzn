@@ -1,11 +1,13 @@
 import { Hono, type Context } from 'hono'
 import { zValidator } from '@hono/zod-validator'
-import { briefBatchSchema, briefInputSchema, bulkActionSchema, type BriefBatchResultDto, rejectSchema, type BulkResultDto, replaceImageSchema, unitEditSchema, unitListQuerySchema, unitLogQuerySchema } from '@wizzn/shared'
+import { batchRefQuerySchema, briefBatchSchema, briefInputSchema, bulkActionSchema, contextJobs, type BriefBatchResultDto, rejectSchema, type BulkResultDto, replaceImageSchema, unitEditSchema, unitListQuerySchema, unitLogQuerySchema } from '@wizzn/shared'
 import { z } from 'zod'
 import { requireAdmin } from '../middleware/require-admin.js'
 import { QUEUES } from '../jobs/queues.js'
 import type { ImageReplacer } from '../pipeline/replace-image.js'
 import type { AdminActionResult, AdminRepo, AppVariables, AuthPort, JobQueue } from '../types.js'
+
+const contextExportSchema = z.object({ ids: z.array(z.string().uuid()).min(1).max(200) })
 
 const idParam = zValidator('param', z.object({ id: z.string().uuid() }))
 
@@ -28,14 +30,22 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
     .post('/briefs/batch', zValidator('json', briefBatchSchema), async (c) => {
       // Whole body is validated up front (all-or-nothing); briefs are then created in file order
       const email = c.get('user').email
+      const { briefs, seriesAssignments } = c.req.valid('json')
+      if (seriesAssignments.length) {
+        const assigned = await repo.assignSeries(seriesAssignments)
+        if (assigned === 'not_found') return c.json({ error: 'Referenced unit not found' }, 404)
+        if (assigned === 'conflict') return c.json({ error: 'Series key conflicts with existing units' }, 409)
+      }
       const out: BriefBatchResultDto = { briefs: [] }
-      for (const brief of c.req.valid('json').briefs) {
+      for (const brief of briefs) {
         const created = await repo.createBrief(brief, email)
         await Promise.all(created.unitIds.map((id) => queue.enqueueResearch(id)))
         out.briefs.push(created)
       }
       return c.json(out, 201)
     })
+    .post('/briefs/batch/refs', zValidator('json', batchRefQuerySchema), async (c) => c.json(await repo.batchRefs(c.req.valid('json'))))
+    .post('/units/context', zValidator('json', contextExportSchema), async (c) => c.json(contextJobs(await repo.contextUnits(c.req.valid('json').ids))))
     .get('/units', zValidator('query', unitListQuerySchema), async (c) => c.json(await repo.listUnits(c.req.valid('query'))))
     .get('/units/:id', idParam, async (c) => {
       const unit = await repo.getUnit(c.req.valid('param').id)
