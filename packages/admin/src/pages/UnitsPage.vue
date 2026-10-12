@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useQuasar } from 'quasar'
-import { UNIT_STATUSES, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
+import { exportFile, useQuasar } from 'quasar'
+import { UNIT_STATUSES, formatPushList, pushListFilename, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
 import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
 
@@ -210,6 +210,14 @@ function confirmBulk(action: BulkActionInput['action']): void {
     cancel: { label: 'Abbrechen', flat: true },
   }).onOk(() => void runBulk(action))
 }
+
+/** List for `pnpm coolify:push-delta --units <file>`: pushes exactly these units to prod */
+function exportPushList(): void {
+  const now = new Date()
+  const ok = exportFile(pushListFilename(now), formatPushList(selected.value, now), { mimeType: 'text/plain', encoding: 'utf-8' })
+  if (ok !== true) $q.notify({ type: 'negative', message: 'Download vom Browser blockiert' })
+}
+
 onMounted(() => {
   void load()
   // Pipeline status changes in the background
@@ -259,6 +267,9 @@ onUnmounted(() => clearInterval(timer))
         <q-btn v-if="selected.some((u) => u.stuck)" flat icon="play_arrow" label="Fortsetzen" :disable="busy" @click="confirmBulk('resume')" />
         <q-btn v-if="selected.some((u) => u.status === 'published')" flat icon="lock" label="Sperren" :disable="busy" @click="confirmBulk('lock')" />
         <q-btn v-if="selected.some((u) => u.status === 'locked')" flat icon="lock_open" label="Entsperren" :disable="busy" @click="confirmBulk('unlock')" />
+        <q-btn flat icon="file_download" label="Push-Liste exportieren" :disable="busy" @click="exportPushList">
+          <q-tooltip>Auswahl als Datei für „pnpm coolify:push-delta --units“ speichern</q-tooltip>
+        </q-btn>
         <q-btn flat icon="replay" label="Neu generieren" :disable="busy" @click="confirmBulk('regenerate')" />
         <q-btn flat color="negative" icon="delete" label="Löschen" :disable="busy" @click="confirmBulk('delete')" />
         <q-btn flat round dense icon="close" :disable="busy" @click="selected = []"><q-tooltip>Auswahl aufheben</q-tooltip></q-btn>
