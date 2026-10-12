@@ -297,6 +297,9 @@ onUnmounted(() => {
             <q-tooltip>Aus dem Feed nehmen, um ihn zu bearbeiten</q-tooltip>
           </q-btn>
           <q-btn color="negative" flat icon="block" label="Ablehnen" :disable="!(reviewable || stuck) || busy" @click="reject" />
+          <q-btn v-if="unit.status === 'failed'" flat color="primary" icon="edit" label="Bearbeiten & neu senden" :to="`/briefs/new?from=${unit.id}`">
+            <q-tooltip>Auftrag anpassen und als neuen Auftrag senden – dieser Wissenshappen bleibt erhalten</q-tooltip>
+          </q-btn>
           <q-btn-dropdown flat icon="replay" label="Neu generieren" :disable="busy || !canRegenerate">
             <q-list>
               <q-item v-close-popup clickable :disable="!canRedraft" @click="redraft">

@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, type SQL } from 'drizzle-orm'
-import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, unitContentSchema, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitLogDto, type UnitSummaryDto } from '@wizzn/shared'
+import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, unitContentSchema, type BriefInput, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitLogDto, type UnitSummaryDto } from '@wizzn/shared'
 import type { Db } from './db/client.js'
 import { completionEvent, contentBrief, feedImpression, source, unit, unitLog } from './db/schema/index.js'
 import { claimResume, isUnitStuck, stillStuck, stuckIds } from './pipeline/recover.js'
@@ -99,6 +99,17 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
         sources: row.sources.map(({ url, title, publisher, tier, provider }) => ({ url, title, publisher, tier, provider })),
         assets: row.assets.map((a) => ({ id: a.id, kind: a.kind, url: mediaUrl(a.path), durationSec: a.durationSec, origin: a.origin, credit: a.credit ?? null, stockQuery: a.stockQuery, prompt: a.prompt ?? null, generator: a.generator ?? null })),
         checkReport: (row.checkReport?.reportJson as CheckReport | undefined) ?? null,
+        brief: {
+          fieldId: row.brief.fieldId,
+          themeId: row.brief.themeId,
+          topic: row.brief.topic,
+          context: row.brief.context,
+          style: row.brief.style as BriefInput['style'],
+          storyArc: row.brief.storyArc as BriefInput['storyArc'],
+          level: row.brief.level,
+          series: row.brief.series,
+          crossFieldId: row.brief.crossFieldId,
+        },
       }
     },
 
