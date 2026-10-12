@@ -160,6 +160,18 @@ describe('/api/admin', () => {
       expect(jobs).toEqual([['unit.check', UNIT]])
       expect(enqueued).toEqual([])
     })
+    it('approves units in review, logs it and skips the rest', async () => {
+      const notes: [string, string][] = []
+      const { app, enqueued } = setup(admin, {
+        approve: async (id) => (id === UNIT ? 'ok' : 'invalid_content'),
+        addLog: async (id, m) => void notes.push([id, m]),
+      })
+      const res = await bulk(app, { action: 'approve', ids: [UNIT, U2] })
+      expect(res.status).toBe(200)
+      expect(await res.json()).toEqual({ done: [UNIT], skipped: [{ id: U2, reason: 'invalid_state' }] })
+      expect(notes).toEqual([[UNIT, expect.stringMatching(/^Freigegeben von .+ \(Mehrfachauswahl\)$/)]])
+      expect(enqueued).toEqual([])
+    })
     it('deletes without enqueueing and reports units with user history', async () => {
       const deleted: string[] = []
       const { app, enqueued } = setup(admin, { deleteUnit: async (id) => (id === UNIT ? (deleted.push(id), 'ok') : 'has_history') })

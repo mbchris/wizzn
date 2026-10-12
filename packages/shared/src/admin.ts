@@ -25,7 +25,7 @@ export const briefInputSchema = z.object({
 export type BriefInput = z.infer<typeof briefInputSchema>
 
 export const bulkActionSchema = z.object({
-  action: z.enum(['regenerate', 'resume', 'delete', 'lock', 'unlock']),
+  action: z.enum(['approve', 'regenerate', 'resume', 'delete', 'lock', 'unlock']),
   ids: z.array(z.string().uuid()).min(1).max(200),
 })
 export type BulkActionInput = z.infer<typeof bulkActionSchema>
