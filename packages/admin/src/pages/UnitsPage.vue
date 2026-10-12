@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { exportFile, useQuasar } from 'quasar'
-import { UNIT_STATUSES, formatPushList, pushListFilename, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
+import { UNIT_STATUSES, contextFilename, formatContextFile, formatPushList, pushListFilename, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type ContextJob, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
 import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
 
@@ -218,6 +218,25 @@ function exportPushList(): void {
   if (ok !== true) $q.notify({ type: 'negative', message: 'Download vom Browser blockiert' })
 }
 
+/** Brief plus published text of the selection, as input for an LLM that plans the next level (docs/batch-import.md, Prompt 2d) */
+async function exportContext(): Promise<void> {
+  busy.value = true
+  try {
+    const jobs = await api<ContextJob[]>('/api/admin/units/context', { method: 'POST', body: { ids: selectedIds.value } })
+    if (!jobs.length) {
+      $q.notify({ type: 'warning', message: 'Keiner der ausgewählten Happen hat fertigen Inhalt' })
+      return
+    }
+    const ok = exportFile(contextFilename(new Date()), formatContextFile(jobs), { mimeType: 'application/json', encoding: 'utf-8' })
+    if (ok !== true) $q.notify({ type: 'negative', message: 'Download vom Browser blockiert' })
+    else $q.notify({ type: 'positive', message: `${jobs.length} Happen als Kontext exportiert` })
+  } catch (e) {
+    $q.notify({ type: 'negative', message: errorMessage(e) })
+  } finally {
+    busy.value = false
+  }
+}
+
 onMounted(() => {
   void load()
   // Pipeline status changes in the background
@@ -269,6 +288,9 @@ onUnmounted(() => clearInterval(timer))
         <q-btn v-if="selected.some((u) => u.status === 'locked')" flat icon="lock_open" label="Entsperren" :disable="busy" @click="confirmBulk('unlock')" />
         <q-btn flat icon="file_download" label="Push-Liste exportieren" :disable="busy" @click="exportPushList">
           <q-tooltip>Auswahl als Datei für „pnpm coolify:push-delta --units“ speichern</q-tooltip>
+        </q-btn>
+        <q-btn flat icon="account_tree" label="Kontext exportieren" :disable="busy" @click="exportContext">
+          <q-tooltip>Auftrag und Inhalt der Auswahl als JSON, damit Gemini die nächste Stufe planen kann</q-tooltip>
         </q-btn>
         <q-btn flat icon="replay" label="Neu generieren" :disable="busy" @click="confirmBulk('regenerate')" />
         <q-btn flat color="negative" icon="delete" label="Löschen" :disable="busy" @click="confirmBulk('delete')" />

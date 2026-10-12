@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
-import { levelLabel, parseBatchFile, type BriefBatchResultDto, type FieldDto } from '@wizzn/shared'
+import { batchRefQuery, levelLabel, parseBatchFile, type BatchRefs, type BriefBatchResultDto, type FieldDto } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
 
 const $q = useQuasar()
@@ -16,18 +16,40 @@ onMounted(async () => {
   fields.value = await api<FieldDto[]>('/api/fields')
 })
 
-const parsed = computed(() => (text.value.trim() ? parseBatchFile(text.value, fields.value) : null))
+/** Units behind "after" references; null while they are loading, which keeps those rows blocked */
+const refs = ref<BatchRefs | null>(null)
+const refQuery = computed(() => (text.value.trim() ? batchRefQuery(parseBatchFile(text.value, fields.value).rows) : { ids: [], series: [] }))
+watch(
+  () => JSON.stringify(refQuery.value),
+  async (key) => {
+    refs.value = null
+    const query = refQuery.value
+    if (!query.ids.length) return
+    try {
+      const loaded = await api<BatchRefs>('/api/admin/briefs/batch/refs', { method: 'POST', body: query })
+      // The file may have changed while the request was running
+      if (key === JSON.stringify(refQuery.value)) refs.value = loaded
+    } catch (e) {
+      $q.notify({ type: 'negative', message: errorMessage(e) })
+    }
+  },
+)
+
+const parsed = computed(() => (text.value.trim() ? parseBatchFile(text.value, fields.value, refs.value) : null))
 const rows = computed(() => parsed.value?.rows ?? [])
+const assignments = computed(() => parsed.value?.assignments ?? [])
+const skipped = computed(() => rows.value.filter((r) => r.skipped).length)
 const invalid = computed(() => rows.value.filter((r) => r.errors.length).length)
 const briefs = computed(() => rows.value.flatMap((r) => r.briefs))
 const unitCount = computed(() => briefs.value.reduce((n, b) => n + b.count * (b.format ? 1 : 2), 0))
-const canImport = computed(() => !!parsed.value && !parsed.value.fileError && rows.value.length > 0 && invalid.value === 0)
+const canImport = computed(() => !!parsed.value && !parsed.value.fileError && briefs.value.length > 0 && invalid.value === 0)
 
 const columns = [
   { name: 'nr', label: '#', field: (r: (typeof rows.value)[number]) => r.index + 1, align: 'left' as const },
   { name: 'field', label: 'Bereich / Thema', field: (r: (typeof rows.value)[number]) => [r.job?.field, r.job?.theme].filter(Boolean).join(' / '), align: 'left' as const },
   { name: 'topic', label: 'Kernidee', field: (r: (typeof rows.value)[number]) => r.job?.topic ?? '–', align: 'left' as const },
   { name: 'level', label: 'Stufe / Serie', field: (r: (typeof rows.value)[number]) => (r.job ? [levelLabel(r.job.level), r.job.series].filter(Boolean).join(' · ') : ''), align: 'left' as const },
+  { name: 'after', label: 'Baut auf', field: (r: (typeof rows.value)[number]) => (r.after ? `${levelLabel(r.after.level)} · ${r.after.title}` : ''), align: 'left' as const },
   { name: 'format', label: 'Format', field: (r: (typeof rows.value)[number]) => r.job?.format ?? '', align: 'left' as const },
   { name: 'count', label: 'Varianten', field: (r: (typeof rows.value)[number]) => r.job?.count ?? '', align: 'right' as const },
   { name: 'status', label: 'Status', field: () => '', align: 'left' as const },
@@ -47,7 +69,7 @@ async function copyFieldList(): Promise<void> {
 async function submit(): Promise<void> {
   saving.value = true
   try {
-    const res = await api<BriefBatchResultDto>('/api/admin/briefs/batch', { method: 'POST', body: { briefs: briefs.value } })
+    const res = await api<BriefBatchResultDto>('/api/admin/briefs/batch', { method: 'POST', body: { briefs: briefs.value, seriesAssignments: assignments.value.map(({ unitId, series }) => ({ unitId, series })) } })
     const units = res.briefs.reduce((n, b) => n + b.unitIds.length, 0)
     $q.notify({ type: 'positive', message: `${res.briefs.length} Aufträge, ${units} Wissenshappen in Arbeit` })
     await router.push('/units?status=')
@@ -78,17 +100,22 @@ async function submit(): Promise<void> {
         <q-table flat dense :rows="rows" :columns="columns" row-key="index" :pagination="{ rowsPerPage: 0 }" hide-pagination>
           <template #body-cell-status="props">
             <q-td :props="props">
-              <q-chip v-if="!props.row.errors.length" dense color="positive" text-color="white" icon="check">{{ props.row.briefs.length }} Auftr.</q-chip>
+              <q-chip v-if="props.row.skipped" dense icon="visibility">Kontext – übersprungen</q-chip>
+              <q-chip v-else-if="!props.row.errors.length" dense color="positive" text-color="white" icon="check">{{ props.row.briefs.length }} Auftr.</q-chip>
               <div v-for="err in props.row.errors" v-else :key="err" class="text-negative text-caption">{{ err }}</div>
             </q-td>
           </template>
         </q-table>
+        <q-banner v-if="assignments.length" dense rounded class="bg-blue-1 q-mt-md">
+          <div class="text-weight-medium">Beim Import erhalten diese bestehenden Happen eine Serie:</div>
+          <div v-for="a in assignments" :key="a.unitId" class="text-caption">„{{ a.title }}“ → {{ a.series }}</div>
+        </q-banner>
       </q-card-section>
 
       <q-card-actions v-if="rows.length" align="right" class="q-pa-md">
         <div class="text-caption q-mr-md" :class="invalid ? 'text-negative' : 'text-grey-7'">
           <template v-if="invalid">{{ invalid }} fehlerhafte Zeile(n) – bitte korrigieren</template>
-          <template v-else>{{ briefs.length }} Aufträge → {{ unitCount }} Wissenshappen</template>
+          <template v-else>{{ briefs.length }} Aufträge → {{ unitCount }} Wissenshappen<template v-if="skipped"> · {{ skipped }} Kontext-Einträge übersprungen</template></template>
         </div>
         <q-btn color="primary" icon="playlist_add" label="Importieren" :disable="!canImport" :loading="saving" @click="submit" />
       </q-card-actions>
