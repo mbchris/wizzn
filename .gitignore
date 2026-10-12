@@ -6,6 +6,7 @@ dist/
 coverage/
 .env
 .env.production
+.env.coolify
 packages/api/.env
 .env.api
 .env.web

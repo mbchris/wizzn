@@ -36,7 +36,7 @@ Viele Aufträge auf einmal anlegen: Redaktion → **Batch-Import** (`/briefs/imp
 | `storyArc` | nein | `rags_to_riches`, `quest`, `voyage_and_return`, `comedy`, `overcoming_the_monster`, `rebirth`, `null` = zufällig |
 | `count` | nein | Varianten 1–10 (Standard 1) |
 | `level` | nein | Wissensstufe 1–5 (Standard 1), siehe unten |
-| `series` | nein | Serien-Schlüssel, 2–60 Zeichen `a–z 0–9 -` (z. B. `veg-protein`); verknüpft alle Stufen eines Themas, sonst `null` |
+| `series` | nein | Serien-Schlüssel, 2–60 Zeichen `a–z 0–9 -` (z. B. `veg-protein`); verknüpft alle Stufen eines Themas, sonst `null`. Ohne `after` immer eine **neue** Serie, siehe unten |
 | `crossField` | nein | Nur Stufe 4: Slug/Name des Bereichs, zu dem die Brücke geschlagen wird, sonst `null` |
 | `after` | nein | `ref` (Happen-ID) aus einem Kontext-Export: Der Auftrag setzt diesen Happen auf einer höheren Stufe fort, siehe unten |
 
@@ -59,6 +59,17 @@ Inhalte starten einfach und werden detaillierter, sobald Nutzer „Mehr davon“
 | 5 | Expertenwissen | Mechanismen, Studienlage, Nuancen, Grenzen | Leucin-Schwelle, PDCAAS, aktuelle Studien |
 
 Faustregel pro Serie: 1× Stufe 1, 2–3× Stufe 2, 1–2× Stufe 3, 1× Stufe 4, optional 1× Stufe 5 – alle mit demselben `series`.
+
+### Eindeutige Serien-Schlüssel
+
+Ein `series` ohne `after` legt immer eine neue Serie an; ebenso ein `after` auf einen Happen ohne Serie.
+
+- Schlüssel frei: wird unverändert übernommen.
+- Schlüssel vergeben: Import nimmt den ersten freien `<schlüssel>-2`, `<schlüssel>-3`, … (bei mehr als 56 Zeichen vorher gekürzt).
+- Alle Jobs einer Datei mit demselben Schlüssel erhalten denselben neuen Schlüssel.
+- Die Vorschau zeigt den endgültigen Schlüssel und listet jede Umbenennung (`veg-protein → veg-protein-2`).
+- Bestehende Serie erweitern: nur über `after` (Kontext-Export, Prompt 2d).
+- Von Hand einer Serie beitreten: **Neuer Auftrag** mit dem bestehenden Schlüssel.
 
 ## Kontext-Export (nächste Stufe planen)
 
@@ -112,16 +123,15 @@ Antwort von Gemini: normale Batch-Datei, jeder neue Auftrag mit `"after": "<ref>
 | Bezugs-Happen | Verhalten beim Import |
 |---|---|
 | hat eine Serie | Auftrag übernimmt sie; `series` darf fehlen, ein anderer Schlüssel ist ein Fehler |
-| hat keine Serie | `series` des Auftrags wird dem Bezugs-Happen zugewiesen (Pflichtfeld) |
+| hat keine Serie | `series` des Auftrags wird dem Bezugs-Happen zugewiesen (Pflichtfeld); ein vergebener Schlüssel erhält ein Suffix |
 
 Zeilenfehler in der Vorschau:
 
 - `after` unbekannt
 - `level` nicht höher als die Stufe des Bezugs-Happens
-- Serien-Schlüssel bereits von anderen Happen belegt
 - zwei Schlüssel für denselben Happen oder ein Schlüssel für zwei Happen in einer Datei
 
-Die Vorschau listet alle Zuweisungen („Titel“ → Serie). Erst **Importieren** schreibt sie: auf den Auftrag des Bezugs-Happens und alle seine Happen (Paar, Varianten), danach werden die Verknüpfungen veröffentlichter Happen neu berechnet. Schlägt eine Zuweisung fehl, wird nichts angelegt.
+Die Vorschau listet alle Zuweisungen („Titel“ → Serie) und Umbenennungen. Erst **Importieren** schreibt sie: auf den Auftrag des Bezugs-Happens und alle seine Happen (Paar, Varianten), danach werden die Verknüpfungen veröffentlichter Happen neu berechnet. Schlägt eine Zuweisung fehl, wird nichts angelegt.
 
 ## Gemini-Prompts
 
@@ -159,6 +169,7 @@ Inhalte sind in Serien organisiert, die von einfach zu detailliert führen. Jede
 Regeln:
 - Einzelhappen ohne Serie: "level" 1, "series" null, "crossField" null.
 - Alle Aufträge einer Serie tragen denselben "series"-Schlüssel (2–60 Zeichen, nur a–z, 0–9 und Bindestrich, z. B. "veg-protein").
+- Ein "series"-Schlüssel ohne "after" steht für eine NEUE Serie. Eine bestehende Serie setzt du nur über "after" fort (siehe Kontext-Dateien).
 - Pro Serie: 1× Stufe 1, 2–3× Stufe 2, 1–2× Stufe 3, 1× Stufe 4, optional 1× Stufe 5.
 - Höhere Stufen bauen auf niedrigeren auf: Nenne im "context" ausdrücklich, welche Stufen-Titel vorausgesetzt werden, und wiederhole deren Kernfakten nicht.
 - Jede Stufe hat eine eigene, in sich verständliche Kernidee – auch wer nur diesen Happen sieht, versteht ihn.
@@ -254,10 +265,11 @@ Alle Kombinationen (Stand `packages/shared/src/fields.ts`):
 {partnership, seduction}, {partnership, needs}, {partnership, love}, {partnership, balance},
 {finance, investments}, {finance, tax-optimization}, {finance, budget},
 {sports, routine}, {sports, workout-types}, {sports, strength}, {sports, cardio},
-{psychology, behaviour-patterns}, {psychology, neurodivergence}, {psychology, developmental}, {psychology, social}
+{psychology, behaviour-patterns}, {psychology, neurodivergence}, {psychology, developmental}, {psychology, social},
+{work, career}, {work, leadership}, {work, productivity}, {work, labour-law}
 ````
 
-Variante gemischt: `Erstelle 20 Aufträge, verteilt auf alle Bereiche (je 4), nur Themen, die gerade aktuell diskutiert werden.`
+Variante gemischt: `Erstelle 21 Aufträge, verteilt auf alle Bereiche (je 3), nur Themen, die gerade aktuell diskutiert werden.`
 
 ### Prompt 2b – Serie planen (Stufe 1–5)
 
@@ -273,18 +285,9 @@ L1 „Vegetarisches Protein: Was es wirklich kann“ · L2 „Linsen“, „Tofu
 · L4 „Wann Protein in deine Sport-Routine gehört“ (crossField "sports") · L5 „Leucin-Schwelle und Proteinqualität (PDCAAS)“
 ````
 
-### Prompt 2c – Serie vertiefen (bestehende Serie erweitern)
-
-````text
-Für die Serie "{{SERIES}}" ({{FIELD}}/{{THEME}}) gibt es bereits diese Happen: {{TITEL_MIT_STUFEN}}.
-Ergänze {{ANZAHL}} Aufträge für die Stufen {{STUFEN}}, die darauf aufbauen und nichts wiederholen. Gleicher "series"-Schlüssel.
-````
-
-Ohne Kontext-Datei kennt Gemini hier nur die Titel; für Aufträge ohne Wiederholungen Prompt 2d verwenden.
-
 ### Prompt 2d – Nächste Stufe aus Kontext-Export
 
-Kontext-Datei anhängen oder unter dem Prompt einfügen.
+Einziger Weg, eine bestehende Serie zu erweitern. Kontext-Datei anhängen oder unter dem Prompt einfügen.
 
 ````text
 Die angehängte Kontext-Datei enthält {{ANZAHL_HAPPEN}} veröffentlichte Happen.

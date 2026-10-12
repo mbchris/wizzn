@@ -1,5 +1,5 @@
-import { and, asc, desc, eq, gt, inArray, type SQL } from 'drizzle-orm'
-import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, unitContentSchema, type BriefInput, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitLogDto, type UnitSummaryDto } from '@wizzn/shared'
+import { and, asc, desc, eq, gt, inArray, or, sql, type SQL } from 'drizzle-orm'
+import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, seriesVariantPattern, unitContentSchema, type BriefInput, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitLogDto, type UnitSummaryDto } from '@wizzn/shared'
 import type { Db } from './db/client.js'
 import { completionEvent, contentBrief, feedImpression, field, source, unit, unitLog } from './db/schema/index.js'
 import { claimResume, isUnitStuck, stillStuck, stuckIds } from './pipeline/recover.js'
@@ -20,7 +20,7 @@ function loadUnit(db: Db, id: string) {
   })
 }
 
-function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'failureReason' | 'updatedAt' | 'field' | 'brief' | 'checkReport'>, stuck: boolean): UnitSummaryDto {
+function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'level' | 'series' | 'failureReason' | 'updatedAt' | 'field' | 'brief' | 'checkReport'>, stuck: boolean): UnitSummaryDto {
   return {
     id: row.id,
     title: row.title,
@@ -28,6 +28,8 @@ function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'fail
     status: row.status,
     fieldSlug: row.field.slug,
     topic: row.brief.topic,
+    level: row.level,
+    series: row.series,
     checkPassed: row.checkReport?.passed ?? null,
     failureReason: row.failureReason,
     updatedAt: row.updatedAt.toISOString(),
@@ -250,7 +252,10 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
 
     async batchRefs(query) {
       const rows = query.ids.length ? await db.query.unit.findMany({ where: inArray(unit.id, query.ids), columns: { id: true, title: true, level: true, series: true }, with: { brief: { columns: { topic: true } } } }) : []
-      const used = query.series.length ? await db.selectDistinct({ series: unit.series }).from(unit).where(inArray(unit.series, query.series)) : []
+      // Numbered variants count as taken too, so the preview can pick the next free suffix
+      const used = query.series.length
+        ? await db.selectDistinct({ series: unit.series }).from(unit).where(or(inArray(unit.series, query.series), sql`${unit.series} ~ ${seriesVariantPattern(query.series)}`))
+        : []
       return {
         units: rows.map((r) => ({ id: r.id, title: r.title ?? r.brief.topic, level: r.level, series: r.series })),
         usedSeries: used.flatMap((u) => (u.series ? [u.series] : [])),

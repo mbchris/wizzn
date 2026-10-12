@@ -16,7 +16,7 @@ onMounted(async () => {
   fields.value = await api<FieldDto[]>('/api/fields')
 })
 
-/** Units behind "after" references; null while they are loading, which keeps those rows blocked */
+/** Units behind "after" references and taken series keys; null while they are loading, which keeps those rows blocked */
 const refs = ref<BatchRefs | null>(null)
 const refQuery = computed(() => (text.value.trim() ? batchRefQuery(parseBatchFile(text.value, fields.value).rows) : { ids: [], series: [] }))
 watch(
@@ -24,7 +24,7 @@ watch(
   async (key) => {
     refs.value = null
     const query = refQuery.value
-    if (!query.ids.length) return
+    if (!query.ids.length && !query.series.length) return
     try {
       const loaded = await api<BatchRefs>('/api/admin/briefs/batch/refs', { method: 'POST', body: query })
       // The file may have changed while the request was running
@@ -38,6 +38,7 @@ watch(
 const parsed = computed(() => (text.value.trim() ? parseBatchFile(text.value, fields.value, refs.value) : null))
 const rows = computed(() => parsed.value?.rows ?? [])
 const assignments = computed(() => parsed.value?.assignments ?? [])
+const renames = computed(() => parsed.value?.renames ?? [])
 const skipped = computed(() => rows.value.filter((r) => r.skipped).length)
 const invalid = computed(() => rows.value.filter((r) => r.errors.length).length)
 const briefs = computed(() => rows.value.flatMap((r) => r.briefs))
@@ -48,7 +49,7 @@ const columns = [
   { name: 'nr', label: '#', field: (r: (typeof rows.value)[number]) => r.index + 1, align: 'left' as const },
   { name: 'field', label: 'Bereich / Thema', field: (r: (typeof rows.value)[number]) => [r.job?.field, r.job?.theme].filter(Boolean).join(' / '), align: 'left' as const },
   { name: 'topic', label: 'Kernidee', field: (r: (typeof rows.value)[number]) => r.job?.topic ?? '–', align: 'left' as const },
-  { name: 'level', label: 'Stufe / Serie', field: (r: (typeof rows.value)[number]) => (r.job ? [levelLabel(r.job.level), r.job.series].filter(Boolean).join(' · ') : ''), align: 'left' as const },
+  { name: 'level', label: 'Stufe / Serie', field: (r: (typeof rows.value)[number]) => (r.job ? [levelLabel(r.job.level), r.briefs[0]?.series ?? r.job.series].filter(Boolean).join(' · ') : ''), align: 'left' as const },
   { name: 'after', label: 'Baut auf', field: (r: (typeof rows.value)[number]) => (r.after ? `${levelLabel(r.after.level)} · ${r.after.title}` : ''), align: 'left' as const },
   { name: 'format', label: 'Format', field: (r: (typeof rows.value)[number]) => r.job?.format ?? '', align: 'left' as const },
   { name: 'count', label: 'Varianten', field: (r: (typeof rows.value)[number]) => r.job?.count ?? '', align: 'right' as const },
@@ -109,6 +110,10 @@ async function submit(): Promise<void> {
         <q-banner v-if="assignments.length" dense rounded class="bg-blue-1 q-mt-md">
           <div class="text-weight-medium">Beim Import erhalten diese bestehenden Happen eine Serie:</div>
           <div v-for="a in assignments" :key="a.unitId" class="text-caption">„{{ a.title }}“ → {{ a.series }}</div>
+        </q-banner>
+        <q-banner v-if="renames.length" dense rounded class="bg-amber-1 q-mt-md">
+          <div class="text-weight-medium">Diese Serien-Schlüssel sind bereits vergeben und werden als neue Serie angelegt:</div>
+          <div v-for="r in renames" :key="r.from" class="text-caption">{{ r.from }} → {{ r.to }}</div>
         </q-banner>
       </q-card-section>
 

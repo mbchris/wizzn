@@ -24,3 +24,18 @@ export const levelLabel = (l: Level): string => `L${l} · ${LEVEL_META[l].name}`
 
 /** Series key shared by all units of one topic ladder, e.g. "veg-protein" */
 export const seriesSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9][a-z0-9-]{1,59}$/, 'Serie: 2–60 Zeichen a–z, 0–9, -')
+
+/** Start of a key that leaves room for a `-<n>` suffix within the 60 characters */
+export const seriesBase = (key: string): string => key.slice(0, 56).replace(/-+$/, '')
+
+/** Key for a new series: the proposed one, or its first free `<key>-2`, `<key>-3`, … if units already carry it */
+export function uniqueSeries(key: string, taken: ReadonlySet<string>): string {
+  if (!taken.has(key)) return key
+  const base = seriesBase(key)
+  let n = 2
+  while (taken.has(`${base}-${n}`)) n++
+  return `${base}-${n}`
+}
+
+/** POSIX regex for the `<key>-<n>` variants of series keys (keys contain no regex characters) */
+export const seriesVariantPattern = (keys: string[]): string => `^(${keys.join('|')})-[0-9]+$`

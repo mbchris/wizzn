@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseBatchFile, type FieldDto } from '../src/index.js'
+import { batchRefQuery, parseBatchFile, seriesVariantPattern, type FieldDto } from '../src/index.js'
 
 const F = '6f1c2a3e-1b2c-4d5e-8f90-123456789abc'
 const T = '8f1c2a3e-1b2c-4d5e-8f90-123456789abc'
@@ -80,10 +80,12 @@ describe('parseBatchFile with exported context', () => {
     expect(rows[0]?.errors[0]).toContain('Unbekannter Bezug')
     expect(rows[1]?.errors[0]).toContain('muss über Stufe 2')
   })
-  it('rejects a new series key that another ladder already uses', () => {
-    const { rows, assignments } = parse([job({ after: L1, level: 2, series: 'vergeben' })], { units: [{ id: L1, title: 'Notgroschen', level: 1, series: null }], usedSeries: ['vergeben'] })
-    expect(rows[0]?.errors[0]).toContain('bereits vergeben')
-    expect(assignments).toEqual([])
+  it('renames a taken key that would be assigned to a referenced unit', () => {
+    const { rows, assignments, renames } = parse([job({ after: L1, level: 2, series: 'vergeben' })], { units: [{ id: L1, title: 'Notgroschen', level: 1, series: null }], usedSeries: ['vergeben'] })
+    expect(rows[0]?.errors).toEqual([])
+    expect(rows[0]?.briefs[0]?.series).toBe('vergeben-2')
+    expect(assignments).toEqual([{ unitId: L1, series: 'vergeben-2', title: 'Notgroschen' }])
+    expect(renames).toEqual([{ from: 'vergeben', to: 'vergeben-2' }])
   })
   it('rejects conflicting keys for one unit and one key for two units', () => {
     const refs = { units: [{ id: L1, title: 'A', level: 1 as const, series: null }, { id: L1B, title: 'B', level: 1 as const, series: null }], usedSeries: [] }
@@ -91,5 +93,56 @@ describe('parseBatchFile with exported context', () => {
     expect(twoKeys.rows[1]?.errors[0]).toContain('bereits die Serie „eins“')
     const oneKey = parse([job({ after: L1, level: 2, series: 'eins' }), job({ after: L1B, level: 2, series: 'eins' })], refs)
     expect(oneKey.rows[1]?.errors[0]).toContain('bereits „A“ zugewiesen')
+  })
+})
+
+describe('parseBatchFile with new series', () => {
+  const free = { units: [], usedSeries: [] }
+  it('keeps a key no existing unit carries', () => {
+    const { rows, renames } = parse([job({ series: 'veg-protein' }), job({ series: 'veg-protein', level: 2, topic: 'Linsen im Detail' })], free)
+    expect(rows.flatMap((r) => r.errors)).toEqual([])
+    expect(rows.map((r) => r.briefs[0]?.series)).toEqual(['veg-protein', 'veg-protein'])
+    expect(renames).toEqual([])
+  })
+  it('gives all jobs of a taken key the same next free suffix', () => {
+    const { rows, renames } = parse([job({ series: 'veg-protein' }), job({ series: 'andere' }), job({ series: 'Veg-Protein', level: 2, topic: 'Linsen im Detail' })], { units: [], usedSeries: ['veg-protein', 'veg-protein-2', 'veg-protein-3'] })
+    expect(rows.flatMap((r) => r.errors)).toEqual([])
+    expect(rows.map((r) => r.briefs[0]?.series)).toEqual(['veg-protein-4', 'andere', 'veg-protein-4'])
+    expect(renames).toEqual([{ from: 'veg-protein', to: 'veg-protein-4' }])
+  })
+  it('never renames onto another key of the same file', () => {
+    const { rows } = parse([job({ series: 'veg-2' }), job({ series: 'veg', topic: 'Zweite Serie' })], { units: [], usedSeries: ['veg'] })
+    expect(rows.map((r) => r.briefs[0]?.series)).toEqual(['veg-2', 'veg-3'])
+  })
+  it('shortens a key of maximum length so the suffix fits', () => {
+    const long = 'a'.repeat(60)
+    const { rows } = parse([job({ series: long })], { units: [], usedSeries: [long] })
+    expect(rows[0]?.briefs[0]?.series).toBe(`${'a'.repeat(56)}-2`)
+  })
+  it('blocks jobs with a series until the taken keys are loaded', () => {
+    const { rows } = parse([job({ series: 'veg-protein' }), job({})])
+    expect(rows[0]?.errors[0]).toContain('wird geprüft')
+    expect(rows[0]?.briefs).toEqual([])
+    expect(rows[1]?.briefs).toHaveLength(1)
+  })
+  it('keeps the series of a referenced unit while a new job with the same key becomes its own series', () => {
+    const refs = { units: [{ id: L1, title: 'Notgroschen', level: 1 as const, series: 'notgroschen' }], usedSeries: ['notgroschen'] }
+    const { rows } = parse([job({ after: L1, level: 2, series: 'notgroschen' }), job({ series: 'notgroschen', topic: 'Neuer Einstieg' })], refs)
+    expect(rows.map((r) => r.briefs[0]?.series)).toEqual(['notgroschen', 'notgroschen-2'])
+  })
+})
+
+describe('batchRefQuery', () => {
+  it('asks for the keys of all new jobs, including the shortened form of long keys', () => {
+    const long = 'b'.repeat(58)
+    const { rows } = parse([job({ series: 'veg-protein' }), job({ series: long }), job({ series: 'kontext', published: {} }), job({})])
+    expect(batchRefQuery(rows)).toEqual({ ids: [], series: ['veg-protein', long, 'b'.repeat(56)] })
+  })
+})
+
+describe('seriesVariantPattern', () => {
+  it('matches only numbered variants of the given keys', () => {
+    const variant = new RegExp(seriesVariantPattern(['veg-protein', 'geld']))
+    expect(['veg-protein-2', 'geld-17', 'veg-protein', 'veg-protein-tofu', 'geld-2-3', 'bargeld-2', 'geld-'].map((s) => variant.test(s))).toEqual([true, true, false, false, false, false, false])
   })
 })

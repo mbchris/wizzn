@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { unitFormatSchema, type ImageCredit } from './content.js'
 import { UNIT_STATUSES, type UnitStatus } from './unit-status.js'
 import { EDITORIAL_STYLES, STORY_ARCS, type CheckReport, type SourceTier } from './pipeline.js'
-import { levelSchema, seriesSchema } from './levels.js'
+import { levelSchema, seriesSchema, type Level } from './levels.js'
 
 export const briefInputSchema = z.object({
   fieldId: z.string().uuid(),
@@ -56,6 +56,9 @@ export interface UnitSummaryDto {
   status: UnitStatus
   fieldSlug: string
   topic: string
+  /** Depth within its series (1 for units without series) */
+  level: Level
+  series: string | null
   checkPassed: boolean | null
   failureReason: string | null
   updatedAt: string

@@ -67,7 +67,7 @@ describe('batch: levels and series', () => {
   })
   it('resolves level, series and cross field', () => {
     const job = { field: 'nutrition', topic: 'Protein im Training', level: 4, series: 'Veg-Protein', crossField: 'Sport' }
-    const { rows } = parseBatchFile(JSON.stringify([job]), fields)
+    const { rows } = parseBatchFile(JSON.stringify([job]), fields, { units: [], usedSeries: [] })
     expect(rows[0]!.errors).toEqual([])
     expect(rows[0]!.briefs[0]).toMatchObject({ level: 4, series: 'veg-protein', crossFieldId: fields[1]!.id })
   })

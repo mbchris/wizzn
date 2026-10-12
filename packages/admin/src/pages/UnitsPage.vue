@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { exportFile, useQuasar } from 'quasar'
-import { UNIT_STATUSES, contextFilename, formatContextFile, formatPushList, pushListFilename, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type ContextJob, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
+import { LEVELS, UNIT_STATUSES, contextFilename, formatContextFile, formatPushList, levelLabel, pushListFilename, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type ContextJob, type Level, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
 import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
 
@@ -26,9 +26,21 @@ const search = ref<string | null>(typeof route.query.q === 'string' ? route.quer
 /** Category = field slug (?field=a,b), format (?format=written) */
 const activeFields = ref<string[]>(listParam(route.query.field))
 const activeFormats = ref<UnitFormat[]>(listParam(route.query.format).filter((f): f is UnitFormat => (UNIT_FORMATS as readonly string[]).includes(f)))
+/** Level (?level=1,2) and series key (?series=a,b); NO_SERIES stands for units without a series */
+const NO_SERIES = '-'
+const activeLevels = ref<Level[]>(listParam(route.query.level).map(Number).filter((l): l is Level => (LEVELS as readonly number[]).includes(l)))
+const activeSeries = ref<string[]>(listParam(route.query.series))
 /** q-select's clear button sets null; the filters always hold arrays */
 const fieldsModel = computed({ get: () => activeFields.value, set: (v: string[] | null) => (activeFields.value = v ?? []) })
 const formatsModel = computed({ get: () => activeFormats.value, set: (v: UnitFormat[] | null) => (activeFormats.value = v ?? []) })
+const levelsModel = computed({ get: () => activeLevels.value, set: (v: Level[] | null) => (activeLevels.value = v ?? []) })
+const seriesModel = computed({ get: () => activeSeries.value, set: (v: string[] | null) => (activeSeries.value = v ?? []) })
+const levelOptions = LEVELS.map((l) => ({ label: levelLabel(l), value: l }))
+const seriesOptions = computed(() => {
+  // Like the categories: keys of the loaded units plus the active ones
+  const keys = new Set([...units.value.flatMap((u) => (u.series ? [u.series] : [])), ...activeSeries.value.filter((s) => s !== NO_SERIES)])
+  return [{ label: 'ohne Serie', value: NO_SERIES }, ...[...keys].sort((a, b) => a.localeCompare(b, 'de')).map((key) => ({ label: key, value: key }))]
+})
 const UNIT_FORMATS = unitFormatSchema.options
 const FORMAT_LABEL: Record<UnitFormat, string> = { written: 'Text', audio: 'Audio' }
 const formatOptions = UNIT_FORMATS.map((f) => ({ label: FORMAT_LABEL[f], value: f }))
@@ -45,7 +57,9 @@ const baseFiltered = computed(() => {
     (u) =>
       (!activeFields.value.length || activeFields.value.includes(u.fieldSlug)) &&
       (!activeFormats.value.length || activeFormats.value.includes(u.format)) &&
-      (!words.length || words.every((w) => norm(`${u.title ?? ''} ${u.topic}`).includes(w))),
+      (!activeLevels.value.length || activeLevels.value.includes(u.level)) &&
+      (!activeSeries.value.length || activeSeries.value.includes(u.series ?? NO_SERIES)) &&
+      (!words.length || words.every((w) => norm(`${u.title ?? ''} ${u.topic} ${u.series ?? ''}`).includes(w))),
   )
 })
 const statusCounts = computed(() => {
@@ -54,7 +68,7 @@ const statusCounts = computed(() => {
   return counts
 })
 const visibleUnits = computed(() => (activeStatuses.value.length ? baseFiltered.value.filter((u) => activeStatuses.value.includes(u.status)) : baseFiltered.value))
-const filterActive = computed(() => !!(activeStatuses.value.length || activeFields.value.length || activeFormats.value.length || (search.value ?? '').trim()))
+const filterActive = computed(() => !!(activeStatuses.value.length || activeFields.value.length || activeFormats.value.length || activeLevels.value.length || activeSeries.value.length || (search.value ?? '').trim()))
 function toggleStatus(s: UnitStatus): void {
   activeStatuses.value = activeStatuses.value.includes(s) ? activeStatuses.value.filter((x) => x !== s) : [...activeStatuses.value, s]
 }
@@ -62,11 +76,13 @@ function resetFilter(): void {
   activeStatuses.value = []
   activeFields.value = []
   activeFormats.value = []
+  activeLevels.value = []
+  activeSeries.value = []
   search.value = ''
 }
 
 /** Sorting also lives in the URL (?sort=updated&desc=1) */
-const SORTABLE = ['status', 'title', 'field', 'format', 'check', 'updated'] as const
+const SORTABLE = ['status', 'title', 'field', 'level', 'series', 'format', 'check', 'updated'] as const
 type SortKey = (typeof SORTABLE)[number]
 const initialSort = (SORTABLE as readonly string[]).includes(String(route.query.sort)) ? (route.query.sort as SortKey) : 'updated'
 const pagination = ref({
@@ -75,13 +91,15 @@ const pagination = ref({
   descending: route.query.sort ? route.query.desc === '1' : true,
 })
 watch(
-  [activeStatuses, activeFields, activeFormats, search, () => pagination.value.sortBy, () => pagination.value.descending],
-  ([statuses, fields, formats, q, sortBy, desc]) => {
+  [activeStatuses, activeFields, activeFormats, activeLevels, activeSeries, search, () => pagination.value.sortBy, () => pagination.value.descending],
+  ([statuses, fields, formats, levels, series, q, sortBy, desc]) => {
     const query = {
       ...route.query,
       status: statuses.length ? statuses.join(',') : undefined,
       field: fields.length ? fields.join(',') : undefined,
       format: formats.length ? formats.join(',') : undefined,
+      level: levels.length ? levels.join(',') : undefined,
+      series: series.length ? series.join(',') : undefined,
       q: (q ?? '').trim() || undefined,
       sort: sortBy ?? undefined,
       desc: sortBy ? (desc ? '1' : '0') : undefined,
@@ -110,6 +128,9 @@ const columns = [
     sort: byText,
   },
   { name: 'field', label: 'Bereich', field: 'fieldSlug', align: 'left' as const, sortable: true, sort: byText },
+  { name: 'level', label: 'Stufe', field: 'level', align: 'left' as const, sortable: true, sort: (a: Level, b: Level) => a - b, format: (v: Level) => levelLabel(v) },
+  // Units without a series sort after all keys
+  { name: 'series', label: 'Serie', field: 'series', align: 'left' as const, sortable: true, sort: (a: string | null, b: string | null) => (a && b ? byText(a, b) : Number(!a) - Number(!b)), format: (v: string | null) => v ?? '–' },
   { name: 'format', label: 'Format', field: 'format', align: 'left' as const, sortable: true, sort: byText },
   { name: 'check', label: 'KI-Check', field: 'checkPassed', align: 'left' as const, sortable: true, sort: (a: boolean | null, b: boolean | null) => CHECK_RANK(a) - CHECK_RANK(b) },
   {
@@ -249,11 +270,13 @@ onUnmounted(() => clearInterval(timer))
   <q-page padding>
     <div class="row items-center q-gutter-md q-mb-md">
       <div class="text-h6">Wissenshappen</div>
-      <q-input v-model="search" dense outlined clearable debounce="200" placeholder="Titel oder Kernidee suchen" style="min-width: 260px">
+      <q-input v-model="search" dense outlined clearable debounce="200" placeholder="Titel, Kernidee oder Serie suchen" style="min-width: 260px">
         <template #prepend><q-icon name="search" /></template>
       </q-input>
       <q-select v-model="fieldsModel" :options="fieldOptions" multiple emit-value map-options use-chips dense outlined clearable label="Bereich" style="min-width: 180px" />
       <q-select v-model="formatsModel" :options="formatOptions" multiple emit-value map-options use-chips dense outlined clearable label="Format" style="min-width: 150px" />
+      <q-select v-model="levelsModel" :options="levelOptions" multiple emit-value map-options use-chips dense outlined clearable label="Stufe" style="min-width: 150px" />
+      <q-select v-model="seriesModel" :options="seriesOptions" multiple emit-value map-options use-chips dense outlined clearable label="Serie" style="min-width: 180px" />
       <q-space />
       <q-btn color="primary" icon="add" label="Neuer Auftrag" to="/briefs/new" />
     </div>

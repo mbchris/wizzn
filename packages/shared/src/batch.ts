@@ -2,7 +2,7 @@ import { z } from 'zod'
 import type { FieldDto } from './api.js'
 import { briefInputSchema, type BriefInput } from './admin.js'
 import { EDITORIAL_STYLES, STORY_ARCS } from './pipeline.js'
-import { levelSchema, seriesSchema, type Level } from './levels.js'
+import { levelSchema, seriesBase, seriesSchema, uniqueSeries, type Level } from './levels.js'
 
 /** Max briefs per batch request (each brief can still spawn up to 10 units). */
 export const BATCH_MAX_JOBS = 100
@@ -55,12 +55,12 @@ export interface BatchRefUnit {
   level: Level
   series: string | null
 }
-export const batchRefQuerySchema = z.object({ ids: z.array(z.string().uuid()).max(BATCH_MAX_JOBS), series: z.array(seriesSchema).max(BATCH_MAX_JOBS) })
+export const batchRefQuerySchema = z.object({ ids: z.array(z.string().uuid()).max(BATCH_MAX_JOBS), series: z.array(seriesSchema).max(BATCH_MAX_JOBS * 2) })
 export type BatchRefQuery = z.infer<typeof batchRefQuerySchema>
 /** Response of POST /api/admin/briefs/batch/refs */
 export interface BatchRefs {
   units: BatchRefUnit[]
-  /** Requested series keys that some unit already carries */
+  /** Requested series keys and their `<key>-<n>` variants that some unit already carries */
   usedSeries: string[]
 }
 
@@ -82,20 +82,46 @@ export interface BatchRow {
   after: BatchRefUnit | null
 }
 
-/** What the preview has to load before jobs with `after` can be checked */
+/** A proposed series key that units already carry, and the free key the import uses instead */
+export interface SeriesRename {
+  from: string
+  to: string
+}
+
+/** What the preview has to load before jobs with `after` or a series can be checked */
 export function batchRefQuery(rows: BatchRow[]): BatchRefQuery {
-  const linked = rows.flatMap((r) => (r.job?.after && !r.skipped ? [r.job] : []))
-  return { ids: [...new Set(linked.map((j) => j.after as string))], series: [...new Set(linked.flatMap((j) => (j.series ? [j.series] : [])))] }
+  const jobs = rows.flatMap((r) => (r.job && !r.skipped ? [r.job] : []))
+  return {
+    ids: [...new Set(jobs.flatMap((j) => (j.after ? [j.after] : [])))],
+    series: [...new Set(jobs.flatMap((j) => (j.series ? [j.series, seriesBase(j.series)] : [])))],
+  }
+}
+
+/** Keys of the series a file creates: every proposed key maps to one that no existing unit and no other key of the file uses */
+function newSeriesKeys(usedSeries: string[]): { resolve: (key: string) => string; renames: SeriesRename[] } {
+  const taken = new Set(usedSeries)
+  const resolved = new Map<string, string>()
+  const renames: SeriesRename[] = []
+  const resolve = (key: string): string => {
+    const known = resolved.get(key)
+    if (known) return known
+    const to = uniqueSeries(key, taken)
+    taken.add(to)
+    resolved.set(key, to)
+    if (to !== key) renames.push({ from: key, to })
+    return to
+  }
+  return { resolve, renames }
 }
 
 const norm = (s: string): string => s.trim().toLowerCase()
 const matches = (x: { slug: string; nameDe: string }, key: string): boolean => norm(x.slug) === norm(key) || norm(x.nameDe) === norm(key)
 
 /**
- * Resolves the series of a job that continues an existing unit. A unit without series takes the job's key,
- * recorded in `assignments`; every other mismatch is a row error.
+ * Resolves the series of a job that continues an existing unit. A unit without series starts a new one under
+ * the job's key, recorded in `assignments`; every other mismatch is a row error.
  */
-function resolveAfter(job: BatchJob, refs: BatchRefs | null, assignments: SeriesAssignment[]): { ref: BatchRefUnit | null; series: string | null; errors: string[] } {
+function resolveAfter(job: BatchJob, refs: BatchRefs | null, assignments: SeriesAssignment[], newKey: (key: string) => string): { ref: BatchRefUnit | null; series: string | null; errors: string[] } {
   const fail = (message: string, ref: BatchRefUnit | null = null) => ({ ref, series: null, errors: [message] })
   if (!refs) return fail('Bezug („after“) wird geprüft …')
   const ref = refs.units.find((u) => u.id === job.after)
@@ -105,11 +131,10 @@ function resolveAfter(job: BatchJob, refs: BatchRefs | null, assignments: Series
     if (job.series && job.series !== ref.series) return fail(`„${ref.title}“ gehört zur Serie „${ref.series}“, nicht „${job.series}“`, ref)
     return { ref, series: ref.series, errors: [] }
   }
-  const series = job.series
-  if (!series) return fail(`"series" fehlt: „${ref.title}“ hat noch keine Serie`, ref)
+  if (!job.series) return fail(`"series" fehlt: „${ref.title}“ hat noch keine Serie`, ref)
+  const series = newKey(job.series)
   const mine = assignments.find((a) => a.unitId === ref.id)
   if (mine) return mine.series === series ? { ref, series, errors: [] } : fail(`„${ref.title}“ erhält in dieser Datei bereits die Serie „${mine.series}“`, ref)
-  if (refs.usedSeries.includes(series)) return fail(`Serie „${series}“ ist bereits vergeben`, ref)
   const other = assignments.find((a) => a.series === series)
   if (other) return fail(`Serie „${series}“ wird in dieser Datei bereits „${other.title}“ zugewiesen`, ref)
   assignments.push({ unitId: ref.id, series, title: ref.title })
@@ -118,20 +143,26 @@ function resolveAfter(job: BatchJob, refs: BatchRefs | null, assignments: Series
 
 /**
  * Parses a batch file (JSON text, optionally wrapped in a ```json fence) and resolves fields/themes.
- * `refs` are the units behind `after` (see batchRefQuery); without them such jobs stay blocked.
+ * `refs` are the units behind `after` and the taken series keys (see batchRefQuery); without them such jobs stay blocked.
+ * A job with a series key and no `after` starts a new series; taken keys are replaced, see `renames`.
  */
-export function parseBatchFile(text: string, fields: FieldDto[], refs: BatchRefs | null = null): { rows: BatchRow[]; fileError: string | null; assignments: SeriesAssignment[] } {
+export function parseBatchFile(
+  text: string,
+  fields: FieldDto[],
+  refs: BatchRefs | null = null,
+): { rows: BatchRow[]; fileError: string | null; assignments: SeriesAssignment[]; renames: SeriesRename[] } {
   const assignments: SeriesAssignment[] = []
+  const { resolve: newKey, renames } = newSeriesKeys(refs?.usedSeries ?? [])
   let raw: unknown
   try {
     raw = JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, ''))
   } catch (e) {
-    return { rows: [], fileError: `Kein gültiges JSON: ${e instanceof Error ? e.message : String(e)}`, assignments }
+    return { rows: [], fileError: `Kein gültiges JSON: ${e instanceof Error ? e.message : String(e)}`, assignments, renames }
   }
   // Accept a bare array of jobs too: LLMs often drop the wrapper
   if (Array.isArray(raw)) raw = { version: 1, jobs: raw }
   const file = batchFileSchema.safeParse(raw)
-  if (!file.success) return { rows: [], fileError: file.error.issues.map((i) => `${i.path.join('.') || 'Datei'}: ${i.message}`).join('; '), assignments }
+  if (!file.success) return { rows: [], fileError: file.error.issues.map((i) => `${i.path.join('.') || 'Datei'}: ${i.message}`).join('; '), assignments, renames }
 
   const rows = file.data.jobs.map((rawJob, index): BatchRow => {
     const parsed = batchJobSchema.safeParse(rawJob)
@@ -145,8 +176,9 @@ export function parseBatchFile(text: string, fields: FieldDto[], refs: BatchRefs
     if (job.theme && field && !theme) errors.push(`Unbekanntes Thema „${job.theme}“ in ${field.nameDe}`)
     const crossField = job.crossField ? fields.find((f) => matches(f, job.crossField as string)) : undefined
     if (job.crossField && !crossField) errors.push(`Unbekannter Querbereich „${job.crossField}“`)
-    const linked = job.after ? resolveAfter(job, refs, assignments) : null
+    const linked = job.after ? resolveAfter(job, refs, assignments, newKey) : null
     if (linked) errors.push(...linked.errors)
+    if (!linked && job.series && !refs) errors.push('Serie wird geprüft …')
     const after = linked?.ref ?? null
     if (errors.length || !field) return { index, job, briefs: [], errors, skipped: false, after }
     // "both" is ONE brief with format null: the API then creates linked written/audio pairs (pairId),
@@ -162,11 +194,11 @@ export function parseBatchFile(text: string, fields: FieldDto[], refs: BatchRefs
         format: job.format === 'both' ? null : job.format,
         count: job.count,
         level: job.level,
-        series: linked ? linked.series : (job.series ?? null),
+        series: linked ? linked.series : job.series ? newKey(job.series) : null,
         crossFieldId: crossField?.id ?? null,
       },
     ]
     return { index, job, briefs, errors, skipped: false, after }
   })
-  return { rows, fileError: null, assignments }
+  return { rows, fileError: null, assignments, renames }
 }
