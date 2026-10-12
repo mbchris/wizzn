@@ -16,3 +16,6 @@ SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 bash scripts/coolify/p
 SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 
 
 ssh -i ~/SynologyDrive/CloudStation/Documents/id_ed25519 chris@apps.emailanschneiders.de "docker network ls | grep coolify; docker inspect -f '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' v75ucqaqms0othfmscihk6qq"
+
+
+SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 ENV_PROD="$PWD/.env.coolify" pnpm storage:migrate -- chris@apps.emailanschneiders.de xc9yilrbgjyu4ckrtjlbcrae
