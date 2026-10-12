@@ -83,7 +83,7 @@ describe('resolveImage', () => {
     expect(t.search).toHaveBeenCalledWith('apple table', expect.anything())
     expect(t.stored[0]!.data.toString()).toBe('bytes:https://img.test/b.jpg')
     expect(t.stored[0]!.ext).toBe('jpg')
-    expect(r).toEqual({ path: 'u1/f1.jpg', origin: 'stock', credit: cs[1]!.credit, stockQuery: 'apple table', key: 'openverse:b' })
+    expect(r).toEqual({ path: 'u1/f1.jpg', origin: 'stock', credit: cs[1]!.credit, stockQuery: 'apple table', key: 'openverse:b', generator: null })
     expect(exclude.has('openverse:b')).toBe(true)
   })
 

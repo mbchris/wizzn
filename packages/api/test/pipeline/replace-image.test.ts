@@ -66,7 +66,7 @@ describe('createImageReplacer', () => {
     expect(chatJson).not.toHaveBeenCalled()
     expect(res).toEqual({
       ok: true,
-      asset: { id: 'u1-asset-0', kind: 'image', url: 'https://media/u1/new1.jpg', durationSec: null, origin: 'stock', credit: credit('n'), stockQuery: 'Sparschwein', prompt: 'ein Sparschwein' },
+      asset: { id: 'u1-asset-0', kind: 'image', url: 'https://media/u1/new1.jpg', durationSec: null, origin: 'stock', credit: credit('n'), stockQuery: 'Sparschwein', prompt: 'ein Sparschwein', generator: null },
     })
     const a = store.assets.get('u1')![0]!
     expect(a).toMatchObject({ id: 'u1-asset-0', path: 'u1/new1.jpg', origin: 'stock', credit: credit('n') })

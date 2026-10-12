@@ -52,7 +52,7 @@ describe('isStuck', () => {
 })
 
 describe('FIELD_SEEDS', () => {
-  it('has the 5 launch fields with unique slugs', () => {
-    expect(FIELD_SEEDS.map((f) => f.slug)).toEqual(['nutrition', 'partnership', 'finance', 'sports', 'psychology'])
+  it('has the 6 launch fields with unique slugs', () => {
+    expect(FIELD_SEEDS.map((f) => f.slug)).toEqual(['nutrition', 'funfacts', 'partnership', 'finance', 'sports', 'psychology'])
   })
 })

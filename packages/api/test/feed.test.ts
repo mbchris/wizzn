@@ -89,8 +89,8 @@ describe('POST /api/units/:id/complete', () => {
   it('requires cover + all slides and length-based dwell for long-form units', async () => {
     const post = (body: object) => app(fakeFeed().repo).request(`/api/units/${LONG}/complete`, { method: 'POST', headers, body: JSON.stringify(body) })
     expect(await (await post({ format: 'written', slidesSeen: 5, dwellSec: 60 })).json()).toMatchObject({ completed: false, reason: 'not_enough_progress' })
-    expect(await (await post({ format: 'written', slidesSeen: 6, dwellSec: 30 })).json()).toMatchObject({ completed: false, reason: 'not_enough_progress' })
-    expect(await (await post({ format: 'written', slidesSeen: 6, dwellSec: 45 })).json()).toMatchObject({ completed: true })
+    expect(await (await post({ format: 'written', slidesSeen: 6, dwellSec: 22 })).json()).toMatchObject({ completed: false, reason: 'not_enough_progress' })
+    expect(await (await post({ format: 'written', slidesSeen: 6, dwellSec: 23 })).json()).toMatchObject({ completed: true })
   })
   it('records the first completion only once and returns rewards', async () => {
     const progress = fakeProgress()
