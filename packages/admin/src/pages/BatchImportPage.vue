@@ -7,18 +7,26 @@ import { api, errorMessage } from 'src/api'
 
 const $q = useQuasar()
 const router = useRouter()
-const fields = ref<FieldDto[]>([])
+// null until loaded: an empty list would mark every row as "Unbekannter Bereich"
+const fields = ref<FieldDto[] | null>(null)
+const fieldsError = ref<string | null>(null)
 const text = ref('')
 const file = ref<File | null>(null)
 const saving = ref(false)
 
-onMounted(async () => {
-  fields.value = await api<FieldDto[]>('/api/fields')
-})
+async function loadFields(): Promise<void> {
+  fieldsError.value = null
+  try {
+    fields.value = await api<FieldDto[]>('/api/fields')
+  } catch (e) {
+    fieldsError.value = errorMessage(e)
+  }
+}
+onMounted(loadFields)
 
 /** Units behind "after" references and taken series keys; null while they are loading, which keeps those rows blocked */
 const refs = ref<BatchRefs | null>(null)
-const refQuery = computed(() => (text.value.trim() ? batchRefQuery(parseBatchFile(text.value, fields.value).rows) : { ids: [], series: [] }))
+const refQuery = computed(() => (fields.value && text.value.trim() ? batchRefQuery(parseBatchFile(text.value, fields.value).rows) : { ids: [], series: [] }))
 watch(
   () => JSON.stringify(refQuery.value),
   async (key) => {
@@ -35,7 +43,7 @@ watch(
   },
 )
 
-const parsed = computed(() => (text.value.trim() ? parseBatchFile(text.value, fields.value, refs.value) : null))
+const parsed = computed(() => (fields.value && text.value.trim() ? parseBatchFile(text.value, fields.value, refs.value) : null))
 const rows = computed(() => parsed.value?.rows ?? [])
 const assignments = computed(() => parsed.value?.assignments ?? [])
 const renames = computed(() => parsed.value?.renames ?? [])
@@ -62,7 +70,7 @@ async function onFile(f: File | null): Promise<void> {
 
 /** Paste into the Gemini prompt so it only uses existing Bereiche/Themen. */
 async function copyFieldList(): Promise<void> {
-  const list = fields.value.map((f) => `- ${f.slug} (${f.nameDe}): ${f.themes.map((t) => `${t.slug} (${t.nameDe})`).join(', ') || '–'}`).join('\n')
+  const list = (fields.value ?? []).map((f) => `- ${f.slug} (${f.nameDe}): ${f.themes.map((t) => `${t.slug} (${t.nameDe})`).join(', ') || '–'}`).join('\n')
   await navigator.clipboard.writeText(list)
   $q.notify({ type: 'positive', message: 'Bereichsliste kopiert' })
 }
@@ -87,13 +95,17 @@ async function submit(): Promise<void> {
     <q-card style="max-width: 1100px" class="q-mx-auto">
       <q-card-section class="row items-center">
         <div class="text-h6 col">Batch-Import</div>
-        <q-btn flat icon="content_copy" label="Bereichsliste kopieren" :disable="!fields.length" @click="copyFieldList" />
+        <q-btn flat icon="content_copy" label="Bereichsliste kopieren" :disable="!fields?.length" @click="copyFieldList" />
       </q-card-section>
       <q-card-section class="q-gutter-md">
         <q-file v-model="file" outlined accept=".json,application/json,text/plain" label="Batch-Datei (.json)" clearable @update:model-value="onFile">
           <template #prepend><q-icon name="upload_file" /></template>
         </q-file>
         <q-input v-model="text" outlined type="textarea" autogrow input-style="max-height: 240px; font-family: monospace; font-size: 12px" label="…oder JSON hier einfügen" />
+        <q-banner v-if="fieldsError" class="bg-negative text-white" rounded>
+          Bereiche konnten nicht geladen werden: {{ fieldsError }}
+          <template #action><q-btn flat label="Erneut laden" @click="loadFields" /></template>
+        </q-banner>
         <q-banner v-if="parsed?.fileError" class="bg-negative text-white" rounded>{{ parsed.fileError }}</q-banner>
       </q-card-section>
 
