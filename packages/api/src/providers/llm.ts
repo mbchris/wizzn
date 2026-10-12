@@ -111,14 +111,17 @@ function runProcess(bin: string, args: string[], stdin: string, timeoutMs: numbe
   })
 }
 
-/** Shared JSON contract: validate against the schema, one repair round-trip. */
+// A near miss (418 of 420 words) is usually fixed by the first repair; the second covers an overcorrection
+const MAX_ATTEMPTS = 3
+
+/** Shared JSON contract: validate against the schema, up to two repair round-trips. */
 export function createJsonClient(model: string, complete: CompleteFn): LlmClient {
   return {
     model,
     async chatJson<T>(messages: ChatMessage[], schema: ZodType<T>): Promise<T> {
       let history = messages
       let lastError = ''
-      for (let attempt = 0; attempt < 2; attempt++) {
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         const raw = await complete(history)
         const problem = validate(raw, schema)
         if (problem.ok) return problem.value
@@ -130,7 +133,7 @@ export function createJsonClient(model: string, complete: CompleteFn): LlmClient
         ]
       }
       // Keep the zod issues: the message lands in unit.error and is the only clue in the admin UI
-      throw new Error(`LLM output failed validation twice: ${lastError.slice(0, 500)}`)
+      throw new Error(`LLM output failed validation ${MAX_ATTEMPTS} times: ${lastError.slice(0, 500)}`)
     },
   }
 }

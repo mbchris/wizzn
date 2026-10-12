@@ -157,9 +157,10 @@ describe('draft prompts', () => {
   it('asks for imageQuery and has the new prompt version', () => {
     const text = draftWrittenPrompt({ topic: 'Geld', format: 'written' } as never, []).map((m) => m.content).join('\n')
     expect(text).toContain('imageQuery')
-    expect(text).toContain('420–600 Wörter')
+    // Target sits inside the validated 420–600 so a small miscount still passes
+    expect(text).toContain('450–550 Wörter')
     expect(text).toContain('keine Sätze wörtlich')
-    expect(PROMPT_VERSION).toBe('2026-10-13.1')
+    expect(PROMPT_VERSION).toBe('2026-10-13.2')
   })
 
   it('always demands the five-part structure in the chosen style and arc', () => {

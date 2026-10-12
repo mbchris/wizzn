@@ -55,9 +55,16 @@ describe('llm client', () => {
     expect(await llm.chatJson([{ role: 'user', content: 'q' }], z.object({ n: z.number() }))).toEqual({ n: 2 })
     expect(bodies[1]).toContain('ungültig')
   })
-  it('gives up after two invalid answers', async () => {
-    const llm = createLlmClient({ baseUrl: 'http://x', model: 'm', apiKey: '', fetchFn: async () => completion('nope') })
-    await expect(llm.chatJson([], z.object({}))).rejects.toThrow(/twice/)
+  it('repairs a second time when the first repair is still invalid', async () => {
+    const answers = ['{"n":"x"}', '{"n":"y"}', '{"n":2}']
+    const llm = createLlmClient({ baseUrl: 'http://x', model: 'm', apiKey: '', fetchFn: async () => completion(answers.shift()!) })
+    expect(await llm.chatJson([{ role: 'user', content: 'q' }], z.object({ n: z.number() }))).toEqual({ n: 2 })
+  })
+  it('gives up after three invalid answers', async () => {
+    let calls = 0
+    const llm = createLlmClient({ baseUrl: 'http://x', model: 'm', apiKey: '', fetchFn: async () => (calls++, completion('nope')) })
+    await expect(llm.chatJson([], z.object({}))).rejects.toThrow(/failed validation 3 times/)
+    expect(calls).toBe(3)
   })
 })
 
