@@ -32,7 +32,7 @@ pnpm test
 | `pnpm creds:pull` / `creds:push` / `creds:diff` | Wrappers for `./creds.sh` (see Credentials) |
 | `pnpm tts:server` / `tts:voice` / `tts:entry` | Local TTS server (chatterbox\|qwen), Qwen designed-voice export, render one unit/text for listening — see [docs/tts.md](docs/tts.md) |
 | `pnpm verify:m4` | Walks through M4 close-out: checks, API smoke test, browser/device checklists. Steps: `all\|auto\|db\|smoke\|browser\|device\|commit` |
-| `pnpm coolify:env` / `coolify:push-delta` / `coolify:push-data` | Coolify env file / push local content + media to prod (see Deploy) |
+| `pnpm coolify:env` / `coolify:push-delta` | Coolify env file / push local content + media to prod (see Deploy) |
 | `pnpm devpack:load` / `devpack:build` | Load 100 prod units + media into the local DB / build a new pack from prod — see [docs/ops/media-storage.md](docs/ops/media-storage.md) |
 | `pnpm storage:check` / `storage:migrate` | Verify the Garage bucket / copy the old prod media volume into it |
 
@@ -147,18 +147,24 @@ Details: [docs/deploy-coolify.md](docs/deploy-coolify.md).
 ### Push local content to prod
 Runs on the Mac over SSH (key passphrase asked once). Needs the local dev Postgres running and the Coolify app UUID (containers are `<service>-<uuid>`). Prod Postgres is a separate Coolify resource: pass `PG_CONTAINER=<db-resource-uuid>` (optional if it's the only `postgres:*` container on the VPS).
 
+Syntax (both arguments are required, in this order; env vars go in front; running without arguments prints this):
+```
+[SSH_KEY=<key file>] [PG_CONTAINER=<db-resource-uuid>] [ENV_PROD=<env file>] \
+  pnpm coolify:push-delta -- <ssh-user>@<vps-host> <coolify-app-uuid> [--units <file>] [--dry-run]
+```
+Example: `SSH_KEY=~/.ssh/id_ed25519 pnpm coolify:push-delta -- chris@vps.example.com xc9yilrbgjyu4ckrtjlbcrae --dry-run`
+
 ```bash
 # Delta: insert-only, adds what prod doesn't have yet
 pnpm coolify:push-delta -- root@<vps> <uuid> --dry-run                       # all published units: show what would change
 pnpm coolify:push-delta -- root@<vps> <uuid> --units ~/Downloads/wizzn-push-<date>.txt   # only the exported selection
 pnpm coolify:push-delta -- root@<vps> <uuid>
-
-# Full overwrite: replaces prod DB (incl. users) + media; backs up prod DB to ~ on the VPS first
-pnpm coolify:push-data -- root@<vps> <uuid>
 ```
 - SSH user needs Docker access without root (one-time, as root on the VPS: `usermod -aG docker <user>`, then log in again).
+- S3 settings (`S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_BUCKET`) are read from `.env.coolify` when it exists, otherwise `.env.production` (both gitignored); `ENV_PROD=<file>` overrides.
 - Optional `SSH_KEY=~/.ssh/<key>` if the key isn't in `~/.ssh/config` / agent.
 - Delta pushes **published** units only: all of them, or with `--units <file>` exactly the listed ones. Create the file in the Redaktion: select rows → **Push-Liste exportieren** (one unit per line, id first; delete lines to narrow it down). Listed units that aren't published are skipped with a warning. A published written/audio pair partner that is neither in the list nor on prod is reported, not added.
+- Duplicates are not imported: a unit whose field + format + title is already live on prod under another id, or that occurs twice in the push, is skipped and listed (`duplicates skipped`); the first published one wins. A unit already on prod is left as it is, including its sources and assets, so a second run inserts nothing.
 - Delta sends the units' rows (`content_brief`, `unit`, `source`, `asset`, `check_report`, `unit_link` where both ends are on prod) plus `field`/`theme`, matched by slug. Users, auth, progress untouched. Links to units that only exist on prod: run `pnpm links:backfill` there.
 - Delta uploads only media referenced by the pushed units, verifies them, then merges the rows; a failed upload leaves the prod DB untouched.
 - Delta never updates or deletes: locally edited existing units and locally deleted media stay as they are on prod.

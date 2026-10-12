@@ -68,7 +68,7 @@ Status: **implemented** (2026-10-11) · setup + operations: [`docs/ops/media-sto
   | `S3_ACCESS_KEY_ID` | app key id |
   | `S3_SECRET_ACCESS_KEY` | app key secret |
 - Local dev defaults to `local`; optional Garage in `docker-compose.dev.yml` (profile `s3`) to test the S3 driver.
-- `push-data.sh` / `push-delta.sh` media step → `rclone copy` Mac → `s3.<domain>` (replaces tar over SSH).
+- `push-delta.sh` media step → `rclone copy` Mac → `s3.<domain>` (replaces tar over SSH).
 
 ### 4. DevPack (100 prod units)
 - `pnpm devpack:build -- <ssh-host> <uuid>`:

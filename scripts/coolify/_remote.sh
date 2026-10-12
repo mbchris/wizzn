@@ -1,4 +1,4 @@
-# Shared by push-data.sh / push-delta.sh. Expects HOST + UUID_ARG set.
+# Used by push-delta.sh. Expects HOST + UUID_ARG set.
 SSH_OPTS=(-o ControlMaster=auto -o ControlPath="$HOME/.ssh/cm-wizzn-%r@%h:%p" -o ControlPersist=15m)
 [ -n "${SSH_KEY:-}" ] && SSH_OPTS+=(-i "$SSH_KEY")
 r() { ssh "${SSH_OPTS[@]}" "$HOST" "$@"; }

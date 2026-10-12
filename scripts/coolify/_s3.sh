@@ -1,7 +1,7 @@
-# Sourced by push-data.sh / push-delta.sh / storage scripts. Reads prod S3 settings from .env.production and
+# Sourced by push-delta.sh / storage scripts. Reads prod S3 settings from .env.coolify (.env.production when that file is absent) and
 # exposes them as the rclone remote `prod:` (no rclone config file needed). Needs rclone (brew install rclone).
-# S3_MODE=1 when .env.production has MEDIA_DRIVER=s3; _remote.sh then corrects it to what the prod api container runs.
-ENV_PROD="${ENV_PROD:-$ROOT/.env.production}"
+# S3_MODE=1 when that file has MEDIA_DRIVER=s3; _remote.sh then corrects it to what the prod api container runs.
+if [ -z "${ENV_PROD:-}" ]; then ENV_PROD="$ROOT/.env.production"; [ -f "$ROOT/.env.coolify" ] && ENV_PROD="$ROOT/.env.coolify"; fi
 prod_env() { if [ -f "$ENV_PROD" ]; then sed -nE "s/^[[:space:]]*(export[[:space:]]+)?$1=['\"]?([^'\"]*)['\"]?[[:space:]]*\$/\2/p" "$ENV_PROD" | tail -1; fi; }
 
 S3_MODE=0

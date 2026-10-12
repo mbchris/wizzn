@@ -6,8 +6,8 @@ pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  <coolify-app-uuid
 api-xc9yilrbgjyu4ckrtjlbcrae-20261010T181721
 postgres-xc9yilrbgjyu4ckrtjlbcrae-20261010T181721
 
-pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  postgres-xc9yilrbgjyu4ckrtjlbcrae-20261010T181721
-pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  api-xc9yilrbgjyu4ckrtjlbcrae-20261010T181721
+pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  
+pnpm coolify:push-data -- chris@coolify.emailandschneiders.de  
 
 
 SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 bash scripts/coolify/push-delta.sh chris@apps.emailanschneiders.de xc9yilrbgjyu4ckrtjlbcrae --dry-run
@@ -18,4 +18,10 @@ SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519
 ssh -i ~/SynologyDrive/CloudStation/Documents/id_ed25519 chris@apps.emailanschneiders.de "docker network ls | grep coolify; docker inspect -f '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' v75ucqaqms0othfmscihk6qq"
 
 
-SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 ENV_PROD="$PWD/.env.coolify" pnpm storage:migrate -- chris@apps.emailanschneiders.de xc9yilrbgjyu4ckrtjlbcrae
+
+SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 
+
+export PG_CONTAINER=v75ucqaqms0othfmscihk6qq
+export SSH_KEY=~/SynologyDrive/CloudStation/Documents/id_ed25519 
+pnpm coolify:push-delta -- chris@apps.emailanschneiders.de xc9yilrbgjyu4ckrtjlbcrae --units UNIT_FILE.txt
+

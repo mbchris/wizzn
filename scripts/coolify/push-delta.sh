@@ -2,21 +2,31 @@
 # Push locally produced units to prod: the media files they reference, then their content rows (insert-only).
 # Without --units: every locally published unit. With --units <file>: exactly the listed units (Redaktion → select rows →
 # "Push-Liste exportieren"; first column = unit id, lines starting with # are ignored). Unpublished units are skipped.
-# Never updates/deletes remote rows; users/auth/progress are not touched.
+# Never updates/deletes remote rows; users/auth/progress are not touched. Units already on prod get no new child rows.
+# Duplicates are skipped and listed: a unit whose field + format + title is already live on prod under another id, or twice in the push.
 # field/theme are matched by slug (ids differ per env because each seeds its own).
-# Media go to the Garage bucket when the prod api runs MEDIA_DRIVER=s3 (MEDIA_TARGET=s3|volume overrides), S3 settings from ENV_PROD.
+# Media go to the Garage bucket when the prod api runs MEDIA_DRIVER=s3 (MEDIA_TARGET=s3|volume overrides), S3 settings from ENV_PROD (default .env.coolify, else .env.production).
 # Usage: [SSH_KEY=~/.ssh/key] [PG_CONTAINER=<db-resource-uuid>] [ENV_PROD=<env file>] \
 #        pnpm coolify:push-delta -- <ssh-host> <coolify-app-uuid> [--units <file>] [--dry-run]
 set -euo pipefail
 [ "${1:-}" = "--" ] && shift
-HOST="${1:?ssh host}"; UUID_ARG="${2:?coolify app uuid or container name}"; shift 2
+usage() {
+  cat >&2 <<'TXT'
+Usage: [SSH_KEY=<key file>] [PG_CONTAINER=<db-resource-uuid>] [ENV_PROD=<env file>] \
+       pnpm coolify:push-delta -- <ssh-user>@<vps-host> <coolify-app-uuid> [--units <file>] [--dry-run]
+  e.g. SSH_KEY=~/.ssh/id_ed25519 pnpm coolify:push-delta -- chris@vps.example.com xc9yilrbgjyu4ckrtjlbcrae --dry-run
+TXT
+  exit 1
+}
+[ $# -ge 2 ] && [[ "$1" != -* ]] && [[ "$2" != -* ]] || { echo "✗ need <ssh-host> and <coolify-app-uuid>" >&2; usage; }
+HOST="$1"; UUID_ARG="$2"; shift 2
 DRY=""; UNITS_FILE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=--dry-run ;;
     --units) UNITS_FILE="${2:?--units needs a file}"; shift ;;
     --units=*) UNITS_FILE="${1#*=}" ;;
-    *) echo "✗ unknown option: $1"; exit 1 ;;
+    *) echo "✗ unknown option: $1" >&2; usage ;;
   esac
   shift
 done
@@ -140,8 +150,6 @@ echo "→ dumping local content rows"
     echo '\.'
   done
   cat <<'SQL'
-\echo new units:
-SELECT '  ' || rpad(format::text, 9) || coalesce(title, '') FROM wizzn_sync.unit WHERE id NOT IN (SELECT id FROM public.unit) ORDER BY title;
 \echo inserted rows:
 WITH i AS (INSERT INTO public.field SELECT * FROM wizzn_sync.field ON CONFLICT DO NOTHING RETURNING 1) SELECT 'field' t, count(*) FROM i;
 CREATE TEMP TABLE fmap AS SELECT s.id old_id, p.id new_id FROM wizzn_sync.field s JOIN public.field p ON p.slug = s.slug;
@@ -153,13 +161,31 @@ UPDATE wizzn_sync.content_brief x SET cross_field_id = m.new_id FROM fmap m WHER
 UPDATE wizzn_sync.content_brief x SET theme_id = m.new_id FROM tmap m WHERE x.theme_id = m.old_id;
 UPDATE wizzn_sync.unit x SET field_id = m.new_id FROM fmap m WHERE x.field_id = m.old_id;
 UPDATE wizzn_sync.unit x SET theme_id = m.new_id FROM tmap m WHERE x.theme_id = m.old_id;
-WITH i AS (INSERT INTO public.content_brief SELECT * FROM wizzn_sync.content_brief ON CONFLICT DO NOTHING RETURNING 1) SELECT 'content_brief' t, count(*) FROM i;
+-- Duplicates: same field + format + title under another id (produced twice, or already live on prod). First published wins.
+CREATE TEMP TABLE cand AS SELECT id, field_id, format, title, lower(btrim(regexp_replace(title, '\s+', ' ', 'g'))) AS k, published_at, created_at
+  FROM wizzn_sync.unit WHERE id NOT IN (SELECT id FROM public.unit);
+CREATE TEMP TABLE dup AS
+  SELECT c.id, c.format, c.title, 'on prod' AS why FROM cand c
+  WHERE c.k <> '' AND EXISTS (SELECT 1 FROM public.unit p WHERE p.status IN ('published', 'locked') AND p.field_id = c.field_id AND p.format = c.format
+                              AND lower(btrim(regexp_replace(p.title, '\s+', ' ', 'g'))) = c.k);
+INSERT INTO dup
+  SELECT id, format, title, 'twice in this push' FROM (
+    SELECT c.*, row_number() OVER (PARTITION BY field_id, format, k ORDER BY published_at NULLS LAST, created_at, id) AS n
+    FROM cand c WHERE c.k <> '' AND c.id NOT IN (SELECT id FROM dup)) x WHERE n > 1;
+CREATE TEMP TABLE new_unit AS SELECT id FROM cand WHERE id NOT IN (SELECT id FROM dup);
+DELETE FROM wizzn_sync.unit WHERE id IN (SELECT id FROM dup);
+WITH i AS (INSERT INTO public.content_brief SELECT * FROM wizzn_sync.content_brief WHERE id IN (SELECT brief_id FROM wizzn_sync.unit) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'content_brief' t, count(*) FROM i;
 WITH i AS (INSERT INTO public.unit SELECT * FROM wizzn_sync.unit WHERE brief_id IN (SELECT id FROM public.content_brief) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'unit' t, count(*) FROM i;
-WITH i AS (INSERT INTO public.source SELECT * FROM wizzn_sync.source WHERE unit_id IN (SELECT id FROM public.unit) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'source' t, count(*) FROM i;
-WITH i AS (INSERT INTO public.asset SELECT * FROM wizzn_sync.asset WHERE unit_id IN (SELECT id FROM public.unit) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'asset' t, count(*) FROM i;
-WITH i AS (INSERT INTO public.check_report SELECT * FROM wizzn_sync.check_report WHERE unit_id IN (SELECT id FROM public.unit) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'check_report' t, count(*) FROM i;
+-- Child rows only for units new in this push: a unit already on prod keeps its rows (locally re-rendered ones have new ids and would pile up)
+WITH i AS (INSERT INTO public.source SELECT * FROM wizzn_sync.source WHERE unit_id IN (SELECT id FROM new_unit) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'source' t, count(*) FROM i;
+WITH i AS (INSERT INTO public.asset SELECT * FROM wizzn_sync.asset WHERE unit_id IN (SELECT id FROM new_unit) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'asset' t, count(*) FROM i;
+WITH i AS (INSERT INTO public.check_report SELECT * FROM wizzn_sync.check_report WHERE unit_id IN (SELECT id FROM new_unit) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'check_report' t, count(*) FROM i;
 WITH i AS (INSERT INTO public.unit_link SELECT * FROM wizzn_sync.unit_link
            WHERE from_unit_id IN (SELECT id FROM public.unit) AND to_unit_id IN (SELECT id FROM public.unit) ON CONFLICT DO NOTHING RETURNING 1) SELECT 'unit_link' t, count(*) FROM i;
+\echo new units:
+SELECT '  ' || rpad(u.format::text, 9) || coalesce(u.title, '') FROM public.unit u JOIN new_unit n ON n.id = u.id ORDER BY u.title;
+\echo duplicates skipped (same field, format and title):
+SELECT '  ' || rpad(format::text, 9) || coalesce(title, '') || '  [' || why || ']' FROM dup ORDER BY title;
 DROP SCHEMA wizzn_sync CASCADE;
 SQL
   [ -n "$DRY" ] && echo "ROLLBACK;" || echo "COMMIT;"
