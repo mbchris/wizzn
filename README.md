@@ -33,11 +33,15 @@ pnpm test
 | `pnpm tts:server` / `tts:voice` / `tts:entry` | Local TTS server (chatterbox\|qwen), Qwen designed-voice export, render one unit/text for listening — see [docs/tts.md](docs/tts.md) |
 | `pnpm verify:m4` | Walks through M4 close-out: checks, API smoke test, browser/device checklists. Steps: `all\|auto\|db\|smoke\|browser\|device\|commit` |
 | `pnpm coolify:env` / `coolify:push-delta` / `coolify:push-data` | Coolify env file / push local content + media to prod (see Deploy) |
+| `pnpm devpack:load` / `devpack:build` | Load 100 prod units + media into the local DB / build a new pack from prod — see [docs/ops/media-storage.md](docs/ops/media-storage.md) |
+| `pnpm storage:check` / `storage:migrate` | Verify the Garage bucket / copy the old prod media volume into it |
 
 ## Seed data & media
 - `pnpm db:seed` — fields + themes from `packages/shared/src/fields.ts` (`FIELD_SEEDS`). Idempotent; also runs on container start.
 - `pnpm db:seed:samples` — dev-only sample units from `packages/api/src/db/samples/<field>.json` — every topic as **both** a written and an audio unit (missing format derived: audio script split into slides, written slides expanded to a script via the configured LLM). Needs `db:seed` first; skips existing samples (topic + format). `scripts/dev.sh` runs both.
-- Generated images/audio → `packages/api/media-data/<unitId>/<hash>.<ext>` (`MEDIA_DIR`, relative to `packages/api`; `MEDIA_DRIVER=s3` for S3). Served in dev by nginx at http://localhost:8081 (`docker-compose.dev.yml`).
+- Generated images/audio → `packages/api/media-data/<unitId>/<hash>.<ext>` (`MEDIA_DIR`, relative to `packages/api`). Served in dev by nginx at http://localhost:8081 (`docker-compose.dev.yml`).
+- Prod: `MEDIA_DRIVER=s3` → Garage bucket on Coolify, nightly backup to Google Drive: [docs/ops/media-storage.md](docs/ops/media-storage.md).
+- Realistic local data: `pnpm devpack:load` (100 prod units + media).
 - Full reset: empty the DB **and** `packages/api/media-data/`.
 
 ### Reset the dev DB
@@ -155,6 +159,7 @@ pnpm coolify:push-data -- root@<vps> <uuid>
 - Optional `SSH_KEY=~/.ssh/<key>` if the key isn't in `~/.ssh/config` / agent.
 - Delta covers content tables only (`field`, `theme`, `content_brief`, `unit`, `source`, `asset`, `check_report`); field/theme matched by slug. Users, auth, progress untouched.
 - Delta never updates or deletes: locally edited existing units and locally deleted media stay as they are on prod.
+- `MEDIA_DRIVER=s3` in `.env.production`: media go to the Garage bucket via `rclone` (`brew install rclone`) instead of the Docker volume.
 
 ## Store / console setup
 Google + Apple resources: see `docs/setup-consoles.md` (`pnpm setup:google`, `pnpm setup:apple`).

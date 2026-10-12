@@ -50,7 +50,7 @@ function deps(store: FakeStore, over: Partial<PipelineDeps> = {}): PipelineDeps 
     fetchPage: async () => ({ ok: true, status: 200, title: 'Seite', text: 'x'.repeat(300) }),
     tts: createSilentTts(100),
     images: createPlaceholderImages(),
-    media: { put: async (p, _d, ext) => (stored.push(ext), `${p}/${stored.length}.${ext}`), publicUrl: (p) => `https://m/${p}` },
+    media: { put: async (p, _d, ext) => (stored.push(ext), `${p}/${stored.length}.${ext}`), delete: async () => {}, publicUrl: (p) => `https://m/${p}` },
     enqueue: async (q, id) => void queued.push(`${q}:${id}`),
     transcode: async () => null,
     stock: null,

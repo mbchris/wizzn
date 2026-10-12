@@ -35,7 +35,7 @@ function setup(candidates: StockCandidate[] = [], status: UnitStatus = 'in_revie
   const image: ImageDeps = {
     stock: stock ?? { name: 'chain', search },
     images: { generate },
-    media: { put: async (prefix, _d, ext) => `${prefix}/new${++n}.${ext}`, publicUrl: (p) => p },
+    media: { put: async (prefix, _d, ext) => `${prefix}/new${++n}.${ext}`, delete: async () => {}, publicUrl: (p) => p },
     llm: { model: 'fake', chatJson },
     fetchFn: (async (u: string) => new Response(Buffer.from(String(u)), { headers: { 'content-type': 'image/jpeg' } })) as unknown as typeof fetch,
     minEdgePx: 800,

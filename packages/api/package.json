@@ -18,9 +18,11 @@
     "llm:check": "tsx --env-file=../../.env src/scripts/llm-check.ts",
     "tts:entry": "tsx --env-file=../../.env src/scripts/tts-entry.ts",
     "audio:rerender": "tsx --env-file=../../.env src/scripts/rerender-audio.ts",
-    "links:backfill": "tsx --env-file=../../.env src/scripts/links-backfill.ts"
+    "links:backfill": "tsx --env-file=../../.env src/scripts/links-backfill.ts",
+    "storage:check": "tsx --env-file=../../.env.production src/scripts/storage-setup.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1149.0",
     "@hono/node-server": "^1.14.0",
     "@hono/zod-validator": "^0.7.0",
     "@wizzn/shared": "workspace:*",

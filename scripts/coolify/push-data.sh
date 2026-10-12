@@ -10,6 +10,7 @@ HOST="${1:?ssh host}"; UUID_ARG="${2:?coolify app uuid or container name}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MEDIA_DIR="$ROOT/packages/api/media-data"
 DUMP="$(mktemp -t wizzn-XXXX).dump"
+source "$(dirname "$0")/_s3.sh"
 source "$(dirname "$0")/_remote.sh"
 DC="docker compose -f $ROOT/docker-compose.dev.yml"
 
@@ -32,8 +33,14 @@ r "docker exec $PG psql -U wizzn -d postgres -c 'DROP DATABASE IF EXISTS wizzn W
 r "docker exec -i $PG pg_restore -U wizzn -d wizzn --no-owner --no-privileges --exit-on-error" < "$DUMP"
 
 echo "→ copying media ($(du -sh "$MEDIA_DIR" | cut -f1))"
-COPYFILE_DISABLE=1 tar -C "$MEDIA_DIR" -czf - . \
-  | r "docker run --rm -i -v $MEDIA_VOL:/media alpine sh -c 'rm -rf /media/* && tar -xzf - -C /media && chown -R 1000:1000 /media'"
+if [ "$S3_MODE" = 1 ]; then
+  use_prod_s3
+  # sync = exact copy: also deletes bucket files that don't exist locally (backups keep them)
+  rclone sync "$MEDIA_DIR" "prod:$S3_BUCKET" "${RCLONE_UPLOAD_FLAGS[@]}"
+else
+  COPYFILE_DISABLE=1 tar -C "$MEDIA_DIR" -czf - . \
+    | r "docker run --rm -i -v $MEDIA_VOL:/media alpine sh -c 'rm -rf /media/* && tar -xzf - -C /media && chown -R 1000:1000 /media'"
+fi
 
 rm -f "$DUMP"
 echo "✓ done (api restarts → migrations run on top of the restored schema)"

@@ -82,6 +82,8 @@ export interface UnitDetailDto extends UnitSummaryDto {
     generator: string | null
   }[]
   checkReport: CheckReport | null
+  /** The job behind the unit, so a failed one can be edited and sent again as a new brief */
+  brief: Omit<BriefInput, 'format' | 'count'>
 }
 
 /** `prompt` (generated mode only) overrides the stored AI prompt and is saved on the asset */

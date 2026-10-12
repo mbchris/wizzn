@@ -61,6 +61,13 @@ const COPY = [
   'APPLE_APP_BUNDLE_ID', 'APPLE_CLIENT_ID', 'APPLE_CLIENT_SECRET', 'GOOGLE_CLIENT_IDS', 'GOOGLE_CLIENT_SECRET',
 ]
 
+// Storage + backup: only from .env.production (the root .env holds dev values or nothing)
+const PROD_ONLY = [
+  'MEDIA_DRIVER', 'S3_ENDPOINT', 'S3_REGION', 'S3_BUCKET', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY',
+  'RESTIC_PASSWORD', 'GDRIVE_CLIENT_ID', 'GDRIVE_CLIENT_SECRET', 'GDRIVE_TOKEN',
+  'BACKUP_S3_ACCESS_KEY_ID', 'BACKUP_S3_SECRET_ACCESS_KEY', 'BACKUP_CRON', 'HEALTHCHECK_URL',
+]
+
 const env = {
   API_PUBLIC_URL: API,
   MEDIA_PUBLIC_URL: MEDIA,
@@ -71,6 +78,7 @@ for (const k of SECRETS) env[k] = secret(k, k === 'BETTER_AUTH_SECRET' ? 48 : 32
 const DB_PLACEHOLDER = 'postgres://wizzn:CHANGE-ME@CHANGE-ME:5432/wizzn'
 env.DATABASE_URL = prod.DATABASE_URL || prev.DATABASE_URL || DB_PLACEHOLDER
 for (const k of COPY) if (dev[k]) env[k] = dev[k]
+for (const k of PROD_ONLY) if (prod[k]) env[k] = prod[k]
 env.STOCK_USER_AGENT ||= `wizzn/1.0 (https://${args.domain}; ops@${args.domain})`
 
 // Sanity checks: dev-only values that won't work on the VPS
@@ -99,6 +107,12 @@ if (env.TTS_PROVIDER !== 'requesty' && llm !== 'requesty') {
 if (env.DATABASE_URL === DB_PLACEHOLDER) warn.push('DATABASE_URL not set — create the Coolify Postgres resource and put its internal URL into .env.production (or edit it in Coolify)')
 else if (local.test(env.DATABASE_URL)) warn.push('DATABASE_URL points at localhost/LAN — use the Coolify Postgres resource\'s internal URL')
 if (prev.POSTGRES_PASSWORD) console.log('Dropped POSTGRES_PASSWORD (Postgres is now a separate Coolify resource) — delete it in Coolify too')
+if (env.MEDIA_DRIVER === 's3') {
+  const missing = ['S3_ENDPOINT', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY'].filter((k) => !env[k])
+  if (missing.length) warn.push(`MEDIA_DRIVER=s3 but ${missing.join(', ')} not set in .env.production (api will refuse to start)`)
+}
+const backupMissing = ['RESTIC_PASSWORD', 'GDRIVE_TOKEN', 'BACKUP_S3_ACCESS_KEY_ID', 'BACKUP_S3_SECRET_ACCESS_KEY'].filter((k) => !env[k])
+if (backupMissing.length) warn.push(`backup service not configured (${backupMissing.join(', ')}) — it will exit until set; see docs/ops/media-storage.md`)
 if (!env.ADMIN_EMAILS) warn.push('ADMIN_EMAILS is empty — nobody can use the admin app')
 if (!env.REVENUECAT_WEBHOOK_AUTH) warn.push('REVENUECAT_WEBHOOK_AUTH is empty — purchases webhook disabled')
 if (!env.GOOGLE_CLIENT_IDS) warn.push('GOOGLE_CLIENT_IDS is empty — Google sign-in disabled')
@@ -107,7 +121,7 @@ if (env.IMAGE_PROVIDER === 'placeholder') warn.push('IMAGE_PROVIDER=placeholder 
 const API_KEYS = existsSync('packages/api/src/env.ts')
   ? new Set([...readFileSync('packages/api/src/env.ts', 'utf8').matchAll(/^\s+([A-Z][A-Z0-9_]+):/gm)].map((m) => m[1]))
   : new Set()
-const SKIP = /^(DATABASE_URL|SEARCH_URL|MEDIA_|BETTER_AUTH_URL|PORT|NODE_ENV|CORS_ORIGINS|TTS_DEBUG_TEXT|GEMINI_CLI_)/
+const SKIP = /^(DATABASE_URL|SEARCH_URL|MEDIA_|S3_|BETTER_AUTH_URL|PORT|NODE_ENV|CORS_ORIGINS|TTS_DEBUG_TEXT|GEMINI_CLI_)/
 const ignored = Object.keys(dev).filter((k) => API_KEYS.has(k) && !COPY.includes(k) && !SECRETS.includes(k) && !SKIP.test(k))
 if (ignored.length) warn.push(`not copied from .env/.env.production (add to COPY + docker-compose.yml if prod needs them): ${ignored.join(', ')}`)
 
@@ -123,5 +137,5 @@ const fromProd = COPY.filter((k) => k in env && k in prod && prod[k] !== base[k]
 if (fromProd.length) console.log(`From .env.production (overriding .env): ${fromProd.join(', ')}`)
 const prodSecrets = SECRETS.filter((k) => prod[k] && prod[k] !== env[k])
 if (prodSecrets.length) console.log(`Ignored in .env.production (generated, kept stable): ${prodSecrets.join(', ')}`)
-console.log(`Domains to assign in Coolify:\n  api   → ${API}:3000\n  admin → ${ADMIN}\n  media → ${MEDIA}`)
+console.log(`Domains to assign in Coolify:\n  api   → ${API}:3000\n  admin → ${ADMIN}\n  media → ${MEDIA} (legacy nginx; after cutover: on the Garage service, port 3902)`)
 for (const w of warn) console.warn(`⚠ ${w}`)

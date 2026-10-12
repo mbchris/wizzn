@@ -2,7 +2,7 @@ import type { Env } from '../env.js'
 import { createPageFetcher } from './fetch-page.js'
 import { createApiImages, createPlaceholderImages, type ImageClient } from './image.js'
 import { createGeminiCliClient, createLlmClient, type LlmClient } from './llm.js'
-import { createLocalMediaStore } from './media-store.js'
+import { createMediaStore } from './media-store.js'
 import { createCuratedProvider } from './research/curated.js'
 import { createEuropePmcProvider } from './research/europepmc.js'
 import type { ResearchProvider } from './research/types.js'
@@ -25,7 +25,7 @@ export function createProviders(env: Env) {
     tts: createTts(env),
     images: createImageClient(env),
     stock: createStockClient(env),
-    media: createLocalMediaStore(env.MEDIA_DIR, env.MEDIA_PUBLIC_URL),
+    media: createMediaStore(env),
   }
 }
 

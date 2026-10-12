@@ -5,11 +5,13 @@ node_modules/
 dist/
 coverage/
 .env
+.env.production
 packages/api/.env
 .env.api
 .env.web
 *.log
 media-data/
+devpacks/
 
 # console setup outputs + keys
 setup-out/

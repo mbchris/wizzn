@@ -22,6 +22,14 @@ describe('loadEnv', () => {
     expect(env.CORS_ORIGINS).toEqual(['http://localhost:9000', 'capacitor://localhost'])
     expect(env.MEDIA_DRIVER).toBe('local')
   })
+  it('requires the S3 settings when MEDIA_DRIVER is s3', () => {
+    expect(() => loadEnv({ ...valid, MEDIA_DRIVER: 's3' })).toThrow(/S3_ENDPOINT[\s\S]*S3_BUCKET[\s\S]*S3_ACCESS_KEY_ID[\s\S]*S3_SECRET_ACCESS_KEY/)
+  })
+  it('accepts a complete S3 config and defaults the region to garage', () => {
+    const env = loadEnv({ ...valid, MEDIA_DRIVER: 's3', S3_ENDPOINT: 'https://s3.example.com', S3_BUCKET: 'media', S3_ACCESS_KEY_ID: 'GK1', S3_SECRET_ACCESS_KEY: 's' })
+    expect(env.MEDIA_DRIVER).toBe('s3')
+    expect(env.S3_REGION).toBe('garage')
+  })
   it('rejects a short auth secret', () => {
     expect(() => loadEnv({ ...valid, BETTER_AUTH_SECRET: 'short' })).toThrow(/BETTER_AUTH_SECRET/)
   })
