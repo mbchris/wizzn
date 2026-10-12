@@ -32,20 +32,23 @@ Design rationale: [`STORAGE_AND_BACKUP.md`](../../STORAGE_AND_BACKUP.md).
    - GARAGE_DEFAULT_SECRET_KEY=${WIZZN_S3_SECRET}
    ```
    In the `garage.toml` content, below `db_engine = "lmdb"`: `metadata_auto_snapshot_interval = "6h"` (consistent metadata snapshots inside the volume).
-5. Env: `WIZZN_S3_KEY_ID`, `WIZZN_S3_SECRET` (step 3), `GARAGE_DEFAULT_BUCKET=wizzn-media`.
+5. Env: `WIZZN_S3_KEY_ID`, `WIZZN_S3_SECRET` (step 3), `GARAGE_DEFAULT_BUCKET=wizzn-media`. Empty key → `Invalid default access key` on start.
+   Shared values: define under Project → Shared Variables, reference as env value `{{project.WIZZN_S3_KEY_ID}}` (never `${project.…}` in compose).
+   `garage.toml`: Coolify moves the inline `content:` to `/data/coolify/services/<uuid>/garage.toml` on deploy; edit there or re-add `content:`.
 6. Domains (garage container): `https://s3.wizzn.app:3900`. Deploy.
-7. Terminal (garage container):
+7. Admin commands over SSH (the Garage image has no shell → Coolify's terminal can't open it):
    ```sh
-   /garage status
-   /garage bucket website --allow wizzn-media
-   /garage bucket alias wizzn-media media.wizzn.app   # web endpoint picks the bucket by Host header
-   /garage bucket create wizzn-devpack
-   /garage key create devpack
-   /garage bucket allow --read --write wizzn-devpack --key devpack
-   /garage key create backup
-   /garage bucket allow --read wizzn-media --key backup
-   /garage key info --show-secret devpack
-   /garage key info --show-secret backup
+   G="docker exec $(docker ps --format '{{.Names}}' | grep -m1 '^garage-') /garage"
+   $G status
+   $G bucket website --allow wizzn-media
+   $G bucket alias wizzn-media media.wizzn.app   # web endpoint picks the bucket by Host header
+   $G bucket create wizzn-devpack
+   $G key create devpack
+   $G bucket allow --read --write wizzn-devpack --key devpack
+   $G key create backup
+   $G bucket allow --read wizzn-media --key backup
+   $G key info --show-secret devpack
+   $G key info --show-secret backup
    ```
 8. Local `.env.production` (Mac):
    ```env
