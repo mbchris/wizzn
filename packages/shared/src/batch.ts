@@ -2,7 +2,7 @@ import { z } from 'zod'
 import type { FieldDto } from './api.js'
 import { briefInputSchema, type BriefInput } from './admin.js'
 import { EDITORIAL_STYLES, STORY_ARCS } from './pipeline.js'
-import { levelSchema, seriesSchema } from './levels.js'
+import { levelSchema, seriesSchema, type Level } from './levels.js'
 
 /** Max briefs per batch request (each brief can still spawn up to 10 units). */
 export const BATCH_MAX_JOBS = 100
@@ -24,6 +24,10 @@ export const batchJobSchema = z.object({
   series: seriesSchema.nullish(),
   /** Slug or German name of the field a level-4 unit bridges to */
   crossField: z.string().nullish(),
+  /** Unit ID (`ref` of a context export) this job continues at a deeper level of the same series */
+  after: z.string().uuid().nullish(),
+  /** Present on entries of a context export: the unit exists already, so the row is never imported */
+  published: z.unknown().optional(),
 })
 export type BatchJob = z.infer<typeof batchJobSchema>
 
@@ -33,10 +37,38 @@ export const batchFileSchema = z.object({
 })
 
 /** Request body of POST /api/admin/briefs/batch: already resolved briefs, validated all-or-nothing. */
-export const briefBatchSchema = z.object({ briefs: z.array(briefInputSchema).min(1).max(BATCH_MAX_JOBS * 2) })
+export const seriesAssignmentSchema = z.object({ unitId: z.string().uuid(), series: seriesSchema })
+export const briefBatchSchema = z.object({
+  briefs: z.array(briefInputSchema).min(1).max(BATCH_MAX_JOBS * 2),
+  /** Existing units that join the series of the new briefs; applied before any brief is created */
+  seriesAssignments: z.array(seriesAssignmentSchema).max(BATCH_MAX_JOBS).default([]),
+})
 export type BriefBatch = z.infer<typeof briefBatchSchema>
 export interface BriefBatchResultDto {
   briefs: { briefId: string; unitIds: string[] }[]
+}
+
+/** A unit referenced by `after`, as far as the preview needs it */
+export interface BatchRefUnit {
+  id: string
+  title: string
+  level: Level
+  series: string | null
+}
+export const batchRefQuerySchema = z.object({ ids: z.array(z.string().uuid()).max(BATCH_MAX_JOBS), series: z.array(seriesSchema).max(BATCH_MAX_JOBS) })
+export type BatchRefQuery = z.infer<typeof batchRefQuerySchema>
+/** Response of POST /api/admin/briefs/batch/refs */
+export interface BatchRefs {
+  units: BatchRefUnit[]
+  /** Requested series keys that some unit already carries */
+  usedSeries: string[]
+}
+
+/** Series an existing unit receives on import because a deeper job continues it */
+export interface SeriesAssignment {
+  unitId: string
+  series: string
+  title: string
 }
 
 export interface BatchRow {
@@ -44,28 +76,68 @@ export interface BatchRow {
   job: BatchJob | null
   briefs: BriefInput[]
   errors: string[]
+  /** Entry of a context export: shown, never imported */
+  skipped: boolean
+  /** Resolved `after` reference */
+  after: BatchRefUnit | null
+}
+
+/** What the preview has to load before jobs with `after` can be checked */
+export function batchRefQuery(rows: BatchRow[]): BatchRefQuery {
+  const linked = rows.flatMap((r) => (r.job?.after && !r.skipped ? [r.job] : []))
+  return { ids: [...new Set(linked.map((j) => j.after as string))], series: [...new Set(linked.flatMap((j) => (j.series ? [j.series] : [])))] }
 }
 
 const norm = (s: string): string => s.trim().toLowerCase()
 const matches = (x: { slug: string; nameDe: string }, key: string): boolean => norm(x.slug) === norm(key) || norm(x.nameDe) === norm(key)
 
-/** Parses a batch file (JSON text, optionally wrapped in a ```json fence) and resolves fields/themes. */
-export function parseBatchFile(text: string, fields: FieldDto[]): { rows: BatchRow[]; fileError: string | null } {
+/**
+ * Resolves the series of a job that continues an existing unit. A unit without series takes the job's key,
+ * recorded in `assignments`; every other mismatch is a row error.
+ */
+function resolveAfter(job: BatchJob, refs: BatchRefs | null, assignments: SeriesAssignment[]): { ref: BatchRefUnit | null; series: string | null; errors: string[] } {
+  const fail = (message: string, ref: BatchRefUnit | null = null) => ({ ref, series: null, errors: [message] })
+  if (!refs) return fail('Bezug („after“) wird geprüft …')
+  const ref = refs.units.find((u) => u.id === job.after)
+  if (!ref) return fail(`Unbekannter Bezug „${job.after}“`)
+  if (job.level <= ref.level) return fail(`Stufe ${job.level} muss über Stufe ${ref.level} von „${ref.title}“ liegen`, ref)
+  if (ref.series) {
+    if (job.series && job.series !== ref.series) return fail(`„${ref.title}“ gehört zur Serie „${ref.series}“, nicht „${job.series}“`, ref)
+    return { ref, series: ref.series, errors: [] }
+  }
+  const series = job.series
+  if (!series) return fail(`"series" fehlt: „${ref.title}“ hat noch keine Serie`, ref)
+  const mine = assignments.find((a) => a.unitId === ref.id)
+  if (mine) return mine.series === series ? { ref, series, errors: [] } : fail(`„${ref.title}“ erhält in dieser Datei bereits die Serie „${mine.series}“`, ref)
+  if (refs.usedSeries.includes(series)) return fail(`Serie „${series}“ ist bereits vergeben`, ref)
+  const other = assignments.find((a) => a.series === series)
+  if (other) return fail(`Serie „${series}“ wird in dieser Datei bereits „${other.title}“ zugewiesen`, ref)
+  assignments.push({ unitId: ref.id, series, title: ref.title })
+  return { ref, series, errors: [] }
+}
+
+/**
+ * Parses a batch file (JSON text, optionally wrapped in a ```json fence) and resolves fields/themes.
+ * `refs` are the units behind `after` (see batchRefQuery); without them such jobs stay blocked.
+ */
+export function parseBatchFile(text: string, fields: FieldDto[], refs: BatchRefs | null = null): { rows: BatchRow[]; fileError: string | null; assignments: SeriesAssignment[] } {
+  const assignments: SeriesAssignment[] = []
   let raw: unknown
   try {
     raw = JSON.parse(text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, ''))
   } catch (e) {
-    return { rows: [], fileError: `Kein gültiges JSON: ${e instanceof Error ? e.message : String(e)}` }
+    return { rows: [], fileError: `Kein gültiges JSON: ${e instanceof Error ? e.message : String(e)}`, assignments }
   }
   // Accept a bare array of jobs too: LLMs often drop the wrapper
   if (Array.isArray(raw)) raw = { version: 1, jobs: raw }
   const file = batchFileSchema.safeParse(raw)
-  if (!file.success) return { rows: [], fileError: file.error.issues.map((i) => `${i.path.join('.') || 'Datei'}: ${i.message}`).join('; ') }
+  if (!file.success) return { rows: [], fileError: file.error.issues.map((i) => `${i.path.join('.') || 'Datei'}: ${i.message}`).join('; '), assignments }
 
   const rows = file.data.jobs.map((rawJob, index): BatchRow => {
     const parsed = batchJobSchema.safeParse(rawJob)
-    if (!parsed.success) return { index, job: null, briefs: [], errors: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`) }
+    if (!parsed.success) return { index, job: null, briefs: [], errors: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`), skipped: false, after: null }
     const job = parsed.data
+    if (job.published !== undefined) return { index, job, briefs: [], errors: [], skipped: true, after: null }
     const errors: string[] = []
     const field = fields.find((f) => matches(f, job.field))
     if (!field) errors.push(`Unbekannter Bereich „${job.field}“`)
@@ -73,7 +145,10 @@ export function parseBatchFile(text: string, fields: FieldDto[]): { rows: BatchR
     if (job.theme && field && !theme) errors.push(`Unbekanntes Thema „${job.theme}“ in ${field.nameDe}`)
     const crossField = job.crossField ? fields.find((f) => matches(f, job.crossField as string)) : undefined
     if (job.crossField && !crossField) errors.push(`Unbekannter Querbereich „${job.crossField}“`)
-    if (errors.length || !field) return { index, job, briefs: [], errors }
+    const linked = job.after ? resolveAfter(job, refs, assignments) : null
+    if (linked) errors.push(...linked.errors)
+    const after = linked?.ref ?? null
+    if (errors.length || !field) return { index, job, briefs: [], errors, skipped: false, after }
     // "both" is ONE brief with format null: the API then creates linked written/audio pairs (pairId),
     // so the feed shows only one variant per topic and completing either counts for both
     const briefs = [
@@ -87,11 +162,11 @@ export function parseBatchFile(text: string, fields: FieldDto[]): { rows: BatchR
         format: job.format === 'both' ? null : job.format,
         count: job.count,
         level: job.level,
-        series: job.series ?? null,
+        series: linked ? linked.series : (job.series ?? null),
         crossFieldId: crossField?.id ?? null,
       },
     ]
-    return { index, job, briefs, errors }
+    return { index, job, briefs, errors, skipped: false, after }
   })
-  return { rows, fileError: null }
+  return { rows, fileError: null, assignments }
 }
