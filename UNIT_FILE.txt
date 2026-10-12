@@ -1,13 +1,51 @@
-# wizzn push list · 2026-10-12 12:52 · 12 units
-4b3cebe2-0e99-44f7-af32-df4520534257	published	audio	Eisen-Suche: Vitamin C knackt die Phytat-Bremse
-1ee9f96d-6c26-434a-8e22-ab1d507915c8	published	written	Käse kann Eisen ausbremsen – aber du musst ihn nicht verbannen
-63ba5630-e903-4c96-b43f-b05be1d69f71	published	written	Milch macht dich nicht automatisch jodsicher
-38eb7696-1384-4d36-a7bc-99fe5d080737	published	audio	Milch ist kein verlässliches Jod-Sicherheitsnetz
-d45e9e3a-0fbb-4c98-918e-25eab9fca640	published	audio	Liebe ist ein Dreieck, kein einzelnes Gefühl
-109aac71-bb92-4b45-9895-3e4bf3d133b8	published	written	Haushaltsstreit braucht keine Schuldigen, sondern Zuständigkeiten
-975030e4-c5ba-4a48-8303-619a4ae24498	published	audio	Haushaltsstreit braucht weniger Schuld – und mehr klare Zuständigkeit
-1b5c0856-5623-4009-a568-3b77c7388f62	published	audio	Split-Training: Mehr Ordnung, nicht automatisch mehr Muskeln
-ffb5fc7c-fdf8-4776-a134-fbaf5bf30cd2	published	audio	Wörter können sich selbst widersprechen – und trotzdem Spaß machen
-0e10e708-2fe8-49fc-87d7-0a80e31bc874	published	written	Die 30-Gramm-Grenze für Protein gibt es nicht
-2e21171a-1c58-4ac2-ba13-53259ced731b	published	audio	Dreißig Gramm sind keine Grenze
-041cefc3-125d-4d7e-acad-f6d3b5c64a5b	published	written	Vegan und B12: Algen sind kein verlässlicher Ersatz
+# wizzn push list · 2026-10-12 18:56 · 50 units
+299dbcd3-671a-41e4-81bb-9ecd2c246220	published	written	Bei ADHS ist Zeit oft kein Gefühl – sondern eine Überraschung
+da376a6a-5b64-4e64-8548-3e159d1a33d2	published	written	RSD bei ADHS: Starker Schmerz ist keine Charakterschwäche
+fc3c5225-d77c-489d-80ba-be984b33d10f	published	audio	Das Versunkene-Kosten-Monster
+92c16ef2-cf3b-4aec-b8a8-f441c291c3ff	published	written	Kompression macht dich nicht schneller – Erholung kann sie unterstützen
+89718609-e8f0-44ed-b839-3c8247b49e48	published	audio	Kompression beim Laufen: keine Abkürzung zu mehr Tempo
+aff2b8fc-778e-4872-8372-70c2371a4c96	published	audio	Nasenatmung beim Laufen: Die Bremse hat Grenzen
+888ae325-b530-4d96-b141-4e1121cb06fe	published	written	Runner’s High: Endocannabinoide statt Endorphine?
+f3e3a589-ad7a-4679-9ced-efcbf571bb89	published	audio	Runner’s High: nicht einfach ein Endorphinrausch
+68cdd290-3d56-4d07-a50b-e69ed17ec2fd	published	audio	Deine Ausdauer ist ein starker Hinweis auf dein Sterberisiko
+8889d935-9999-4304-bdb5-3f9ad6655221	published	written	Ausdauerfitness: ein starker Hinweis auf langes Leben
+8de38cc6-9c0a-4674-af6e-86047d8f910f	published	audio	Der Muskel-Fokus ist kein Kraft-Booster für jede Wiederholung
+dad31a80-49ad-43a2-8838-7d8ae2e70c05	published	written	Der Muskel-Fokus ist nicht automatisch der stärkste Fokus
+2f3c0ce3-e91a-435a-bee4-f89fbf70ba7e	published	written	Muskeln trainierst du auch beim Ablassen
+01b5ead6-a80e-4651-92b7-772a981b8d58	published	audio	Der Muskel wächst auch beim Nachgeben
+6b44d120-b63d-4620-b05a-682efa4ccf3c	published	written	Griffkraft: ein überraschend starker Gesundheitsmarker
+259620df-173e-4950-8f09-555589cd349a	published	audio	Deine Griffkraft sagt mehr über deine Gesundheit, als du denkst
+8f4b88f9-c0e3-48cf-89ab-0f909fa759d7	published	audio	Muskelaufbau: Die Zehn ist kein Naturgesetz
+7d5af2f9-b289-4a8c-b139-5eb4dd15c7d7	published	written	Die Zehn ist keine Muskelregel
+c5c2db02-f098-4abf-975f-f7abc88e19a1	published	audio	Plyometrie: Deine Sehnen sind Teil des Antriebs
+a829c060-421a-4394-8646-1535173ee81a	published	written	Muskeln aufbauen: Hanteln sind nicht automatisch schneller
+371977c0-fbb3-421c-88fa-569643385bf6	published	audio	Muskeln wachsen nicht wegen der Hantelscheibe
+d7e91fa4-05eb-456f-8213-7843de77a89a	published	written	Kraft und Ausdauer passen zusammen – wenn du die Reize trennst
+0f71c7db-ccc7-4db8-b987-d2953fdfe020	published	audio	Deload: Macht weniger Training dich stärker?
+2f70de6e-25c3-4817-926e-334ddce286a0	published	written	Wer nie entlastet, trainiert nicht automatisch besser
+7266fa18-aff2-461f-a482-667ea3aa3e54	published	audio	Morgen oder Abend? Wann dein Körper am besten trainiert
+6151566b-d903-44bc-aee5-dc1f45c45163	published	written	Dein Körper hat eine Hochleistungszeit – aber keine Pflichtuhr
+b8d68461-0b36-4907-817b-8af4501f0d0e	published	audio	Du musst nicht fünfmal pro Woche trainieren, um dranzubleiben
+ce548b40-3f2d-44c2-8c53-60c488097b89	published	written	Fit bleiben braucht kein volles Wochenprogramm
+1b94e5c4-3d51-4f61-a2a2-00d57dbbd495	published	audio	Fair Play beginnt mit klarer Verantwortung
+4c9b5368-4cf2-4021-9da9-e5e314c6fe56	published	written	Liebe verändert ihre Mischung – nicht automatisch ihren Wert
+0797548f-9e6e-453a-a909-8ee6b6d04e6c	published	audio	Liebe ist kein einzelnes Gefühl
+a0517f7a-a6ea-4648-9768-acedd5b49da6	published	audio	Nähe braucht kein Doppelgänger-Dasein
+8d3f643e-c2dc-4a25-9132-5ffb2a0cf44f	published	written	Nähe braucht zwei eigene Menschen
+793b54fe-0708-430e-b14b-b46555f461b7	published	audio	Die fünf Sprachen der Liebe sind keine feste Gebrauchsanweisung
+46fc8daf-ffaf-459e-a311-d0ee0b6e9722	published	written	Die fünf Sprachen der Liebe sind keine festen Schubladen
+c1542b4d-d18f-40a9-867a-0665b208c779	published	written	Beim Kennenlernen kann ein kleiner Gefallen mehr verbinden als ein Geschenk
+05ed21e2-67cd-4e05-a59c-74104e4ad678	published	audio	Höhenangst oder Herzklopfen? Wenn Aufregung wie Verliebtheit wirkt
+62db5adc-ce9a-481a-aabc-633c446d2269	published	written	Dein Herz kann Hängebrücken-Schreck für Verliebtheit halten
+dfe6e071-8e17-4679-893a-59a0fd479417	published	audio	Vertrautheit schlägt den perfekten Spruch
+67555e98-5b06-4c21-8c48-62bdd52b3ec8	published	audio	Gabel, Gabel, Gabel: Wenn Wörter kurz leer laufen
+c5321984-f319-4958-a371-3a5647431ddf	published	audio	In der Tiefsee werden manche Krebstiere zu Riesen
+5f0b0b16-9087-4ff8-9589-17162e2b3eec	published	written	Pando sieht aus wie ein Wald – und ist doch ein Organismus
+a34d3889-d675-4c50-865e-865f9fefaaf6	published	written	Mark Twain und Halley: ein erstaunlicher Zufall mit 75 Jahren Abstand
+2bb252e8-c483-4149-96f7-2af8874b660e	published	audio	Zu alt zum Lernen? Dein Gehirn sagt: Nö.
+c3a8bd3a-8704-4f1f-8a1c-d0d23abd99d1	published	audio	Zone zwei: Warum langsames Laufen die Ausdauerbasis stärkt
+598e1354-d30e-4d68-9e28-2ec94d5993b4	published	written	Warum Fakten unsere Meinung oft nicht ändern
+fe42450c-02de-4946-93ad-1316f3506fd9	published	audio	Warum Fakten deine Meinung nicht automatisch ändern
+373544ae-1316-4666-8de2-ca8ac2fdd6e0	published	audio	Vitamin B zwölf: Algen und Zahnpasta sind keine verlässliche Versorgung
+e59cf9eb-3ade-4fea-8324-53f61e293dfb	published	audio	Viele Zeugen bedeuten nicht automatisch weniger Hilfe
+cbba813c-3a9b-4bad-90b9-58ad665960ba	published	audio	Steve Jobs und das Nummernschild: sechs Monate inkognito

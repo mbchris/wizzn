@@ -78,10 +78,7 @@ async function onVote(unit: FeedUnitDto, vote: FeedbackVote): Promise<void> {
   } catch (e) {
     console.warn('feedback failed', e)
     Notify.create({ message: 'Feedback konnte nicht gespeichert werden.', color: 'negative', position: 'top', timeout: 1800 })
-    return
   }
-  await nextTick()
-  scroller.value?.scrollTo({ top: (at + 1) * scroller.value.clientHeight, behavior: 'smooth' })
 }
 
 function observeCards(): void {

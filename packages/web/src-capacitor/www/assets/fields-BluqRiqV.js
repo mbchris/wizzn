@@ -1,0 +1,1 @@
+var e={nutrition:`🥗`,partnership:`🤝`,finance:`💰`,sports:`🏃`,psychology:`🧠`},t=t=>e[t]??`✨`;export{t};

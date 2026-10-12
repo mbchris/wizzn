@@ -125,12 +125,8 @@ watch(active, (n, o) => {
   if (n !== o) haptics.snap()
 })
 
-/* Knowledge stream: "mehr davon" pulls linked units in right behind the current card, "weniger davon" skips its series */
-function scrollToCard(i: number): void {
-  const el = scroller.value
-  el?.scrollTo({ top: i * el.clientHeight, behavior: 'smooth' })
-}
-
+/* Knowledge stream: "mehr davon" pulls linked units in right behind the current card, "weniger davon" skips its series.
+   The card stays put: a vote only marks the selection, the user decides when to move on. */
 async function onVote(unit: FeedUnitDto, vote: FeedbackVote): Promise<void> {
   const at = units.value.findIndex((u) => u.id === unit.id)
   if (at < 0) return
@@ -148,11 +144,7 @@ async function onVote(unit: FeedUnitDto, vote: FeedbackVote): Promise<void> {
   } catch (e) {
     console.warn('feedback failed', e)
     Notify.create({ message: 'Feedback konnte nicht gespeichert werden.', color: 'negative', position: 'top', timeout: 1800 })
-    return
   }
-  await nextTick()
-  const pos = visibleUnits.value.findIndex((u) => u.id === unit.id)
-  if (pos >= 0) scrollToCard(pos + 1)
 }
 
 function reset(): void {

@@ -1,0 +1,1 @@
+import{At as e,x as t}from"./QBtn-DLtkR4WN.js";var n=e(null),r=e(!1),i=e([]),a=null;async function o(){return i.value.length?i.value:(a??=t.fields().then(e=>i.value=e).finally(()=>a=null),a)}function s(){return{filter:n,stale:r,fields:i,loadFields:o}}export{s as t};
