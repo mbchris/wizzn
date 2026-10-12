@@ -32,7 +32,7 @@ Viele Aufträge auf einmal anlegen: Redaktion → **Batch-Import** (`/briefs/imp
 | `topic` | ja | Kernidee, 3–200 Zeichen |
 | `context` | nein | Briefing für die KI, max. 4000 Zeichen |
 | `format` | nein | `written`, `audio`, `both` (Standard: `both` → 2 Aufträge) |
-| `style` | nein | `friendly`, `factual`, `narrative`, `null` = zufällig |
+| `style` | nein | `friendly`, `factual`, `narrative`, `null` = zufällig; unbekannte Werte gelten als `null` |
 | `storyArc` | nein | `rags_to_riches`, `quest`, `voyage_and_return`, `comedy`, `overcoming_the_monster`, `rebirth`, `null` = zufällig |
 | `count` | nein | Varianten 1–10 (Standard 1) |
 | `level` | nein | Wissensstufe 1–5 (Standard 1), siehe unten |

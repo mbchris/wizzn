@@ -17,7 +17,8 @@ export const batchJobSchema = z.object({
   topic: z.string().trim().min(3).max(200),
   context: z.string().max(4000).default(''),
   format: z.enum(['written', 'audio', 'both']).default('both'),
-  style: z.enum(EDITORIAL_STYLES).nullish(),
+  // LLMs repeat the story arc here: an unknown style means "pick one", like null
+  style: z.enum(EDITORIAL_STYLES).nullish().catch(null),
   storyArc: z.enum(STORY_ARCS).nullish(),
   count: z.number().int().min(1).max(10).default(1),
   level: levelSchema.default(1),

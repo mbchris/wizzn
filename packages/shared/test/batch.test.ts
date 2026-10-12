@@ -31,6 +31,14 @@ describe('parseBatchFile', () => {
     expect(rows[2]?.errors[0]).toContain('topic')
     expect(rows[3]?.errors).toEqual([])
   })
+  it('treats an unknown style, e.g. a story arc in the style slot, as no style instead of rejecting the row', () => {
+    const { rows } = parseBatchFile(
+      JSON.stringify({ version: 1, jobs: [{ field: 'finanzen', topic: 'Notgroschen', style: 'overcoming_the_monster', storyArc: 'overcoming_the_monster' }, { field: 'finanzen', topic: 'Zinseszins', style: 'factual' }] }),
+      fields,
+    )
+    expect(rows.map((r) => r.errors)).toEqual([[], []])
+    expect(rows.map((r) => [r.briefs[0]?.style, r.briefs[0]?.storyArc])).toEqual([[null, 'overcoming_the_monster'], ['factual', null]])
+  })
   it('reports invalid JSON and wrong version as file errors', () => {
     expect(parseBatchFile('{nope', fields).fileError).toContain('Kein gültiges JSON')
     expect(parseBatchFile(JSON.stringify({ version: 2, jobs: [{}] }), fields).fileError).toContain('version')
