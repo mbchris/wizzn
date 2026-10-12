@@ -16,6 +16,7 @@ export const FIELD_SEEDS: readonly FieldSeed[] = [
       { slug: 'vegan', nameDe: 'Vegan' },
       { slug: 'vegetarian', nameDe: 'Vegetarisch' },
       { slug: 'keto', nameDe: 'Keto' },
+      { slug: 'kalorienarm', nameDe: 'Kalorienarm' },
     ],
   },
   {
@@ -37,6 +38,7 @@ export const FIELD_SEEDS: readonly FieldSeed[] = [
       { slug: 'needs', nameDe: 'Bedürfnisse' },
       { slug: 'love', nameDe: 'Liebe' },
       { slug: 'balance', nameDe: 'Balance in der Partnerschaft' },
+      { slug: 'gemeinsamkeiten', nameDe: 'Gemeinsamkeiten' },
     ],
   },
   {
@@ -58,6 +60,7 @@ export const FIELD_SEEDS: readonly FieldSeed[] = [
       { slug: 'workout-types', nameDe: 'Trainingsarten' },
       { slug: 'strength', nameDe: 'Kraft' },
       { slug: 'cardio', nameDe: 'Ausdauer' },
+      { slug: 'skills', nameDe: 'Technik & Koordination' },
     ],
   },
   {
@@ -80,6 +83,8 @@ export const FIELD_SEEDS: readonly FieldSeed[] = [
       { slug: 'leadership', nameDe: 'Führung' },
       { slug: 'productivity', nameDe: 'Produktivität' },
       { slug: 'labour-law', nameDe: 'Arbeitsrecht' },
+      { slug: 'worklifebalance', nameDe: 'Work-Life-Balance' },
+      { slug: 'kollegen', nameDe: 'Kollegen & Teamklima' },
     ],
   },
 ]
