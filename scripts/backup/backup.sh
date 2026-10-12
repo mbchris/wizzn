@@ -7,7 +7,7 @@ started=$(date +%s)
 
 echo "→ [db] pg_dump → restic"
 # Dump to a file first: a failed pg_dump must not leave a truncated dump as the newest snapshot
-dump_dir="$(mktemp -d /cache/db.XXXX)"; trap 'rm -rf "$dump_dir"' EXIT
+dump_dir="$(mktemp -d /cache/db.XXXXXX)"; trap 'rm -rf "$dump_dir"' EXIT
 pg_dump --format=custom --no-owner --no-privileges --file "$dump_dir/wizzn.dump" "$DATABASE_URL"
 (cd "$dump_dir" && restic backup wizzn.dump --tag db --host wizzn)
 

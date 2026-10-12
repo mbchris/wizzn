@@ -13,4 +13,5 @@ CRON="${BACKUP_CRON:-15 3 * * *}"
 echo "$CRON /backup/backup.sh" > /tmp/crontab
 echo "✓ backup scheduled: '$CRON' ($TZ) → $RESTIC_REPOSITORY"
 [ "${BACKUP_ON_START:-false}" = true ] && /backup/backup.sh || true
-exec supercronic /tmp/crontab
+# Absolute path: as PID 1 supercronic re-executes itself by argv[0], without a PATH lookup
+exec "$(command -v supercronic)" /tmp/crontab
