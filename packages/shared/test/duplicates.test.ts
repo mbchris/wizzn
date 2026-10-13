@@ -3,6 +3,8 @@ import { duplicateGroups, type DuplicateCandidate } from '../src/duplicates.js'
 
 const unit = (id: string, over: Partial<DuplicateCandidate> = {}): DuplicateCandidate => ({
   id,
+  briefId: `brief-${id}`,
+  level: 1,
   format: 'written',
   fieldSlug: 'ernaehrung',
   series: null,
@@ -65,6 +67,17 @@ describe('duplicateGroups', () => {
       unit('b', { text: 'Protein in Hülsenfrüchten: Linsen, Bohnen, Erbsen' }),
     ])
     expect(groups).toEqual([])
+  })
+
+  it('groups variants of one brief only when they are on the same level', () => {
+    const variant = { briefId: 'brief-x', text: 'Notgroschen aufbauen Rücklage' }
+    expect(duplicateGroups([unit('a', { ...variant, level: 1 }), unit('b', { ...variant, level: 2 })])).toEqual([])
+    expect(duplicateGroups([unit('a', { ...variant, level: 2 }), unit('b', { ...variant, level: 2 })])).toEqual([{ ids: ['a', 'b'], reasons: ['subject'] }])
+  })
+
+  it('groups the same subject from different briefs across levels', () => {
+    const groups = duplicateGroups([unit('a', { text: 'Notgroschen aufbauen Rücklage', level: 1 }), unit('b', { text: 'Notgroschen aufbauen Rücklage', level: 3 })])
+    expect(groups).toEqual([{ ids: ['a', 'b'], reasons: ['subject'] }])
   })
 
   it('merges chains into one group and reports both reasons', () => {

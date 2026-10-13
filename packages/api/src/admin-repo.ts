@@ -298,11 +298,11 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
 
     async duplicateUnits() {
       const rows = await db.query.unit.findMany({
-        columns: { id: true, title: true, format: true, status: true, level: true, series: true, failureReason: true, updatedAt: true },
+        columns: { id: true, briefId: true, title: true, format: true, status: true, level: true, series: true, failureReason: true, updatedAt: true },
         with: { brief: { columns: { topic: true } }, field: { columns: { slug: true } }, checkReport: { columns: { passed: true } } },
         orderBy: [desc(unit.updatedAt)],
       })
-      const groups = duplicateGroups(rows.map((r) => ({ id: r.id, format: r.format, fieldSlug: r.field.slug, series: r.series, text: `${r.title ?? ''} ${r.brief.topic}` })))
+      const groups = duplicateGroups(rows.map((r) => ({ id: r.id, briefId: r.briefId, level: r.level, format: r.format, fieldSlug: r.field.slug, series: r.series, text: `${r.title ?? ''} ${r.brief.topic}` })))
       const byId = new Map(rows.map((r) => [r.id, r]))
       const members = groups.map((g) => g.ids.flatMap((id) => byId.get(id) ?? []))
       const stuck = await stuckIds(db, members.flat())

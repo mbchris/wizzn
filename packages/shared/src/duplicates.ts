@@ -1,4 +1,5 @@
 import type { UnitFormat } from './content.js'
+import type { Level } from './levels.js'
 import { jaccard, topicTokens } from './links.js'
 
 /** Share of content words two units must have in common to count as the same subject */
@@ -8,6 +9,8 @@ export type DuplicateReason = 'series' | 'subject'
 
 export interface DuplicateCandidate {
   id: string
+  briefId: string
+  level: Level
   format: UnitFormat
   fieldSlug: string
   series: string | null
@@ -29,7 +32,8 @@ function seriesRoot(key: string, known: ReadonlySet<string>): string {
 }
 
 /**
- * Units of one format that cover the same ground: same series (any level) or, within a field, mostly the same content words.
+ * Units of one format that cover the same ground: same series (any level) or, within a field, mostly the same content words
+ * (any level, except between variants of one brief).
  * Groups are transitive; ids keep the input order.
  */
 export function duplicateGroups(units: DuplicateCandidate[]): DuplicateGroup[] {
@@ -60,6 +64,8 @@ export function duplicateGroups(units: DuplicateCandidate[]): DuplicateGroup[] {
     for (let b = a + 1; b < units.length; b++) {
       const [x, y] = [units[a]!, units[b]!]
       if (x.format !== y.format || x.fieldSlug !== y.fieldSlug) continue
+      // Variants of one brief share the core idea by design; they only repeat each other on the same level
+      if (x.briefId === y.briefId && x.level !== y.level) continue
       if (jaccard(tokens[a]!, tokens[b]!) >= DUPLICATE_MIN_SCORE) link(a, b, 'subject')
     }
   }
