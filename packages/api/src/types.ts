@@ -1,6 +1,6 @@
 import type { QueueName } from './jobs/queues.js'
 import type { ClaimResult } from './pipeline/recover.js'
-import type { BatchRefQuery, BatchRefs, BriefInput, ContextUnit, FieldDto, InterestsInput, MeDto, UnitDetailDto, UnitEdit, UnitListQuery, UnitLogDto, UnitSummaryDto } from '@wizzn/shared'
+import type { BatchRefQuery, BatchRefs, BriefInput, ContextUnit, DuplicateGroupDto, FieldDto, InterestsInput, MeDto, UnitDetailDto, UnitEdit, UnitListQuery, UnitLogDto, UnitSummaryDto } from '@wizzn/shared'
 
 export interface SessionUser {
   id: string
@@ -61,6 +61,8 @@ export interface AdminRepo {
    * 'conflict': a unit already has another series, or the key belongs to units outside these briefs.
    */
   assignSeries(assignments: { unitId: string; series: string }[]): Promise<'ok' | 'not_found' | 'conflict'>
+  /** Groups over all units, not only the newest ones of listUnits */
+  duplicateUnits(): Promise<DuplicateGroupDto[]>
 }
 
 export interface JobQueue {

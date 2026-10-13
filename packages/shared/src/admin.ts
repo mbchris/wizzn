@@ -3,6 +3,7 @@ import { unitFormatSchema, type ImageCredit } from './content.js'
 import { UNIT_STATUSES, type UnitStatus } from './unit-status.js'
 import { EDITORIAL_STYLES, STORY_ARCS, type CheckReport, type SourceTier } from './pipeline.js'
 import { levelSchema, seriesSchema, type Level } from './levels.js'
+import type { DuplicateReason } from './duplicates.js'
 
 export const briefInputSchema = z.object({
   fieldId: z.string().uuid(),
@@ -64,6 +65,12 @@ export interface UnitSummaryDto {
   updatedAt: string
   /** Working status older than STUCK_AFTER_MS: its job is gone, admins may resume/regenerate/edit it */
   stuck: boolean
+}
+
+/** Units of one format that share a series or a subject (duplicateGroups) */
+export interface DuplicateGroupDto {
+  reasons: DuplicateReason[]
+  units: UnitSummaryDto[]
 }
 
 export interface UnitDetailDto extends UnitSummaryDto {

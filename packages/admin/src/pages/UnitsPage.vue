@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { exportFile, useQuasar } from 'quasar'
-import { LEVELS, UNIT_STATUSES, contextFilename, formatContextFile, formatPushList, levelLabel, pushListFilename, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type ContextJob, type Level, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
+import { LEVELS, UNIT_STATUSES, contextFilename, formatContextFile, formatPushList, levelLabel, pushListFilename, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type ContextJob, type DuplicateGroupDto, type DuplicateReason, type Level, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
 import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
 
@@ -35,10 +35,21 @@ const fieldsModel = computed({ get: () => activeFields.value, set: (v: string[] 
 const formatsModel = computed({ get: () => activeFormats.value, set: (v: UnitFormat[] | null) => (activeFormats.value = v ?? []) })
 const levelsModel = computed({ get: () => activeLevels.value, set: (v: Level[] | null) => (activeLevels.value = v ?? []) })
 const seriesModel = computed({ get: () => activeSeries.value, set: (v: string[] | null) => (activeSeries.value = v ?? []) })
+/** Duplicate filter (?dup=1): groups span all units, so their members may lie outside the loaded list */
+const dupOnly = ref(route.query.dup === '1')
+const dupGroups = ref<DuplicateGroupDto[]>([])
+const REASON_LABEL: Record<DuplicateReason, string> = { series: 'Serie', subject: 'Thema' }
+const dupInfo = computed(() => new Map(dupGroups.value.flatMap((g, i) => g.units.map((u) => [u.id, { group: i + 1, reasons: g.reasons.map((r) => REASON_LABEL[r]).join(' + ') }] as const))))
+/** Rows the filters work on; group members take their polled state where the list has it */
+const rows = computed(() => {
+  if (!dupOnly.value) return units.value
+  const polled = new Map(units.value.map((u) => [u.id, u]))
+  return dupGroups.value.flatMap((g) => g.units.map((u) => polled.get(u.id) ?? u))
+})
 const levelOptions = LEVELS.map((l) => ({ label: levelLabel(l), value: l }))
 const seriesOptions = computed(() => {
   // Like the categories: keys of the loaded units plus the active ones
-  const keys = new Set([...units.value.flatMap((u) => (u.series ? [u.series] : [])), ...activeSeries.value.filter((s) => s !== NO_SERIES)])
+  const keys = new Set([...rows.value.flatMap((u) => (u.series ? [u.series] : [])), ...activeSeries.value.filter((s) => s !== NO_SERIES)])
   return [{ label: 'ohne Serie', value: NO_SERIES }, ...[...keys].sort((a, b) => a.localeCompare(b, 'de')).map((key) => ({ label: key, value: key }))]
 })
 const UNIT_FORMATS = unitFormatSchema.options
@@ -46,14 +57,14 @@ const FORMAT_LABEL: Record<UnitFormat, string> = { written: 'Text', audio: 'Audi
 const formatOptions = UNIT_FORMATS.map((f) => ({ label: FORMAT_LABEL[f], value: f }))
 const fieldOptions = computed(() => {
   // Categories come from the loaded units; active ones stay selectable even when no unit matches
-  const slugs = new Set([...units.value.map((u) => u.fieldSlug), ...activeFields.value])
+  const slugs = new Set([...rows.value.map((u) => u.fieldSlug), ...activeFields.value])
   return [...slugs].sort((a, b) => a.localeCompare(b, 'de')).map((slug) => ({ label: slug, value: slug }))
 })
 const norm = (t: string): string => t.toLocaleLowerCase('de').normalize('NFD').replace(/\p{Diacritic}/gu, '')
 /** Everything except the status filter, so the chip counts reflect the other filters */
 const baseFiltered = computed(() => {
   const words = norm((search.value ?? '').trim()).split(/\s+/).filter(Boolean)
-  return units.value.filter(
+  return rows.value.filter(
     (u) =>
       (!activeFields.value.length || activeFields.value.includes(u.fieldSlug)) &&
       (!activeFormats.value.length || activeFormats.value.includes(u.format)) &&
@@ -68,7 +79,7 @@ const statusCounts = computed(() => {
   return counts
 })
 const visibleUnits = computed(() => (activeStatuses.value.length ? baseFiltered.value.filter((u) => activeStatuses.value.includes(u.status)) : baseFiltered.value))
-const filterActive = computed(() => !!(activeStatuses.value.length || activeFields.value.length || activeFormats.value.length || activeLevels.value.length || activeSeries.value.length || (search.value ?? '').trim()))
+const filterActive = computed(() => !!(dupOnly.value || activeStatuses.value.length || activeFields.value.length || activeFormats.value.length || activeLevels.value.length || activeSeries.value.length || (search.value ?? '').trim()))
 function toggleStatus(s: UnitStatus): void {
   activeStatuses.value = activeStatuses.value.includes(s) ? activeStatuses.value.filter((x) => x !== s) : [...activeStatuses.value, s]
 }
@@ -79,20 +90,21 @@ function resetFilter(): void {
   activeLevels.value = []
   activeSeries.value = []
   search.value = ''
+  dupOnly.value = false
 }
 
 /** Sorting also lives in the URL (?sort=updated&desc=1) */
-const SORTABLE = ['status', 'title', 'field', 'level', 'series', 'format', 'check', 'updated'] as const
+const SORTABLE = ['dup', 'status', 'title', 'field', 'level', 'series', 'format', 'check', 'updated'] as const
 type SortKey = (typeof SORTABLE)[number]
-const initialSort = (SORTABLE as readonly string[]).includes(String(route.query.sort)) ? (route.query.sort as SortKey) : 'updated'
+const initialSort = (SORTABLE as readonly string[]).includes(String(route.query.sort)) && (route.query.sort !== 'dup' || dupOnly.value) ? (route.query.sort as SortKey) : 'updated'
 const pagination = ref({
   rowsPerPage: 50,
   sortBy: initialSort as string | null,
   descending: route.query.sort ? route.query.desc === '1' : true,
 })
 watch(
-  [activeStatuses, activeFields, activeFormats, activeLevels, activeSeries, search, () => pagination.value.sortBy, () => pagination.value.descending],
-  ([statuses, fields, formats, levels, series, q, sortBy, desc]) => {
+  [activeStatuses, activeFields, activeFormats, activeLevels, activeSeries, search, () => pagination.value.sortBy, () => pagination.value.descending, dupOnly],
+  ([statuses, fields, formats, levels, series, q, sortBy, desc, dup]) => {
     const query = {
       ...route.query,
       status: statuses.length ? statuses.join(',') : undefined,
@@ -101,6 +113,7 @@ watch(
       level: levels.length ? levels.join(',') : undefined,
       series: series.length ? series.join(',') : undefined,
       q: (q ?? '').trim() || undefined,
+      dup: dup ? '1' : undefined,
       sort: sortBy ?? undefined,
       desc: sortBy ? (desc ? '1' : '0') : undefined,
     }
@@ -143,13 +156,34 @@ const columns = [
     format: (v: string) => new Date(v).toLocaleString('de-DE'),
   },
 ]
+/** Group members sit next to each other: the group column leads and sorts while the filter is on */
+const tableColumns = computed(() =>
+  dupOnly.value ? [{ name: 'dup', label: 'Duplikat', field: (u: UnitSummaryDto) => dupInfo.value.get(u.id)?.group ?? 0, align: 'left' as const, sortable: true, sort: (a: number, b: number) => a - b }, ...columns] : columns,
+)
+watch(dupOnly, (on) => {
+  if (on) {
+    void loadDuplicates()
+    pagination.value = { ...pagination.value, sortBy: 'dup', descending: false }
+  } else if (pagination.value.sortBy === 'dup') {
+    pagination.value = { ...pagination.value, sortBy: 'updated', descending: true }
+  }
+})
+
+/** Compares all units on the server, so it runs on demand and not with the status polling */
+async function loadDuplicates(): Promise<void> {
+  try {
+    dupGroups.value = await api<DuplicateGroupDto[]>('/api/admin/units/duplicates')
+  } catch (e) {
+    $q.notify({ type: 'negative', message: errorMessage(e) })
+  }
+}
 
 async function load(): Promise<void> {
   try {
     // Filtering happens client-side so every chip can show its count
     units.value = await api<UnitSummaryDto[]>('/api/admin/units')
     // Keep the selection across polling, minus rows that left the list
-    const byId = new Map(units.value.map((u) => [u.id, u]))
+    const byId = new Map(rows.value.map((u) => [u.id, u]))
     selected.value = selected.value.flatMap((u) => byId.get(u.id) ?? [])
     error.value = ''
   } catch (e) {
@@ -214,7 +248,7 @@ async function runBulk(action: BulkActionInput['action']): Promise<void> {
     const res = await api<BulkResultDto>('/api/admin/units/bulk', { method: 'POST', body: { action, ids: selectedIds.value } satisfies BulkActionInput })
     $q.notify({ type: res.skipped.length ? 'warning' : 'positive', message: summarize(action, res) })
     selected.value = selected.value.filter((u) => !res.done.includes(u.id))
-    await load()
+    await Promise.all([load(), loadDuplicates()])
   } catch (e) {
     $q.notify({ type: 'negative', message: errorMessage(e) })
   } finally {
@@ -260,6 +294,7 @@ async function exportContext(): Promise<void> {
 
 onMounted(() => {
   void load()
+  void loadDuplicates()
   // Pipeline status changes in the background
   timer = setInterval(() => void load(), 5000)
 })
@@ -296,9 +331,15 @@ onUnmounted(() => clearInterval(timer))
         {{ STATUS_LABEL[s] }}
         <q-badge rounded class="q-ml-xs" :color="activeStatuses.includes(s) ? 'white' : STATUS_COLOR[s]" :text-color="activeStatuses.includes(s) ? STATUS_COLOR[s] : 'white'" :label="statusCounts[s]" />
       </q-chip>
+      <q-separator vertical spaced />
+      <q-chip clickable dense :outline="!dupOnly" color="brown" :text-color="dupOnly ? 'white' : undefined" :icon="dupOnly ? 'check' : 'content_copy'" :class="{ 'filter-chip--empty': !dupInfo.size && !dupOnly }" @click="dupOnly = !dupOnly">
+        Duplikate
+        <q-badge rounded class="q-ml-xs" :color="dupOnly ? 'white' : 'brown'" :text-color="dupOnly ? 'brown' : 'white'" :label="dupInfo.size" />
+        <q-tooltip>Gleiches Format und gleiche Serie oder gleiches Thema (Titel und Kernidee)</q-tooltip>
+      </q-chip>
       <q-btn flat dense no-caps icon="filter_alt_off" label="Alle Filter zurücksetzen" color="grey-8" class="q-ml-sm" :disable="!filterActive" @click="resetFilter" />
       <q-space />
-      <div class="text-caption text-grey-7">{{ visibleUnits.length }} von {{ units.length }}</div>
+      <div class="text-caption text-grey-7">{{ visibleUnits.length }} von {{ rows.length }}</div>
     </div>
     <q-banner v-if="error" class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
     <q-banner v-if="selected.length" dense rounded class="bg-blue-1 q-mb-sm">
@@ -324,7 +365,7 @@ onUnmounted(() => clearInterval(timer))
       v-model:selected="selected"
       v-model:pagination="pagination"
       :rows="visibleUnits"
-      :columns="columns"
+      :columns="tableColumns"
       row-key="id"
       selection="multiple"
       flat
@@ -336,6 +377,12 @@ onUnmounted(() => clearInterval(timer))
       <!-- Row click opens the unit; the checkbox must not bubble into it -->
       <template #body-selection="scope">
         <div @click.stop><q-checkbox v-model="scope.selected" dense /></div>
+      </template>
+      <template #body-cell-dup="props">
+        <q-td :props="props">
+          <div class="text-weight-medium">#{{ props.value }}</div>
+          <div class="text-caption text-grey-7">{{ dupInfo.get(props.row.id)?.reasons }}</div>
+        </q-td>
       </template>
       <template #body-cell-status="props">
         <q-td :props="props">

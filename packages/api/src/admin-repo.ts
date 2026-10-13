@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, gt, inArray, or, sql, type SQL } from 'drizzle-orm'
-import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, seriesVariantPattern, unitContentSchema, type BriefInput, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitLogDto, type UnitSummaryDto } from '@wizzn/shared'
+import { canDelete, canTransition, draftAudioSchema, draftWrittenSchema, duplicateGroups, seriesVariantPattern, unitContentSchema, type BriefInput, type CheckReport, type UnitDetailDto, type UnitStatus, type UnitLogDto, type UnitSummaryDto } from '@wizzn/shared'
 import type { Db } from './db/client.js'
 import { completionEvent, contentBrief, feedImpression, field, source, unit, unitLog } from './db/schema/index.js'
 import { claimResume, isUnitStuck, stillStuck, stuckIds } from './pipeline/recover.js'
@@ -20,7 +20,13 @@ function loadUnit(db: Db, id: string) {
   })
 }
 
-function summary(row: Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'level' | 'series' | 'failureReason' | 'updatedAt' | 'field' | 'brief' | 'checkReport'>, stuck: boolean): UnitSummaryDto {
+type SummaryRow = Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'level' | 'series' | 'failureReason' | 'updatedAt'> & {
+  field: Pick<UnitRow['field'], 'slug'>
+  brief: Pick<UnitRow['brief'], 'topic'>
+  checkReport: Pick<NonNullable<UnitRow['checkReport']>, 'passed'> | null
+}
+
+function summary(row: SummaryRow, stuck: boolean): UnitSummaryDto {
   return {
     id: row.id,
     title: row.title,
@@ -288,6 +294,19 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
       })
       if (onPublished) for (const id of outcome.relink) await onPublished(id).catch((e: unknown) => console.error(`[links] ${id}:`, e))
       return outcome.result
+    },
+
+    async duplicateUnits() {
+      const rows = await db.query.unit.findMany({
+        columns: { id: true, title: true, format: true, status: true, level: true, series: true, failureReason: true, updatedAt: true },
+        with: { brief: { columns: { topic: true } }, field: { columns: { slug: true } }, checkReport: { columns: { passed: true } } },
+        orderBy: [desc(unit.updatedAt)],
+      })
+      const groups = duplicateGroups(rows.map((r) => ({ id: r.id, format: r.format, fieldSlug: r.field.slug, series: r.series, text: `${r.title ?? ''} ${r.brief.topic}` })))
+      const byId = new Map(rows.map((r) => [r.id, r]))
+      const members = groups.map((g) => g.ids.flatMap((id) => byId.get(id) ?? []))
+      const stuck = await stuckIds(db, members.flat())
+      return groups.map((g, i) => ({ reasons: g.reasons, units: members[i]!.map((r) => summary(r, stuck.has(r.id))) }))
     },
   }
 }

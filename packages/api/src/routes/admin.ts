@@ -47,6 +47,8 @@ export const adminRoutes = (auth: AuthPort, adminEmails: string[], repo: AdminRe
     .post('/briefs/batch/refs', zValidator('json', batchRefQuerySchema), async (c) => c.json(await repo.batchRefs(c.req.valid('json'))))
     .post('/units/context', zValidator('json', contextExportSchema), async (c) => c.json(contextJobs(await repo.contextUnits(c.req.valid('json').ids))))
     .get('/units', zValidator('query', unitListQuerySchema), async (c) => c.json(await repo.listUnits(c.req.valid('query'))))
+    // Registered before /units/:id, which would reject "duplicates" as an id
+    .get('/units/duplicates', async (c) => c.json(await repo.duplicateUnits()))
     .get('/units/:id', idParam, async (c) => {
       const unit = await repo.getUnit(c.req.valid('param').id)
       return unit ? c.json(unit) : c.json({ error: 'Not Found' }, 404)
