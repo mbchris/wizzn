@@ -50,7 +50,7 @@ describe('/api/admin', () => {
     expect((await other.app.request('/api/admin/units', { headers })).status).toBe(403)
   })
   it('returns duplicate groups instead of treating "duplicates" as a unit id', async () => {
-    const row = { id: UNIT, title: 'Notgroschen', format: 'written' as const, status: 'published' as const, fieldSlug: 'finanzen', topic: 'Rücklage', level: 1 as const, series: 'geld', checkPassed: true, failureReason: null, updatedAt: '2026-10-11T10:00:00.000Z', stuck: false }
+    const row = { id: UNIT, title: 'Notgroschen', format: 'written' as const, status: 'published' as const, fieldSlug: 'finanzen', themeSlug: null, themeName: null, topic: 'Rücklage', level: 1 as const, series: 'geld', checkPassed: true, failureReason: null, updatedAt: '2026-10-11T10:00:00.000Z', stuck: false }
     const groups = [{ reasons: ['series' as const], units: [row, { ...row, id: FIELD }] }]
     const { app } = setup(admin, { duplicateUnits: async () => groups })
     const res = await app.request('/api/admin/units/duplicates', { headers })

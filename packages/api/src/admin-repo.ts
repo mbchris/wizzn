@@ -13,6 +13,7 @@ function loadUnit(db: Db, id: string) {
     with: {
       brief: true,
       field: true,
+      theme: true,
       checkReport: true,
       sources: { orderBy: (s, { asc }) => [asc(s.position)] },
       assets: { orderBy: (a, { asc }) => [asc(a.position)] },
@@ -22,9 +23,13 @@ function loadUnit(db: Db, id: string) {
 
 type SummaryRow = Pick<UnitRow, 'id' | 'title' | 'format' | 'status' | 'level' | 'series' | 'failureReason' | 'updatedAt'> & {
   field: Pick<UnitRow['field'], 'slug'>
+  theme: Pick<NonNullable<UnitRow['theme']>, 'slug' | 'nameDe'> | null
   brief: Pick<UnitRow['brief'], 'topic'>
   checkReport: Pick<NonNullable<UnitRow['checkReport']>, 'passed'> | null
 }
+
+/** Relations a summary needs, without the briefs' and units' large columns */
+const SUMMARY_WITH = { brief: { columns: { topic: true } }, field: { columns: { slug: true } }, theme: { columns: { slug: true, nameDe: true } }, checkReport: { columns: { passed: true } } } as const
 
 function summary(row: SummaryRow, stuck: boolean): UnitSummaryDto {
   return {
@@ -33,6 +38,8 @@ function summary(row: SummaryRow, stuck: boolean): UnitSummaryDto {
     format: row.format,
     status: row.status,
     fieldSlug: row.field.slug,
+    themeSlug: row.theme?.slug ?? null,
+    themeName: row.theme?.nameDe ?? null,
     topic: row.brief.topic,
     level: row.level,
     series: row.series,
@@ -88,9 +95,10 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
       if (query.fieldId) where.push(eq(unit.fieldId, query.fieldId))
       const rows = await db.query.unit.findMany({
         where: where.length ? and(...where) : undefined,
-        with: { brief: true, field: true, checkReport: true },
+        columns: { id: true, title: true, format: true, status: true, level: true, series: true, failureReason: true, updatedAt: true },
+        with: SUMMARY_WITH,
+        // No limit: the admin list filters, counts and draws the knowledge graph over all units
         orderBy: [desc(unit.updatedAt)],
-        limit: 200,
       })
       const stuck = await stuckIds(db, rows)
       return rows.map((r) => summary(r, stuck.has(r.id)))
@@ -299,7 +307,7 @@ export function createAdminRepo(db: Db, mediaUrl: (path: string) => string, onPu
     async duplicateUnits() {
       const rows = await db.query.unit.findMany({
         columns: { id: true, briefId: true, title: true, format: true, status: true, level: true, series: true, failureReason: true, updatedAt: true },
-        with: { brief: { columns: { topic: true } }, field: { columns: { slug: true } }, checkReport: { columns: { passed: true } } },
+        with: SUMMARY_WITH,
         orderBy: [desc(unit.updatedAt)],
       })
       const groups = duplicateGroups(rows.map((r) => ({ id: r.id, briefId: r.briefId, level: r.level, format: r.format, fieldSlug: r.field.slug, series: r.series, text: `${r.title ?? ''} ${r.brief.topic}` })))

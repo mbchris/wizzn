@@ -2,8 +2,9 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { exportFile, useQuasar } from 'quasar'
-import { LEVELS, UNIT_STATUSES, contextFilename, formatContextFile, formatPushList, levelLabel, pushListFilename, unitFormatSchema, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type ContextJob, type DuplicateGroupDto, type DuplicateReason, type Level, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
+import { LEVELS, UNIT_STATUSES, contextFilename, formatContextFile, formatPushList, inKnowledgeNode, knowledgeTree, levelLabel, pushListFilename, unitFormatSchema, withoutDeeperLevel, type BulkActionInput, type BulkResultDto, type BulkSkipReason, type ContextJob, type DuplicateGroupDto, type DuplicateReason, type Level, type UnitFormat, type UnitStatus, type UnitSummaryDto } from '@wizzn/shared'
 import { api, errorMessage } from 'src/api'
+import KnowledgeGraph from 'src/components/KnowledgeGraph.vue'
 import { STATUS_COLOR, STATUS_LABEL, stuckLabel } from 'src/status'
 
 const router = useRouter()
@@ -46,6 +47,14 @@ const rows = computed(() => {
   const polled = new Map(units.value.map((u) => [u.id, u]))
   return dupGroups.value.flatMap((g) => g.units.map((u) => polled.get(u.id) ?? u))
 })
+/** Units a follow-up can still be written for (?leaf=1); a series is judged over all its units, whatever else is filtered */
+const leafOnly = ref(route.query.leaf === '1')
+const leafIds = computed(() => withoutDeeperLevel(units.value))
+const leafCount = computed(() => rows.value.filter((u) => leafIds.value.has(u.id)).length)
+/** Knowledge graph panel (?graph=1); its selected node (?node=<key>) keeps that node and everything below it */
+const showGraph = ref(route.query.graph === '1')
+const activeNode = ref<string | null>(typeof route.query.node === 'string' ? route.query.node : null)
+const tree = computed(() => knowledgeTree(rows.value))
 const levelOptions = LEVELS.map((l) => ({ label: levelLabel(l), value: l }))
 const seriesOptions = computed(() => {
   // Like the categories: keys of the loaded units plus the active ones
@@ -70,6 +79,8 @@ const baseFiltered = computed(() => {
       (!activeFormats.value.length || activeFormats.value.includes(u.format)) &&
       (!activeLevels.value.length || activeLevels.value.includes(u.level)) &&
       (!activeSeries.value.length || activeSeries.value.includes(u.series ?? NO_SERIES)) &&
+      (!leafOnly.value || leafIds.value.has(u.id)) &&
+      (!activeNode.value || inKnowledgeNode(u, activeNode.value)) &&
       (!words.length || words.every((w) => norm(`${u.title ?? ''} ${u.topic} ${u.series ?? ''}`).includes(w))),
   )
 })
@@ -79,7 +90,7 @@ const statusCounts = computed(() => {
   return counts
 })
 const visibleUnits = computed(() => (activeStatuses.value.length ? baseFiltered.value.filter((u) => activeStatuses.value.includes(u.status)) : baseFiltered.value))
-const filterActive = computed(() => !!(dupOnly.value || activeStatuses.value.length || activeFields.value.length || activeFormats.value.length || activeLevels.value.length || activeSeries.value.length || (search.value ?? '').trim()))
+const filterActive = computed(() => !!(dupOnly.value || leafOnly.value || activeNode.value || activeStatuses.value.length || activeFields.value.length || activeFormats.value.length || activeLevels.value.length || activeSeries.value.length || (search.value ?? '').trim()))
 function toggleStatus(s: UnitStatus): void {
   activeStatuses.value = activeStatuses.value.includes(s) ? activeStatuses.value.filter((x) => x !== s) : [...activeStatuses.value, s]
 }
@@ -91,6 +102,8 @@ function resetFilter(): void {
   activeSeries.value = []
   search.value = ''
   dupOnly.value = false
+  leafOnly.value = false
+  activeNode.value = null
 }
 
 /** Sorting also lives in the URL (?sort=updated&desc=1) */
@@ -103,8 +116,8 @@ const pagination = ref({
   descending: route.query.sort ? route.query.desc === '1' : true,
 })
 watch(
-  [activeStatuses, activeFields, activeFormats, activeLevels, activeSeries, search, () => pagination.value.sortBy, () => pagination.value.descending, dupOnly],
-  ([statuses, fields, formats, levels, series, q, sortBy, desc, dup]) => {
+  [activeStatuses, activeFields, activeFormats, activeLevels, activeSeries, search, () => pagination.value.sortBy, () => pagination.value.descending, dupOnly, leafOnly, showGraph, activeNode],
+  ([statuses, fields, formats, levels, series, q, sortBy, desc, dup, leaf, graph, node]) => {
     const query = {
       ...route.query,
       status: statuses.length ? statuses.join(',') : undefined,
@@ -114,6 +127,9 @@ watch(
       series: series.length ? series.join(',') : undefined,
       q: (q ?? '').trim() || undefined,
       dup: dup ? '1' : undefined,
+      leaf: leaf ? '1' : undefined,
+      graph: graph ? '1' : undefined,
+      node: node ?? undefined,
       sort: sortBy ?? undefined,
       desc: sortBy ? (desc ? '1' : '0') : undefined,
     }
@@ -313,6 +329,9 @@ onUnmounted(() => clearInterval(timer))
       <q-select v-model="levelsModel" :options="levelOptions" multiple emit-value map-options use-chips dense outlined clearable label="Stufe" style="min-width: 150px" />
       <q-select v-model="seriesModel" :options="seriesOptions" multiple emit-value map-options use-chips dense outlined clearable label="Serie" style="min-width: 180px" />
       <q-space />
+      <q-btn :flat="!showGraph" :outline="showGraph" :color="activeNode ? 'primary' : 'grey-8'" icon="hub" label="Graph" @click="showGraph = !showGraph">
+        <q-tooltip>Bereich → Thema → Serie → Stufen; ein Klick filtert auf den Knoten und alles darunter</q-tooltip>
+      </q-btn>
       <q-btn color="primary" icon="add" label="Neuer Auftrag" to="/briefs/new" />
     </div>
     <div class="row items-center q-gutter-xs q-mb-md">
@@ -337,10 +356,16 @@ onUnmounted(() => clearInterval(timer))
         <q-badge rounded class="q-ml-xs" :color="dupOnly ? 'white' : 'brown'" :text-color="dupOnly ? 'brown' : 'white'" :label="dupInfo.size" />
         <q-tooltip>Gleiches Format und gleiche Serie oder gleiches Thema (Titel und Kernidee)</q-tooltip>
       </q-chip>
+      <q-chip clickable dense :outline="!leafOnly" color="teal" :text-color="leafOnly ? 'white' : undefined" :icon="leafOnly ? 'check' : 'low_priority'" :class="{ 'filter-chip--empty': !leafCount && !leafOnly }" @click="leafOnly = !leafOnly">
+        ohne tiefere Stufe
+        <q-badge rounded class="q-ml-xs" :color="leafOnly ? 'white' : 'teal'" :text-color="leafOnly ? 'teal' : 'white'" :label="leafCount" />
+        <q-tooltip>Happen unter Stufe 5, die in ihrer Serie noch keine tiefere Stufe haben – Kandidaten für Folge-Happen</q-tooltip>
+      </q-chip>
       <q-btn flat dense no-caps icon="filter_alt_off" label="Alle Filter zurücksetzen" color="grey-8" class="q-ml-sm" :disable="!filterActive" @click="resetFilter" />
       <q-space />
       <div class="text-caption text-grey-7">{{ visibleUnits.length }} von {{ rows.length }}</div>
     </div>
+    <KnowledgeGraph v-if="showGraph" v-model="activeNode" :nodes="tree" class="q-mb-md" />
     <q-banner v-if="error" class="bg-negative text-white q-mb-md">{{ error }}</q-banner>
     <q-banner v-if="selected.length" dense rounded class="bg-blue-1 q-mb-sm">
       <div class="row items-center q-gutter-sm">

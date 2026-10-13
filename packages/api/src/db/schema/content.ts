@@ -141,6 +141,7 @@ export const themeRelations = relations(theme, ({ one }) => ({ field: one(field,
 export const unitRelations = relations(unit, ({ one, many }) => ({
   brief: one(contentBrief, { fields: [unit.briefId], references: [contentBrief.id] }),
   field: one(field, { fields: [unit.fieldId], references: [field.id] }),
+  theme: one(theme, { fields: [unit.themeId], references: [theme.id] }),
   sources: many(source),
   assets: many(asset),
   checkReport: one(checkReport, { fields: [unit.id], references: [checkReport.unitId] }),

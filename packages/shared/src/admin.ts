@@ -56,6 +56,9 @@ export interface UnitSummaryDto {
   format: 'audio' | 'written'
   status: UnitStatus
   fieldSlug: string
+  /** Null for units of a brief without theme */
+  themeSlug: string | null
+  themeName: string | null
   topic: string
   /** Depth within its series (1 for units without series) */
   level: Level
