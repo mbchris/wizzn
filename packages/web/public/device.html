@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<!--
+  Browser-based Android device for demos: /device.html shows the web app (same origin, ./index.html)
+  inside a Pixel-style frame. The iframe gives the app a real phone viewport, so Quasar breakpoints,
+  bottom sheets and 100dvh behave as on a device. Deep links pass through: /device.html#/explore.
+  Still the web build: Capacitor plugins are unavailable.
+-->
+<html lang="de">
+  <head>
+    <title>wizzn – Android</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#14121C" />
+    <style>
+      :root {
+        /* Pixel 8 class: 412 x 915 dp */
+        --screen-w: 412px;
+        --screen-h: 915px;
+        --status-h: 36px;
+        --gesture-h: 24px;
+        --bezel: 9px;
+        --app-bg: #0b0c10;
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background: radial-gradient(120% 90% at 50% 0%, #23262e 0%, #101216 60%, #08090b 100%);
+        font-family: Roboto, 'Google Sans', system-ui, sans-serif;
+      }
+
+      /* Takes the scaled size, so the device stays centred when it is shrunk to fit */
+      .stage { position: relative; }
+      .device {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: calc(var(--screen-w) + 2 * var(--bezel));
+        height: calc(var(--screen-h) + 2 * var(--bezel));
+        padding: var(--bezel);
+        border-radius: 52px;
+        background: #050506;
+        box-shadow:
+          0 0 0 1.5px #3b3e45,
+          0 0 0 4px #17181b,
+          0 0 0 5px #44474e,
+          0 40px 80px -20px rgba(0, 0, 0, 0.8),
+          0 18px 36px -18px rgba(0, 0, 0, 0.9);
+        transform-origin: top left;
+      }
+      /* Power + volume rocker on the right edge, as on a Pixel */
+      .key { position: absolute; right: -8px; width: 4px; border-radius: 0 3px 3px 0; background: linear-gradient(90deg, #2a2c31, #4a4d55); }
+      .key.power { top: 190px; height: 58px; }
+      .key.volume { top: 290px; height: 116px; }
+
+      .screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-radius: 43px;
+        background: var(--app-bg);
+      }
+
+      .status {
+        flex: 0 0 var(--status-h);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 22px 0 26px;
+        background: var(--app-bg);
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 0.1px;
+        transition: background 0.2s ease;
+        user-select: none;
+      }
+      .status-icons { display: flex; align-items: center; gap: 5px; }
+      .status svg { display: block; height: 16px; width: auto; fill: currentColor; }
+      .camera {
+        position: absolute;
+        top: 11px;
+        left: 50%;
+        width: 18px;
+        height: 18px;
+        margin-left: -9px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 38% 34%, #2b3345 0 14%, #0a0b0e 42%, #000 100%);
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+        pointer-events: none;
+      }
+
+      iframe { flex: 1; min-height: 0; width: 100%; border: 0; background: var(--app-bg); }
+
+      .gesture {
+        flex: 0 0 var(--gesture-h);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--app-bg);
+        transition: background 0.2s ease;
+      }
+      .gesture::before { content: ''; width: 108px; height: 4px; border-radius: 2px; background: rgba(255, 255, 255, 0.86); }
+    </style>
+  </head>
+  <body>
+    <div class="stage" id="stage">
+      <div class="device" id="device">
+        <span class="key power"></span>
+        <span class="key volume"></span>
+        <div class="screen">
+          <div class="status" id="status">
+            <span id="clock"></span>
+            <span class="status-icons">
+              <!-- Material: wifi, signal_cellular_alt, battery_full -->
+              <svg viewBox="0 0 24 24"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z" /></svg>
+              <svg viewBox="0 0 24 24"><path d="M17 4h3v16h-3zM5 14h3v6H5zM11 9h3v11h-3z" /></svg>
+              <svg viewBox="0 0 24 24"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z" /></svg>
+            </span>
+          </div>
+          <span class="camera"></span>
+          <iframe id="app" title="wizzn" allow="autoplay; clipboard-write; fullscreen; web-share"></iframe>
+          <div class="gesture" id="gesture"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // A real phone needs no frame: go straight to the app
+      if (Math.min(screen.width, screen.height) < 500) location.replace('./' + location.hash)
+
+      const APP_BG = '#0b0c10'
+      const stage = document.getElementById('stage')
+      const device = document.getElementById('device')
+      const app = document.getElementById('app')
+      const statusBar = document.getElementById('status')
+      const gestureBar = document.getElementById('gesture')
+      const clock = document.getElementById('clock')
+
+      app.src = './' + location.hash
+
+      // Shrink the whole device to fit the window; never enlarge it (dp stay 1:1 on large screens)
+      function fit() {
+        const w = device.offsetWidth
+        const h = device.offsetHeight
+        const scale = Math.min(1, (innerHeight - 40) / h, (innerWidth - 32) / w)
+        device.style.transform = `scale(${scale})`
+        stage.style.width = `${w * scale}px`
+        stage.style.height = `${h * scale}px`
+      }
+      addEventListener('resize', fit)
+      fit()
+
+      function tick() {
+        clock.textContent = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })
+      }
+      tick()
+      setInterval(tick, 10_000)
+
+      // Edge-to-edge: system bars take the colour of whatever the app draws at that screen edge
+      function edgeColor(doc, y) {
+        for (let el = doc.elementFromPoint(4, y); el; el = el.parentElement) {
+          const cs = doc.defaultView.getComputedStyle(el)
+          if (cs.backgroundImage !== 'none') return APP_BG
+          const c = cs.backgroundColor
+          if (c && c !== 'transparent' && !/,\s*0\)$/.test(c)) return c
+        }
+        return APP_BG
+      }
+      setInterval(() => {
+        const doc = app.contentDocument
+        if (!doc?.body) return
+        statusBar.style.background = edgeColor(doc, 1)
+        gestureBar.style.background = edgeColor(doc, doc.documentElement.clientHeight - 2)
+        // Keep the address bar shareable: mirror the app route into this page's hash.
+        // Polled, because router redirects use replaceState and fire no hashchange.
+        const route = app.contentWindow.location.hash || '#/'
+        if (route !== location.hash) history.replaceState(null, '', route)
+      }, 400)
+
+      // Touch emulation: desktop scrollbars off, and mouse drag scrolls like a finger (with fling + snap)
+      function emulateTouch(win) {
+        const doc = win.document
+        const style = doc.createElement('style')
+        style.textContent =
+          '*{scrollbar-width:none;-webkit-user-select:none;user-select:none}' +
+          '*::-webkit-scrollbar{display:none}' +
+          'input,textarea,[contenteditable]{-webkit-user-select:text;user-select:text}'
+        doc.head.appendChild(style)
+        doc.addEventListener('dragstart', (e) => e.preventDefault())
+
+        const scrollerFor = (el, axis) => {
+          for (; el && el !== doc.documentElement; el = el.parentElement) {
+            const cs = win.getComputedStyle(el)
+            const overflow = axis === 'x' ? cs.overflowX : cs.overflowY
+            const room = axis === 'x' ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight
+            if (room > 1 && (overflow === 'auto' || overflow === 'scroll')) return el
+          }
+          return null
+        }
+
+        // Snap positions of the scroller's children, so a released drag settles like a native fling
+        const snapPoints = (el, axis) => {
+          const x = axis === 'x'
+          const box = el.getBoundingClientRect()
+          const max = x ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight
+          const points = []
+          for (const child of el.children) {
+            const align = win.getComputedStyle(child).scrollSnapAlign.split(' ')
+            const mode = x ? align[align.length - 1] : align[0]
+            if (!mode || mode === 'none') continue
+            const r = child.getBoundingClientRect()
+            let p = (x ? r.left - box.left + el.scrollLeft : r.top - box.top + el.scrollTop)
+            const size = x ? r.width : r.height
+            const view = x ? el.clientWidth : el.clientHeight
+            if (mode === 'center') p += size / 2 - view / 2
+            else if (mode === 'end') p += size - view
+            points.push(Math.max(0, Math.min(max, p)))
+          }
+          return points
+        }
+
+        let drag = null
+        doc.addEventListener('pointerdown', (e) => {
+          if (e.pointerType !== 'mouse' || e.button !== 0) return
+          if (e.target.closest('input,textarea,select,[contenteditable]')) return
+          drag = { target: e.target, x: e.clientX, y: e.clientY, el: null }
+        })
+
+        doc.addEventListener('pointermove', (e) => {
+          if (!drag) return
+          if (!(e.buttons & 1)) return release()
+          const dx = e.clientX - drag.x
+          const dy = e.clientY - drag.y
+          if (!drag.el) {
+            if (Math.hypot(dx, dy) < 8) return
+            const axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+            const el = scrollerFor(drag.target, axis)
+            if (!el) return void (drag = null)
+            Object.assign(drag, { el, axis, start: axis === 'x' ? el.scrollLeft : el.scrollTop, snap: el.style.scrollSnapType })
+            // Mandatory snapping would fight the finger; it is restored once the fling has settled
+            el.style.scrollSnapType = 'none'
+          }
+          const pos = drag.axis === 'x' ? e.clientX : e.clientY
+          const delta = drag.axis === 'x' ? dx : dy
+          drag.velocity = drag.lastT ? (pos - drag.lastPos) / Math.max(1, e.timeStamp - drag.lastT) : 0
+          drag.lastPos = pos
+          drag.lastT = e.timeStamp
+          drag.el[drag.axis === 'x' ? 'scrollLeft' : 'scrollTop'] = drag.start - delta
+        })
+
+        function release() {
+          const d = drag
+          drag = null
+          if (!d?.el) return
+          const { el, axis } = d
+          const x = axis === 'x'
+          const max = x ? el.scrollWidth - el.clientWidth : el.scrollHeight - el.clientHeight
+          const now = x ? el.scrollLeft : el.scrollTop
+          const points = snapPoints(el, axis)
+          // Snapping lists page one item per fling, free lists coast further
+          let projected = now - (d.velocity || 0) * (points.length ? 180 : 320)
+          if (points.length) {
+            const view = x ? el.clientWidth : el.clientHeight
+            projected = Math.max(d.start - view, Math.min(d.start + view, projected))
+          }
+          let target = Math.max(0, Math.min(max, projected))
+          if (points.length) target = points.reduce((a, b) => (Math.abs(b - projected) < Math.abs(a - projected) ? b : a))
+
+          const restore = () => {
+            el.removeEventListener('scrollend', restore)
+            clearTimeout(timer)
+            el.style.scrollSnapType = d.snap
+          }
+          const timer = setTimeout(restore, 700)
+          if (Math.abs(target - now) < 1) restore()
+          else {
+            el.addEventListener('scrollend', restore)
+            el.scrollTo({ [x ? 'left' : 'top']: target, behavior: 'smooth' })
+          }
+          // The mouseup that ends a drag must not also tap the element under it
+          const swallow = (e) => { e.stopPropagation(); e.preventDefault() }
+          doc.addEventListener('click', swallow, { capture: true, once: true })
+          setTimeout(() => doc.removeEventListener('click', swallow, { capture: true }), 50)
+        }
+        doc.addEventListener('pointerup', release)
+        doc.addEventListener('pointercancel', release)
+      }
+
+      app.addEventListener('load', () => emulateTouch(app.contentWindow))
+    </script>
+  </body>
+</html>
