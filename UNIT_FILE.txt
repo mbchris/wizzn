@@ -1,51 +1,190 @@
-# wizzn push list · 2026-10-12 18:56 · 50 units
-299dbcd3-671a-41e4-81bb-9ecd2c246220	published	written	Bei ADHS ist Zeit oft kein Gefühl – sondern eine Überraschung
-da376a6a-5b64-4e64-8548-3e159d1a33d2	published	written	RSD bei ADHS: Starker Schmerz ist keine Charakterschwäche
-fc3c5225-d77c-489d-80ba-be984b33d10f	published	audio	Das Versunkene-Kosten-Monster
-92c16ef2-cf3b-4aec-b8a8-f441c291c3ff	published	written	Kompression macht dich nicht schneller – Erholung kann sie unterstützen
-89718609-e8f0-44ed-b839-3c8247b49e48	published	audio	Kompression beim Laufen: keine Abkürzung zu mehr Tempo
-aff2b8fc-778e-4872-8372-70c2371a4c96	published	audio	Nasenatmung beim Laufen: Die Bremse hat Grenzen
-888ae325-b530-4d96-b141-4e1121cb06fe	published	written	Runner’s High: Endocannabinoide statt Endorphine?
-f3e3a589-ad7a-4679-9ced-efcbf571bb89	published	audio	Runner’s High: nicht einfach ein Endorphinrausch
-68cdd290-3d56-4d07-a50b-e69ed17ec2fd	published	audio	Deine Ausdauer ist ein starker Hinweis auf dein Sterberisiko
-8889d935-9999-4304-bdb5-3f9ad6655221	published	written	Ausdauerfitness: ein starker Hinweis auf langes Leben
-8de38cc6-9c0a-4674-af6e-86047d8f910f	published	audio	Der Muskel-Fokus ist kein Kraft-Booster für jede Wiederholung
-dad31a80-49ad-43a2-8838-7d8ae2e70c05	published	written	Der Muskel-Fokus ist nicht automatisch der stärkste Fokus
-2f3c0ce3-e91a-435a-bee4-f89fbf70ba7e	published	written	Muskeln trainierst du auch beim Ablassen
-01b5ead6-a80e-4651-92b7-772a981b8d58	published	audio	Der Muskel wächst auch beim Nachgeben
-6b44d120-b63d-4620-b05a-682efa4ccf3c	published	written	Griffkraft: ein überraschend starker Gesundheitsmarker
-259620df-173e-4950-8f09-555589cd349a	published	audio	Deine Griffkraft sagt mehr über deine Gesundheit, als du denkst
-8f4b88f9-c0e3-48cf-89ab-0f909fa759d7	published	audio	Muskelaufbau: Die Zehn ist kein Naturgesetz
-7d5af2f9-b289-4a8c-b139-5eb4dd15c7d7	published	written	Die Zehn ist keine Muskelregel
-c5c2db02-f098-4abf-975f-f7abc88e19a1	published	audio	Plyometrie: Deine Sehnen sind Teil des Antriebs
-a829c060-421a-4394-8646-1535173ee81a	published	written	Muskeln aufbauen: Hanteln sind nicht automatisch schneller
-371977c0-fbb3-421c-88fa-569643385bf6	published	audio	Muskeln wachsen nicht wegen der Hantelscheibe
-d7e91fa4-05eb-456f-8213-7843de77a89a	published	written	Kraft und Ausdauer passen zusammen – wenn du die Reize trennst
-0f71c7db-ccc7-4db8-b987-d2953fdfe020	published	audio	Deload: Macht weniger Training dich stärker?
-2f70de6e-25c3-4817-926e-334ddce286a0	published	written	Wer nie entlastet, trainiert nicht automatisch besser
-7266fa18-aff2-461f-a482-667ea3aa3e54	published	audio	Morgen oder Abend? Wann dein Körper am besten trainiert
-6151566b-d903-44bc-aee5-dc1f45c45163	published	written	Dein Körper hat eine Hochleistungszeit – aber keine Pflichtuhr
-b8d68461-0b36-4907-817b-8af4501f0d0e	published	audio	Du musst nicht fünfmal pro Woche trainieren, um dranzubleiben
-ce548b40-3f2d-44c2-8c53-60c488097b89	published	written	Fit bleiben braucht kein volles Wochenprogramm
-1b94e5c4-3d51-4f61-a2a2-00d57dbbd495	published	audio	Fair Play beginnt mit klarer Verantwortung
-4c9b5368-4cf2-4021-9da9-e5e314c6fe56	published	written	Liebe verändert ihre Mischung – nicht automatisch ihren Wert
-0797548f-9e6e-453a-a909-8ee6b6d04e6c	published	audio	Liebe ist kein einzelnes Gefühl
-a0517f7a-a6ea-4648-9768-acedd5b49da6	published	audio	Nähe braucht kein Doppelgänger-Dasein
-8d3f643e-c2dc-4a25-9132-5ffb2a0cf44f	published	written	Nähe braucht zwei eigene Menschen
-793b54fe-0708-430e-b14b-b46555f461b7	published	audio	Die fünf Sprachen der Liebe sind keine feste Gebrauchsanweisung
-46fc8daf-ffaf-459e-a311-d0ee0b6e9722	published	written	Die fünf Sprachen der Liebe sind keine festen Schubladen
-c1542b4d-d18f-40a9-867a-0665b208c779	published	written	Beim Kennenlernen kann ein kleiner Gefallen mehr verbinden als ein Geschenk
-05ed21e2-67cd-4e05-a59c-74104e4ad678	published	audio	Höhenangst oder Herzklopfen? Wenn Aufregung wie Verliebtheit wirkt
-62db5adc-ce9a-481a-aabc-633c446d2269	published	written	Dein Herz kann Hängebrücken-Schreck für Verliebtheit halten
-dfe6e071-8e17-4679-893a-59a0fd479417	published	audio	Vertrautheit schlägt den perfekten Spruch
-67555e98-5b06-4c21-8c48-62bdd52b3ec8	published	audio	Gabel, Gabel, Gabel: Wenn Wörter kurz leer laufen
-c5321984-f319-4958-a371-3a5647431ddf	published	audio	In der Tiefsee werden manche Krebstiere zu Riesen
-5f0b0b16-9087-4ff8-9589-17162e2b3eec	published	written	Pando sieht aus wie ein Wald – und ist doch ein Organismus
-a34d3889-d675-4c50-865e-865f9fefaaf6	published	written	Mark Twain und Halley: ein erstaunlicher Zufall mit 75 Jahren Abstand
-2bb252e8-c483-4149-96f7-2af8874b660e	published	audio	Zu alt zum Lernen? Dein Gehirn sagt: Nö.
-c3a8bd3a-8704-4f1f-8a1c-d0d23abd99d1	published	audio	Zone zwei: Warum langsames Laufen die Ausdauerbasis stärkt
-598e1354-d30e-4d68-9e28-2ec94d5993b4	published	written	Warum Fakten unsere Meinung oft nicht ändern
-fe42450c-02de-4946-93ad-1316f3506fd9	published	audio	Warum Fakten deine Meinung nicht automatisch ändern
-373544ae-1316-4666-8de2-ca8ac2fdd6e0	published	audio	Vitamin B zwölf: Algen und Zahnpasta sind keine verlässliche Versorgung
-e59cf9eb-3ade-4fea-8324-53f61e293dfb	published	audio	Viele Zeugen bedeuten nicht automatisch weniger Hilfe
-cbba813c-3a9b-4bad-90b9-58ad665960ba	published	audio	Steve Jobs und das Nummernschild: sechs Monate inkognito
+# wizzn push list · 2026-10-13 08:08 · 189 units
+5b4bf36e-ffef-47bc-a5b6-9e60cd7f38d3	published	audio	Der temporoparietale Übergang ist kein Empathie-Schalter
+ad0fed77-c6d8-4006-8174-f429483fa205	published	audio	Bindungssicherheit zeigt sich in der Erzählung
+f7264a58-a288-449e-a923-549f6ceefeb3	published	written	Lob für Mühe kann Lernen ausbremsen
+e3992e16-621f-4950-b0bc-5091b7f05416	published	written	Anandamid im Runner’s High: Die genaue Rolle bleibt offen
+0160b410-8a5f-40c8-92e5-e8ec5d602d97	published	audio	Anandamid: möglicher Schlüssel, kein bewiesener Alleingang
+47ec81ff-a1dd-44da-b9ba-6574141590a7	published	written	Bärtierchen machen aus ihren Zellen Bioglas
+4715aa3a-9017-48b6-9a2d-68db6b2bf947	published	audio	Drei Sekunden kontrolliert senken: mehr Reiz, aber kein Automatismus
+34c1d231-4429-4f56-bc51-1abb7cb3b634	published	written	Deine Ausdauer wächst nicht im Dauer-Vollgas – sondern mit Plan
+32230cce-b989-4c95-8a0b-75edc77d85aa	published	written	Fair-Play-Karten: Schluss mit dem Haushalts-Pingpong
+35469f3d-ed79-4edf-b75d-4b22f7eac70b	published	written	Die niedrigste TER macht nicht automatisch den günstigsten ETF
+a0fb9712-504b-4583-9d15-d0e0f4b3c6b5	published	audio	Bloßes Bemühen zu loben kann Lernen blockieren
+36d50117-729f-46ff-a51d-8c414e869773	published	written	Fehler zu erkennen braucht Wissen – nicht nur Selbstvertrauen
+949c5c68-c3b3-49e9-b818-d5a0a5048f6c	published	audio	Warum Wissen deinen Blick auf Fehler schärft
+7279c942-1d66-4858-8795-b08fdba51202	published	written	Haushaltsstreit beginnt oft vor dem Putzen
+0c7c5581-b769-416b-93e0-4d5729fd6672	published	written	Empathie sitzt nicht in einem einzigen Hirnzentrum
+569130aa-f845-448e-a60c-f85782b5b119	published	written	Autismus: Der Thalamus-Filter ist nicht belegt
+55299925-fefc-459b-8400-cffcc9709a9e	published	written	Grübeln stoppen? Drei Sinnes-Stopps bringen dich zurück ins Jetzt
+d48d9c2d-d162-40b7-a2ab-4bc4187955df	published	audio	Zone zwei vervielfacht Mitochondrien nicht nachweislich
+cba58c15-5672-4182-8b6b-79a3e613f9cd	published	written	Eisen clever kombinieren: Drei pflanzliche Teller mit Köpfchen
+4d177b0a-8065-4b04-a927-a1710ab80078	published	written	Das Peter-Prinzip: Gute Leistung ist noch keine Führungskompetenz
+b09a8529-df1b-453d-b8d2-15842ddae90e	published	audio	Das Peter-Prinzip: Wenn gute Arbeit zur falschen Beförderung führt
+06e188c4-2081-4d88-9d1f-8685dc2545ea	published	audio	Psychologische Sicherheit: Das wahre Geheimnis hochleistender Teams
+d72dcefd-67b4-48e1-8ccd-c22ff312a3c3	published	audio	Bärtierchen: Proteine verwandeln Zellen in Bioglas
+dfe82c97-3199-42f9-91ab-a042d33bcfd2	published	written	Kleopatra war dem iPhone näher als den Pyramiden
+b5169a0e-5371-4287-86a2-819dbba50d83	published	written	Schlimmbesserung: Wenn gut gemeint schlimmer endet
+8e1d9a18-b0e0-49f7-9d28-64aebd0c0317	published	audio	Schlimmbesserung: Wenn gut gemeint schlimmer wird
+c9d79c9b-2d70-4566-bdbb-0636cb924893	published	audio	Warum ein ETF mit höherer TER günstiger sein kann
+69f1cd02-a668-4757-84f1-357394d1da14	published	audio	Der Thalamus ist keine belegte Reiz-Bremse bei Autismus
+358c82cc-ed23-4a18-b4f9-9445ea9c7aae	published	written	Halbe Satzzahl, gleiche Last: So planst du deinen Deload
+67420bb2-3d9b-46b3-a1fe-b023d60535b0	published	audio	Die Eisen-Optimierer-Küche: Drei pflanzliche Kombinationen für deinen Alltag
+eca08a72-ec2d-4aca-9b7d-5bf096bcdc34	published	audio	Der Halo-Effekt: Warum gutes Aussehen wie Kompetenz wirkt
+6ed64665-d96b-45fa-9181-2aba8801e9b4	published	audio	Der Latte-Faktor: Dein Kaffee macht dich nicht arm
+9f56779e-8164-4bb7-a92d-86aacbd3e0eb	published	written	Vertrautheit kann attraktiver sein als der erste Funke
+970fb236-5ac7-4a91-b13e-d450d2f052d8	published	audio	Vertrautheit kann Anziehung wachsen lassen
+ae2d9607-f69e-4046-9580-de64c65a8a85	published	audio	Der Streit beginnt vor dem Wischmopp
+77893b55-73c0-46a8-94d2-7468107342b5	published	audio	Die ruhige Pace ist dein Trainingsplan, nicht deine Ausrede
+fdb05a35-6326-448f-9d2a-8191c8477cd5	published	written	Ein ETF mit höherer TER kann günstiger abschneiden
+dbf1ede0-7e99-41a8-a2a3-cc8d3a3bc85f	published	written	Warum selbst Erfolgreiche sich wie Hochstapler fühlen
+f0e413dd-a62d-4e3c-89a9-e067fbba398d	published	audio	Das Fair-Play-Karten-Audit: Schluss mit dem „Sag einfach Bescheid“
+c1cac749-8efd-4472-bf00-ae9fb39833b3	published	written	80 Prozent Arbeitszeit können 100 Prozent Leistung ermöglichen
+c317fbdb-71a9-4065-9cdd-22c448212871	published	written	Das beste Team ist nicht das mit den meisten Genies
+ce3d039c-ec00-497e-ae7c-7c61ce53f480	published	audio	Die Vier-Tage-Woche: Warum kürzer arbeiten mehr Leistung bringen kann
+80a6197a-bfdb-4f73-9b04-d723e04e78dc	published	audio	Good Vibes Only: Wenn gute Laune das Teamklima vergiftet
+7d1cf5cb-776a-4785-8b36-42cce8f677e6	published	written	Mikromanagement: Wenn Kontrolle Eigenständigkeit verdrängt
+4941655c-19f3-4639-b77e-c53a9bac5282	published	audio	Drei Sinnesstopps gegen kreisende Gedanken
+395341c5-98b4-4b20-955c-b8ca8436fdd2	published	audio	Titin ist nicht der alleinige Schlüssel zum Muskelwachstum
+7c0b8487-e003-4497-8be4-44e775bc2352	published	audio	Mikromanagement: Kontrolle sichert nicht automatisch Leistung
+f70ee7f1-0d49-4563-baab-1837cbbe28e4	published	audio	Der Zinseszins: Warum Zeit dein größter Mitspieler sein kann
+5aa446ea-01f8-4946-a3a9-70c21dbf7a05	published	written	Bargeld macht dein Budget sichtbar – und bremst spontane Käufe
+eae1ffe2-35c5-47b1-8e97-17c43c42de4c	published	audio	Bargeld macht dein Budget sichtbar – und kann Spontankäufe bremsen
+2a6325a5-4f94-4501-9dc1-d245bf73ecdb	published	written	Vier Routinen machen Reizschutz planbarer – nicht magisch
+cd503073-e334-4def-a414-12c7877e0a62	published	written	Titin beim Ablassen: wichtige Feder, aber kein bewiesener Wachstumsschalter
+c709cead-0c73-4892-b9ba-f673e8f2b9af	published	written	Keine Steuererklärung? Dann freut sich vielleicht der Fiskus
+026f90c4-e355-4918-8384-f47a5c9dc436	published	written	100 Euro weg? Dein Kopf hört den Verlust lauter.
+da3a12a9-796c-4a3f-948c-fcf5ebbaceda	published	audio	Die Werbungskostenpauschale: Warum viele Arbeitnehmer Geld liegen lassen
+8f13d4a9-d6ef-4859-8812-422c513a1d5c	published	written	Der Kostenberg ist der Nachteil aktiver Fonds
+bdd18ca7-aab2-449d-8106-3a7818fd0900	published	audio	Warum der teure Fondsmanager den Index nicht automatisch schlägt
+a99e95d0-4b4b-4837-b006-086cb1024506	published	written	Keto-Grippe: Der Energieschalter braucht Zeit
+63ac1c30-9c6f-42b3-85b6-a7a15947f3bc	published	audio	Keto-Grippe: Kein einfacher Zuckerentzug
+19054d36-9593-4108-9898-ad49a71624ee	published	written	Der B12-Mythos: Warum auch Rinder B12 über das Futter bekommen
+3c095eaf-6cd1-4d7e-8fec-d731ad3a9822	published	audio	Der B zwölf-Mythos: Auch beim Rind hängt das Vitamin an Mikroben
+af61991a-a949-43bb-90e7-40519ee29623	published	written	Abnehmen ohne Hunger? Füll den Teller, nicht nur den Kalorienzähler
+c9e0be0d-05eb-4849-8c93-3b089b73c990	published	audio	Ein voller Magen ist kein Diät-Zauber – aber ein guter Verbündeter
+05c3af73-77e4-4b23-a1ed-8a0b8875019c	published	written	Gemeinsame Werte tragen weiter als gemeinsamer Musikgeschmack
+489e3e3e-5faa-4289-94fc-228b6d8854ba	published	audio	Das Reiz-Puffer-Protokoll: vier Routinen gegen Reizüberflutung im Berufsalltag
+89af242e-c69f-4196-9ef4-8c71b41b51bf	published	audio	Gemeinsame Werte tragen weiter als gleicher Musikgeschmack
+d3ed298c-5c17-47b7-9ca5-885f1afecc80	published	written	Drei Sekunden ablassen: mehr Reiz, aber kein Muskel-Shortcut
+a9bc0f0d-8164-4191-929e-c4095b43d0aa	published	audio	Der unsichtbare Projektleiter im Kopf
+39e58497-f332-468d-bf3a-dd6afb329cf2	published	written	Der sechste Sinn, der dich auf Kurs hält
+feac661a-aa5b-42c1-a05a-0061d97149b9	published	audio	Propriozeption: Dein sechster Sinn gegen das Umknicken
+6ef60c67-288a-4eec-a36e-c57a85e41d26	published	audio	Der Zappelphilipp schlägt den Marathonläufer nicht – aber …
+ec3791be-974b-44db-8f74-b47afc4a3182	published	written	Der Marshmallow-Test misst mehr als Willenskraft
+7080aa68-d5a2-4f2d-8442-0cbd97f0efaf	published	audio	Der Marshmallow-Test misst mehr als Willenskraft
+cca51ef1-d32e-4f4b-9c89-73192e604e5c	published	audio	Masking macht Autismus unsichtbar – und kostet Kraft
+889583c9-0e97-4d82-a79a-93681b503bbb	published	written	SOS heißt nicht „Save Our Souls“
+6de848fb-ad2b-425e-82fc-db90694cb545	published	audio	SOS heißt nicht „Save Our Souls“
+6b8b3468-a048-4533-9660-502fb4c86140	published	written	Hedy Lamarr dachte Funk neu – und legte eine Spur zu Bluetooth und WLAN
+8776b0bf-c493-4cb8-b6a6-3c7a804c10c1	published	audio	Hedy Lamarr: Der Hollywood-Star, der Funkwellen springen ließ
+9bbc2c08-4f75-4107-83a8-dc54bfd25937	published	audio	Die Kosten-Checkliste für deinen ersten Welt-Indexfonds
+ffb8006d-71f6-4498-85bd-2b29af19b9b1	published	written	Dein Coffee-to-go macht dich nicht arm
+4ef50dd2-33cf-49fb-bd42-065b00ae2156	published	audio	Attention Tunnel: Unterbrechungen sind nicht bloß Sturheit
+21eeb083-c7e6-4e3e-8bb9-d6161f4130fd	published	audio	Deload planen: Weniger Sätze sind keine Kraftgarantie
+47109ac7-36b6-4350-a98c-63d3f2eb5588	published	written	Der unsichtbare Projektplan zermürbt Paare
+e93177a6-6e77-431f-a9b0-41be3c1b167a	published	written	Dein Alltags-Zappeln zählt mehr, als dein Bürostuhl ahnt
+c3fef83b-9dda-407e-b33b-a9ca3abbb0fe	published	written	Masking ist mehr als bloßes Höflichsein
+e6a0b88c-2a2d-4592-a84e-640fafd541af	published	written	Ein längerer Blick sagt mehr als ein Spruch – aber drei Sekunden sind kein Code
+4c07c4ac-5012-43f3-9673-be303955a808	published	audio	Blickkontakt: Die Drei-Sekunden-Regel der Anziehung?
+93eccd0f-1a30-4e57-88ed-301c50e76b91	published	written	Spiegeln schafft Nähe – wenn es natürlich bleibt
+789d3c0c-57bb-47df-ac2f-d4826af64d37	published	audio	Spiegeln kann beim Dating Verbundenheit fördern
+ecf9d963-7832-4f82-a775-87d27a18f267	published	audio	Der Arm-Streifer ist kein Flirt-Zauber
+740431f0-2b3a-4531-b83e-4e2626789b12	published	written	Eine Berührung ist kein Flirt-Zaubertrick
+81cd18f8-7530-41b7-bdd1-b9f3dd0fd5c8	published	written	Humor ist sexy – aber kein Intelligenztest
+1413f6a2-dff3-4dc1-a162-0482b879bb74	published	audio	Humor beim Flirten: sexy, aber kein Gentest
+defc3eea-6c7f-4866-a732-92775b2a9966	published	written	Gute Absichten reichen nicht, wenn Liebe falsch übersetzt wird
+04114844-8c5b-4285-9c29-eeb0836d66a8	published	audio	Du gibst Liebe – aber kommt sie auch an?
+293289c8-4716-4d03-b816-96338c5352a9	published	written	Erst verstehen, dann lösen
+552ae0ab-85e7-44e0-9208-ba78c79e9048	published	audio	Erst verstehen, dann lösen
+d07971f9-3bdd-4fd9-ba4b-f76f692bebc8	published	written	Nähe ist nicht automatisch Gefahr
+441f3a34-82f9-44eb-ab7b-0005bfe93b50	published	audio	Bindungstrauma: Wenn Nähe sich plötzlich gefährlich anfühlt
+53f3d62f-34a6-4ea3-9798-6a989380ef15	published	written	Körperliche Nähe ist kein Luxus: Sie kann Stress messbar dämpfen
+9a7c8338-8cc4-476a-a2f0-23c28c1abdfa	published	audio	Hauthunger: Warum Nähe mehr ist als ein schönes Extra
+c68a6a20-dfe4-4ea1-a5e7-07f762154ed1	published	written	Vollendete Liebe braucht drei Komponenten – aber keine starre Balance
+c40bcd28-25ec-4faa-a3e4-51d684c084fa	published	audio	Das Sternberg-Dreieck: Drei Seiten der Liebe
+8f535135-c5de-4a26-aaaf-5128bc2d0af9	published	audio	Die Coolidge-Effekt-Falle: Neue Liebe ist kein Liebestest
+9025e5c9-b4bb-4f31-89ac-f3fbbe74be3e	published	written	Liebe wird selbstverständlich? Dann wird selbst der Müll zum Beziehungstest.
+dd26633a-6b37-4c67-ac8d-a89789bc1630	published	audio	Das Danke für den Müll ist kein Kleinkram
+f3516f9c-f801-44fd-ad1e-d9c162804a79	published	written	Liebe kann dein mögliches Ich sichtbar machen
+7adc5c33-2f84-47e5-9e6d-ca6cfd8241a2	published	audio	Liebe, die Potenzial sichtbar macht
+ae293011-5bde-49bb-bd0a-37a6da8ccca6	published	written	Der perfekte Deckel kann echte Liebe verhindern
+61966c82-4314-48f0-92eb-a8d0dbd67a14	published	audio	The One ist kein Beziehungstest
+753d28d2-a451-4d29-9e2f-271fc62d6d1e	published	written	Das Beziehungsklima darf kein Ein-Personen-Job sein
+20c1ef8b-9aff-4775-9e04-be574257c439	published	audio	Das Lächeln, das Beziehungen erschöpft
+59899034-0b17-448e-a18e-23cb32674970	published	written	Kompromisse machen nicht jede Entscheidung fair
+fb3cb941-cd89-4afd-9ddd-d350ad46edc2	published	audio	Veto statt fauler Kompromiss?
+5bf2e2ad-cf2a-4b74-9511-ad8688321db4	published	audio	Die Egalitäts-Falle: Wenn Liebe zur Buchhaltung wird
+7c4fc5a5-ceb2-4d95-a087-687e72d3415f	published	written	Gemeinsam ins Bett – und näher zueinander?
+d346922e-527f-42b9-8a09-43aa1cefe777	published	audio	Schlafsynchronität: Der stille Taktgeber für Beziehungsglück
+0a7bf952-47aa-41ee-acc9-bd12b7dfd1cd	published	audio	Die Deadline ist kein Maß für den Aufwand
+912ade9f-eda3-4dce-9ac3-28edc516b94e	published	audio	Kleopatra und das iPhone: Die optische Täuschung der Geschichte
+8716fcde-d138-4374-a85f-9c009781cb27	published	audio	Weaponized Incompetence: Wenn Dummstellen zur Waffe wird
+78b2de09-1fed-418c-8a3d-a7aa26ad7a53	published	written	Dummstellen ist keine faire Aufgabenverteilung
+5f0f27ca-f751-4d26-b4ea-a9f9277dcf8f	published	written	Insider-Witze können Nähe schaffen – solange alle mitlachen
+90a8874d-a37a-45a7-8458-0604f1298eb0	published	audio	Insider-Witze: kleine Welt, große Nähe
+721f7dac-0f29-475f-bc21-ff5f926bd989	published	written	Eine Krise macht euch nicht automatisch stärker
+c351eb7a-b872-4c4d-9cb2-2d2f180f3f1a	published	audio	Krisen vereinen Paare nicht automatisch
+b0150964-7a53-4689-9af9-dadda354b4df	published	audio	Paralleles Spiel: Warum ihr nicht immer etwas zusammen machen müsst
+6c806076-7335-42c3-9103-6c4cd68668db	published	written	Nebeneinander statt Dauerprogramm: Nähe ohne gemeinsames Hobby
+2745efcb-3b0d-4a5b-8844-036c0795b0d9	published	written	Nicht gleicher Kontostand verbindet – sondern gemeinsame Geldwerte
+f207aa96-4b94-4a2a-912d-e01fb3596924	published	audio	Nicht gleiche Kontostände, sondern gemeinsame Geldwerte verbinden
+ef26bc07-f07f-4cfc-bc86-5af92ec1593c	published	written	Unerledigte Aufgaben bleiben im Kopf – aber rauben sie dir wirklich den Schlaf?
+19a369ca-d4f3-4b1e-8f03-f7f8a622230b	published	audio	Unerledigte Aufgaben halten dich nicht automatisch wach
+af9298da-d4bc-428d-bb98-a6cb173b044c	published	audio	Job-Hopping oder bleiben? Versunkene Kosten entscheiden nicht
+1f56437b-ce91-4fe0-9d25-3341d9c2c216	published	written	Deine investierten Jahre sind kein Grund zu bleiben
+5b6ef7a0-3026-4c83-b559-34298af6fd93	published	written	Die Beförderung macht dich nicht dauerhaft glücklicher
+929bc991-9984-4f2b-a7f3-d8756a3448f0	published	audio	Warum dich die nächste Beförderung nicht dauerhaft glücklicher macht
+9c7e25ab-db96-4b80-aad7-0466bc0de6b1	published	written	Dein Versprecher steht nicht im Rampenlicht
+898b12a3-f728-4ca9-858f-e5dbc222fe4f	published	audio	Spotlight-Effekt im Meeting: Warum sich niemand an deinen Versprecher erinnert
+37842e1d-567a-40a5-8310-c56737e7ff94	published	written	Der Bestätigungsfehler blockiert gute Teamentscheidungen
+8fb0e26b-2806-4ec7-a1f4-a0d4190c53a2	published	audio	Im Team gewinnt nicht automatisch das bessere Argument
+bb22fe5d-905e-47f8-9a2a-b8cbd4eaa65c	published	written	Selbstüberschätzung beginnt oft dort, wo Fachwissen fehlt
+7e9a883c-d6ab-4fe4-acd1-ae077fd41b5f	published	audio	Selbstsicherheit ist kein Kompetenznachweis
+09abb154-d6b3-4d69-9c85-27e990e1a551	published	written	Der Halo-Effekt: Ein guter erster Eindruck ist kein Kompetenzbeweis
+590319ae-566a-48ca-aadf-fa1c5dc5e1fc	published	written	Grübeln blockiert dich? Hol deine Aufmerksamkeit zurück
+1082663d-63a1-445c-88cf-e1276e78bc02	published	audio	DMN-Unterbrechung: Raus aus dem Gedankenkreisel
+0e1b51a5-4017-4296-899f-2138dd70d38c	published	written	Großraumbüro: Reizüberflutung ist kein Belastbarkeitstest
+ac051793-1ff3-4b0a-a55f-8d2fb12e144a	published	audio	Großraumbüro: Erschöpfung ist kein Belastbarkeitstest
+e7e0d903-70b9-4a3b-8975-71a574a3c8ad	published	audio	Das Reiz-Puffer-Protokoll: Produktiv bleiben im Open Space
+68cad9fc-8834-4437-ad43-7b57b9ba7bb7	published	audio	Die Pauschale schützt dich vor Belegstress – aber nicht vor dem Rechnen
+7e3be00c-2a0e-462e-a676-63b2538107ac	published	written	Delegieren heißt: das ganze Denken abgeben
+18f9074a-d4ee-4deb-82ab-a8ef5e559e70	published	audio	Delegation heißt: Aufgabe ganz abgeben
+70459434-1c8f-4d48-b97b-3372db688c60	published	written	Dein Budget braucht keine Excel-Akrobatik
+29913661-458d-41a5-84f5-4a2166e47c47	published	audio	Die Fünfzig-Dreißig-Zwanzig-Regel: Finanzieller Frieden trotz Einstiegsgehalt
+07f026fb-e02a-4ed9-8d6e-8917f3c9367f	published	written	Was am Monatsende übrig bleibt, wird selten Vermögen
+87208546-a85d-4d65-b5fe-b9480a0a818a	published	audio	Erst sparen, dann ausgeben: Altersvorsorge automatisieren
+529d8d1c-2e67-4746-8e25-b87d6315337a	published	written	Steuerklasse 3/5 macht deine Jahressteuer nicht kleiner
+8e601486-eb4b-4147-bccf-1abfa0e5c7df	published	audio	Verlustaversion: Warum 100 Euro Verlust mehr schmerzen
+698929ae-33cb-4eae-834f-10125b33e1ba	published	audio	Steuerklasse drei und fünf sparen am Jahresende keinen Cent
+c3df86c0-052f-4c2e-a64f-f7b685329f95	published	written	Gute Verhandlungen beginnen mit einem Perspektivwechsel
+f1e9c281-1057-45e3-8926-f87466f1aee1	published	audio	Erst verstehen, dann verhandeln
+658b4f66-bf1c-4047-9768-8ffb7aaff4f1	published	written	Klartext schlägt das Feedback-Chaos
+0bcae98f-a68b-4473-a446-3ad0beefebad	published	audio	Kritik braucht Klarheit, keinen freundlichen Umweg
+d0ed264a-3849-4863-8c83-fd16fed58599	published	written	Der Vitrifikations-Effekt: Warum Pausen dich vor dem Ausbrennen schützen können
+291f4c80-e373-41ad-89e0-c5b85ed4e070	published	audio	Der Vitrifikations-Effekt: Warum dein System Pausen braucht
+f60da430-074b-43e8-bbcd-54a777c55a4f	published	written	Die 80/20-Arbeitswoche: Routine statt Dauer-Sprint
+6031a1a1-bc9d-4fbc-b609-eed800937e2d	published	audio	Die Zone-2-Arbeitswoche: Warum Routine Spitzenleistung möglich macht
+9f7ec66a-7108-40dc-8f26-b6dead390988	published	written	Dein Freibetrag wirkt nur, wenn die Bank ihn kennt
+896e768f-3a0f-4645-951f-c888c28510f8	published	audio	Freistellungsauftrag nicht vergessen: Mehr von deinen Kapitalerträgen behalten
+85f3eef7-0a8c-4ed1-89ca-49252c6dd8bd	published	audio	Die Leucin-Schwelle für Teams: Der minimale Trigger für Motivation
+a24cc7d6-8af5-4f03-b7ed-497956eba22d	published	written	Drei Sekunden schlagen den Reflex
+c603904e-b853-443f-83bd-7a47b52e4af4	published	audio	Das Drei-Sekunden-Protokoll für schwierige Entscheidungen
+3fc6623f-2352-4d42-a843-6763cfc88a75	published	audio	Die Jobwechsel-Keto-Grippe: Warum die Einarbeitung anfangs wehtun kann
+90658c67-fa6e-4e1d-869d-c083e9df278c	published	written	Nähe braucht Luft: Warum Freiraum Beziehungen stärken kann
+354235e5-2cff-4b08-ba1b-1c06f30ce9ea	published	audio	Ein bisschen Abstand kann Nähe schützen
+0347eddf-c8e7-48b3-811c-9a529bc5170f	published	written	50/50: Wenn Liebe zur Buchhaltung wird
+2a9365cb-4ea2-4426-9e7b-067293e96bbb	published	written	False Growth Mindset: Lob für Fleiß kann blockieren
+0b6eedff-64bd-49b3-bd37-5cb703d07fff	published	written	Dein Job braucht Deload-Wochen
+278365b0-b3bc-48da-b504-69d666f1cb5a	published	audio	Deload im Job: Warum auch Wissensarbeiter eine Entlastungswoche brauchen
+739d95f2-5f2f-4245-8db7-18485d17f849	published	audio	Wenn Lob zur Sackgasse wird
+d5266058-9032-4101-82fe-f5a4ea5277d4	published	written	Ein Reiz-Puffer macht dich im Open Space produktiver
+70b8719c-2c52-497f-8a53-5d868994f616	published	written	Der Pauschbetrag ist schon da – zusätzliche Kosten zählen erst darüber
+9fc2d81a-058a-4c0d-a932-ba1b80704db9	published	audio	Der Attention Tunnel: Warum Task-Switches so schmerzhaft sind
+fd4c7d01-1578-4f55-b43c-b1e32480a9c3	published	written	Teams brauchen keine Lob-Dusche – sondern den richtigen Impuls
+61cba93d-9b7e-4b35-8511-e8661f297ed7	published	audio	Dein Kalender ist nicht deine Produktivität
+f54baeb2-769d-4005-b262-a848f3e0761d	published	written	Erschöpfung im neuen Job heißt nicht: Du bist ungeeignet
+95e3743d-2a2a-495d-862d-bc8038026820	published	audio	Ritual oder Routine? So bekommt euer Alltag neue Bedeutung
+2768a9a3-34e8-4e52-aed4-336462cd2f08	published	written	Task-Switches kosten mehr als einen Klick
+d320c5ee-35c3-4dbc-9108-b0bb1b84f428	published	written	Dein Kalender ist kein Produktivitätsnachweis
+f3d5b576-7407-441e-84d8-70cc78350904	published	audio	Time Blindness: Zuspätkommen ist nicht automatisch Respektlosigkeit
+3e737421-e83d-4c67-880d-61a50da72371	published	written	Autismus als Ein-Kanal-Fokus: Was Monotropismus erklärt

@@ -7,6 +7,7 @@ import { api, ApiError, ensureSession } from 'src/api'
 import { usePlatform } from 'src/composables/usePlatform'
 import { useVault } from 'src/composables/useVault'
 import { useHaptics } from 'src/composables/useHaptics'
+import { useVariantSwap } from 'src/composables/useVariantSwap'
 import UnitCard from 'components/UnitCard.vue'
 
 /**
@@ -20,6 +21,7 @@ const vault = useVault()
 const haptics = useHaptics()
 const units = ref<FeedUnitDto[]>([])
 const active = ref(0)
+const { swap } = useVariantSwap(units)
 const loading = ref(false)
 const ended = ref(false)
 const error = ref('')
@@ -123,6 +125,7 @@ function close(): void {
         :mount-content="Math.abs(i - active) <= 1"
         :preload="i === active + 1"
         @vote="onVote(u, $event)"
+        @swap="swap(u)"
       />
       <section class="wz-end">
         <div class="wz-end-inner">

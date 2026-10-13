@@ -49,6 +49,16 @@ export function pickOnePerPair<T extends { id: string; pairId: string | null }>(
   return out
 }
 
+/** Unit id → id of its published slides/audio sibling; units without one have no entry. */
+export function counterpartIds<T extends { id: string; pairId: string | null }>(units: T[], published: T[]): Map<string, string> {
+  const out = new Map<string, string>()
+  for (const u of units) {
+    const other = u.pairId ? published.find((p) => p.pairId === u.pairId && p.id !== u.id) : undefined
+    if (other) out.set(u.id, other.id)
+  }
+  return out
+}
+
 export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): FeedRepo {
   return {
     async getPrefs(userId) {
@@ -104,11 +114,16 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
         userId ? (await db.select({ id: savedUnit.unitId }).from(savedUnit).where(and(eq(savedUnit.userId, userId), inArray(savedUnit.unitId, ids)))).map((r) => r.id) : [],
       )
       const rows = await db
-        .select({ id: unit.id, title: unit.title, format: unit.format, content: unit.contentJson, level: unit.level, series: unit.series, field })
+        .select({ id: unit.id, pairId: unit.pairId, title: unit.title, format: unit.format, content: unit.contentJson, level: unit.level, series: unit.series, field })
         .from(unit)
         .innerJoin(field, eq(field.id, unit.fieldId))
         .where(inArray(unit.id, ids))
       const assets = await db.select().from(asset).where(inArray(asset.unitId, ids))
+      const pairIds = rows.flatMap((r) => (r.pairId ? [r.pairId] : []))
+      const pairs = pairIds.length
+        ? await db.select({ id: unit.id, pairId: unit.pairId }).from(unit).where(and(eq(unit.status, 'published'), inArray(unit.pairId, pairIds)))
+        : []
+      const counterparts = counterpartIds(rows, pairs)
       for (const r of rows) {
         const content = unitContentSchema.safeParse(r.content)
         if (!content.success) continue
@@ -125,6 +140,7 @@ export function createFeedRepo(db: Db, mediaUrl: (path: string) => string): Feed
           level: r.level,
           series: r.series,
           saved: saved.has(r.id),
+          counterpartId: counterparts.get(r.id) ?? null,
         })
       }
       return out

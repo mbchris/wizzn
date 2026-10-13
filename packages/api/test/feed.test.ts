@@ -29,7 +29,7 @@ function fakeFeed(prefs: Partial<FeedPrefs> = {}) {
     getPrefs: async () => ({ fieldIds: ['A'], themeIds: [], formats: ['written'], timezone: 'Europe/Berlin', ...prefs }),
     getCandidates: async () => [{ id: 'u1', fieldId: 'A' }, { id: 'u2', fieldId: 'B' }],
     loadUnits: async (ids) =>
-      new Map(ids.map((id) => [id, { id, title: id, format: 'written' as const, field: { id: 'A', slug: 'finance', nameDe: 'Finanzen', adviceDisclaimer: true }, content: written, media: {}, credits: {}, level: 1 as const, series: null, saved: false }])),
+      new Map(ids.map((id) => [id, { id, title: id, format: 'written' as const, field: { id: 'A', slug: 'finance', nameDe: 'Finanzen', adviceDisclaimer: true }, content: written, media: {}, credits: {}, level: 1 as const, series: null, saved: false, counterpartId: null }])),
     getSignals: async () => [],
     recordImpressions: async (_u, ids) => void impressions.push(...ids),
     getPublishedContent: async (id) => (id === LONG ? longWritten : [UNIT, UNIT2].includes(id) ? written : null),

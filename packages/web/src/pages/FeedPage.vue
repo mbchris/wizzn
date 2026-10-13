@@ -9,6 +9,7 @@ import { useProgress } from 'src/composables/useProgress'
 import { useFeedFilter } from 'src/composables/useFeedFilter'
 import { useVault } from 'src/composables/useVault'
 import { useHaptics } from 'src/composables/useHaptics'
+import { useVariantSwap } from 'src/composables/useVariantSwap'
 import UnitCard from 'components/UnitCard.vue'
 import AccountSheet from 'components/AccountSheet.vue'
 import StreamTopBar from 'components/StreamTopBar.vue'
@@ -22,6 +23,7 @@ const vault = useVault()
 const { filter, stale, fields } = useFeedFilter()
 const units = ref<FeedUnitDto[]>([])
 const active = ref(0)
+const { swap } = useVariantSwap(units)
 const pageActive = ref(true)
 const loading = ref(false)
 const exhausted = ref(false)
@@ -205,6 +207,7 @@ onUnmounted(() => observer?.disconnect())
         :mount-content="mounted(i)"
         :preload="i === active + 1"
         @vote="onVote(u, $event)"
+        @swap="swap(u)"
       />
 
       <section class="wz-end">

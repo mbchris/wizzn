@@ -20,7 +20,7 @@ function fakeFeed(): FeedRepo {
       new Map(
         ids.filter((i) => PUBLISHED.has(i)).map((i): [string, Omit<FeedUnitDto, 'discovery'>] => [
           i,
-          { id: i, title: i, format: 'written', field: { id: 'A', slug: 'nutrition', nameDe: 'Ernährung', adviceDisclaimer: true }, content, media: {}, credits: {}, level: 1, series: null, saved: false },
+          { id: i, title: i, format: 'written', field: { id: 'A', slug: 'nutrition', nameDe: 'Ernährung', adviceDisclaimer: true }, content, media: {}, credits: {}, level: 1, series: null, saved: false, counterpartId: null },
         ]),
       ),
     recordImpressions: async () => undefined,

@@ -49,6 +49,8 @@ export interface FeedUnitDto {
   series: string | null
   /** Bookmarked by the current user */
   saved: boolean
+  /** Published unit of the same article in the other format (read ↔ listen); null without one */
+  counterpartId: string | null
 }
 
 /** Grid tile for search results and saved units; never paired with a total count */

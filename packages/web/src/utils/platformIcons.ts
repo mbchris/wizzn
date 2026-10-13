@@ -16,6 +16,7 @@ export const ICON_MAP: Record<string, IconDefinition> = {
   settings: { android: 'tune', ios: 'ion-ios-options' },
   gear: { android: 'settings', ios: 'ion-ios-settings' },
   headphones: { android: 'headphones', ios: 'ion-ios-headset' },
+  prefer_read: { android: 'menu_book', ios: 'ion-ios-book' },
   slides: { android: 'view_carousel', ios: 'ion-ios-albums' },
   description: { android: 'description', ios: 'ion-ios-document' },
   bolt: { android: 'bolt', ios: 'ion-ios-flash' },

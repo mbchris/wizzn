@@ -19,7 +19,7 @@ const props = defineProps<{
   mountContent: boolean
   preload: boolean
 }>()
-const emit = defineEmits<{ vote: [FeedbackVote] }>()
+const emit = defineEmits<{ vote: [FeedbackVote]; swap: [] }>()
 
 const { pIcon } = usePlatform()
 const haptics = useHaptics()
@@ -91,6 +91,16 @@ function toggleSave(): void {
           <template v-if="unit.discovery"><span class="wz-dot">•</span>Entdecken</template>
         </span>
         <div class="wz-head-actions">
+          <button
+            v-if="unit.counterpartId"
+            type="button"
+            class="wz-icon-btn wz-swap"
+            :aria-label="isWritten(unit) ? 'Lieber hören' : 'Lieber lesen'"
+            :title="isWritten(unit) ? 'Lieber hören' : 'Lieber lesen'"
+            @click="emit('swap')"
+          >
+            <q-icon :name="pIcon(isWritten(unit) ? 'headphones' : 'prefer_read')" size="20px" />
+          </button>
           <button type="button" class="wz-icon-btn wz-vote" :class="{ on: voted === -1 }" aria-label="Weniger davon" @click="vote(-1)">
             <q-icon :name="pIcon('less_like')" size="20px" />
           </button>
@@ -149,7 +159,7 @@ function toggleSave(): void {
 .wz-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 -10px 4px 0; }
 .wz-head-actions { display: flex; align-items: center; flex: none; }
 .wz-dot { opacity: 0.6; margin: 0 2px; }
-.wz-vote { color: rgba(255, 255, 255, 0.6); }
+.wz-vote, .wz-swap { color: rgba(255, 255, 255, 0.6); }
 .wz-vote.on { color: var(--wz-glow); }
 .wz-save { color: rgba(255, 255, 255, 0.85); }
 .wz-save.saved { color: var(--wz-glow); filter: drop-shadow(0 0 6px var(--wz-glow)); }
